@@ -1,0 +1,129 @@
+ctype = CTYPE() concat 200+256*(200+256*200)
+ctype = CTYPE(STRING) concat 'gray1'
+ctype = CTYPE() concat 150+256*(150+256*150)
+ctype = CTYPE(STRING) concat 'gray2'
+ctype = CTYPE() concat 100+256*(100+256*100)
+ctype = CTYPE(STRING) concat 'gray3'
+ctype = CTYPE() concat 50+256*(50+256*50)
+ctype = CTYPE(STRING) concat 'gray4'
+ctype = CTYPE() concat 150+256*(150+256*50)
+ctype = CTYPE(STRING) concat 'brown'
+
+erase
+
+ctype default
+ltype 0
+
+location 5000 23000 5000 14000
+
+limits 10 14.5 0 0.29
+
+ticksize -1 10 0.02 0.1
+
+expand 1.1
+lweight 4
+box
+
+expand 1.2
+lweight 2
+
+xlabel M_{FoF} (h^{-1} M_\odot)
+ylabel M_b/M_{FoF}
+
+data Mb.ascii.dat
+read { x 1 y0 2 y1 3 y2 4}
+set lx = lg(x)
+
+ctype gray1
+shade 9 lx y2
+
+ctype brown
+shade 9 lx y1
+ctype default
+ltype 0
+connect lx y0
+ltype 2
+lweight 4
+relocate 9  0.1667   draw 15 0.1667
+
+
+limits 0 10 0 10
+expand 1.02
+lweight 2
+relocate 8 9 label z=0.625
+#
+#
+#
+ctype default
+ltype 0
+
+location 5000 23000 14000 23000
+limits 10 14.5 0 0.05
+
+ticksize -1 10 0.005 0.02
+
+expand 1.1
+lweight 4
+box 0 2 0 0
+
+expand 1.2
+lweight 2
+
+#xlabel M_{FoF} (M_\odot)
+ylabel M_*/M_{FoF}
+
+data Ms.ascii.dat
+read { x 1 y0 2 y1 3 y2 4}
+set lx = lg(x)
+
+ctype gray1
+shade 9 lx y2
+
+ctype brown
+shade 9 lx y1
+ctype default
+ltype 0
+connect lx y0
+ltype 2
+lweight 4
+#relocate 9  0.1667   draw 15 0.1667
+
+#
+#
+#
+
+ctype default
+ltype 0
+
+location 5000 23000 23000 32000
+limits 10 14.5 0 0.25
+
+ticksize -1 10 0.02 0.1
+
+expand 1.1
+lweight 4
+box 0 2 0 0
+
+expand 1.2
+lweight 2
+
+#xlabel M_{FoF} (M_\odot)
+ylabel M_{gas}/M_{FoF}
+
+data Mg.ascii.dat
+read { x 1 y0 2 y1 3 y2 4}
+set lx = lg(x)
+
+ctype gray1
+shade 9 lx y2
+
+ctype brown
+shade 9 lx y1
+ctype default
+ltype 0
+connect lx y0
+ltype 2
+lweight 4
+#relocate 9  0.1667   draw 15 0.1667
+
+

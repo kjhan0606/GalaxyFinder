@@ -1,0 +1,205 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<stddef.h>
+#include<string.h>
+#include<math.h>
+#include<mpi.h>
+#include<sys/types.h>
+#include "Memory.h"
+#include "header.h"
+#include "ramses.h"
+#include "tree.h"
+#include "defs.h"
+#include "hfind.h"
+#include "galcenter.h"
+
+typedef struct VecPos{
+	dptype x,y,z,mass;
+}VecPos;
+
+
+
+Center Find_Center(VecPos *r, lint mp, dptype targetmass){
+	lint i,j,k;
+	dptype Rmax2= -9999;
+	dptype cx,cy,cz,tmass;
+	cx = cy = cz = tmass = 0;
+	for(i=0;i<mp;i++){
+		cx += r[i].x*r[i].mass;
+		cy += r[i].y*r[i].mass;
+		cz += r[i].z*r[i].mass;
+		tmass += r[i].mass;
+	}
+	cx = cx/tmass;
+	cy = cy/tmass;
+	cz = cz/tmass;
+	for(i=0;i<mp;i++){
+		dptype tmpx = r[i].x - cx;
+		dptype tmpy = r[i].y - cy;
+		dptype tmpz = r[i].z - cz;
+		dptype dist2 = tmpx*tmpx + tmpy*tmpy + tmpz*tmpz;
+		Rmax2 = MAX(Rmax2, dist2);
+	}
+	dptype cox,coy,coz,omass;
+	dptype cnx,cny,cnz,nmass;
+	dptype Rox,Rnx,Rox2,Rnx2;
+	dptype shiftr,shiftR;
+
+	cox = cx; coy = cy; coz = cz; omass = tmass;
+	Rox = sqrt(Rmax2)*pow(tmass/targetmass,0.33333333333L);
+
+	int criteria=1;
+	do{
+		Rox2 = Rox*Rox;
+		cnx = cny = cnz = nmass = 0;
+		for(i=0;i<mp;i++){
+			dptype tmpx = r[i].x-cx;
+			dptype tmpy = r[i].y-cy;
+			dptype tmpz = r[i].z-cz;
+			dptype dist2 = tmpx*tmpx + tmpy*tmpy + tmpz*tmpz;
+			if(dist2 < Rox2){
+				cnx += r[i].x*r[i].mass;
+				cny += r[i].y*r[i].mass;
+				cnz += r[i].z*r[i].mass;
+				nmass += r[i].mass;
+			}
+		}
+		cnx = cnx/nmass;
+		cny = cny/nmass;
+		cnz = cnz/nmass;
+		shiftr = sqrt((cnx-cox)*(cnx-cox)+(cny-coy)*(cny-coy)+(cnz-coz)*(cnz-coz));
+
+		Rnx = Rox*pow(targetmass/nmass, 0.3333333L);
+		shiftR = Rnx/Rox-1.;
+
+		if(shiftr < MIN_SHIFT && fabs(shiftR) < MIN_SHIFT) criteria = 0;
+		else criteria = 1;
+
+		cox = cox + (cnx-cox)*rSTEP;
+		coy = coy + (cny-coy)*rSTEP;
+		coz = coz + (cnz-coz)*rSTEP;
+		Rox = Rox + (Rnx-Rox)*RSTEP;
+
+	} while(criteria);
+
+
+	Center center;
+	center.x = cox;
+	center.y = coy;
+	center.z = coz;
+	center.R = Rox;
+
+	printf("%g %g %g : %g\n",cox,coy,coz,Rox);
+
+}
+
+GalCenter find_centers(FoFTPtlStruct *bp, lint np){
+	GalCenter result;
+	lint mp;
+	lint i,j,k;
+	VecPos *r;
+	dptype targetmass,nowmass;
+	dptype cx,cy,cz;
+	{
+		mp = 0;
+		for(i=0;i<np;i++){
+			if(bp[i].type == TYPE_STAR){
+				mp ++;
+			}
+		}
+		r = (VecPos*)Malloc(sizeof(VecPos)*mp,PPTR(r));
+		nowmass = mp = 0;
+		cx = cy = cz = 0;
+		for(i=0;i<np;i++){
+			if(bp[i].type == TYPE_STAR){
+				r[mp].x = bp[i].x;
+				r[mp].y = bp[i].y;
+				r[mp].z = bp[i].z;
+				r[mp].mass = bp[i].mass;
+				nowmass += r[mp].mass;
+				cx += r[mp].x *r[mp].mass;
+				cy += r[mp].y *r[mp].mass;
+				cz += r[mp].z *r[mp].mass;
+				mp++;
+			}
+		}
+		targetmass = MIN(nowmass*0.5, 1e9);
+	
+		if(mp>30) result.gal = Find_Center(r,mp, targetmass);
+		else if(mp >0) {
+			result.gal.x = cx/nowmass; result.gal.y = cy/nowmass; result.gal.z = cz/nowmass;
+		}
+		else {
+			result.gal.x = result.gal.y = result.gal.z = NO_CENTER_POS;
+		}
+		Free(r);
+	}
+	{
+		mp = 0;
+		for(i=0;i<np;i++){
+			if(bp[i].type == TYPE_DM){
+				mp ++;
+			}
+		}
+		r = (VecPos*)Malloc(sizeof(VecPos)*mp,PPTR(r));
+		nowmass = mp = 0;
+		cx = cy = cz = 0;
+		for(i=0;i<np;i++){
+			if(bp[i].type == TYPE_DM){
+				r[mp].x = bp[i].x;
+				r[mp].y = bp[i].y;
+				r[mp].z = bp[i].z;
+				r[mp].mass = bp[i].mass;
+				nowmass += r[mp].mass;
+				cx += r[mp].x *r[mp].mass;
+				cy += r[mp].y *r[mp].mass;
+				cz += r[mp].z *r[mp].mass;
+				mp++;
+			}
+		}
+	
+		if(mp>30) result.dmhalo = Find_Center(r,mp, targetmass);
+		else if(mp >0) {
+			result.dmhalo.x = cx/nowmass; result.dmhalo.y = cy/nowmass; result.dmhalo.z = cz/nowmass;
+		}
+		else {
+			result.dmhalo.x = result.dmhalo.y = result.dmhalo.z = NO_CENTER_POS;
+		}
+		Free(r);
+	}
+	{
+		mp = 0;
+		for(i=0;i<np;i++){
+			if(bp[i].type == TYPE_GAS){
+				mp ++;
+			}
+		}
+		r = (VecPos*)Malloc(sizeof(VecPos)*mp,PPTR(r));
+		nowmass = mp = 0;
+		cx = cy = cz = 0;
+		for(i=0;i<np;i++){
+			if(bp[i].type == TYPE_GAS){
+				r[mp].x = bp[i].x;
+				r[mp].y = bp[i].y;
+				r[mp].z = bp[i].z;
+				r[mp].mass = bp[i].mass;
+				nowmass += r[mp].mass;
+				cx += r[mp].x *r[mp].mass;
+				cy += r[mp].y *r[mp].mass;
+				cz += r[mp].z *r[mp].mass;
+				mp++;
+			}
+		}
+	
+		if(mp>30) result.gas = Find_Center(r,mp, targetmass);
+		else if(mp >0) {
+			result.gas.x = cx/nowmass; result.gas.y = cy/nowmass; result.gas.z = cz/nowmass;
+		}
+		else {
+			result.gas.x = result.gas.y = result.gas.z = NO_CENTER_POS;
+		}
+		Free(r);
+	}
+
+	return result;
+}

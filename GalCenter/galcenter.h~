@@ -1,0 +1,16 @@
+
+typedef struct Center{
+	dptype x,y,z;
+}Center;
+typedef struct GalCenter{
+	idtype haloid, subgalid;
+	Center gal, dmhalo,gas;
+}GalCenter;
+
+
+#define NO_CENTER_POS -99999999
+#define MIN_SHIFT 0.005
+#define rSTEP 0.1
+#define RSTEP 0.1
+
+GalCenter find_centers(FoFTPtlStruct *, lint);

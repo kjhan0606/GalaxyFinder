@@ -1,0 +1,31 @@
+icc: error #10236: File not found:  'slice2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'nslice2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'slice3fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'ramses2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'dslice3fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'slice3xzslice.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'fslice3fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'grafic2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'white2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'dslice2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'main.c'
+icc: command line error: no files specified; for help type "icc -help"
+icc: error #10236: File not found:  'main.o'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'omslice2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'sliceshift2fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
+icc: error #10236: File not found:  'hr52fits.c'
+icc: warning #10315: specifying -lm before files may supersede the Intel(R) math library and affect performance
