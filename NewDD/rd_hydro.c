@@ -69,9 +69,9 @@ int rd_hydro(RamsesType *ram, char *infile){
 
 //	}
 	if( !(neq_chem || rt) && nvar2 != ram->nvar){
-		DEBUGPRINT0("FILE hydro.tmp is not compatible\n");
-		DEBUGPRINT("Found     = %d\n", nvar2);
-		DEBUGPRINT("Expected  = %d\n", ram->nvar);
+		ERRORPRINT0("FILE hydro.tmp is not compatible\n");
+		ERRORPRINT("Found     = %d\n", nvar2);
+		ERRORPRINT("Expected  = %d\n", ram->nvar);
 		exit(999);
 	}
 	
@@ -90,9 +90,9 @@ int rd_hydro(RamsesType *ram, char *infile){
 			F77read(&ilevel2, sizeof(int), 1, fp);
 			F77read(&numbl2, sizeof(int), 1, fp);
 			if(numbl2 != ncache){
-				DEBUGPRINT0("File hydro.tmp is not compatible\n");
-				DEBUGPRINT("Found    = %d for level %d \n", numbl2, ilevel2);
-				DEBUGPRINT("Expected = %d for level %d \n", ncache, ilevel+1);
+				ERRORPRINT0("File hydro.tmp is not compatible\n");
+				ERRORPRINT("Found    = %d for level %d \n", numbl2, ilevel2);
+				ERRORPRINT("Expected = %d for level %d \n", ncache, ilevel+1);
 			}
 			if(ncache >0 ) {
 				int *ind_grid = (int*)Malloc(sizeof(int)*ncache,PPTR(ind_grid));

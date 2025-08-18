@@ -25,6 +25,9 @@ typedef char familytype;
 #define DEBUGPRINT(_fmt, ...)  do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)}while(0)
 #define DEBUGPRINT0(_fmt) do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG)} while(0)
 
+#define ERRORPRINT(_fmt, ...)  do{DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)}while(0)
+#define ERRORPRINT0(_fmt) do{DEBUGPRINT2(WHERESTR _fmt, WHEREARG)} while(0)
+
 
 
 /*
@@ -237,7 +240,7 @@ typedef struct RamsesType{
 	int _nn,chip;\
 	_nn=fread(&chip, sizeof(int), 1,fp);\
 	if(chip!=size*nmem) {\
-		DEBUGPRINT("Error reading "#a" "#size" "#nmem"  %d :  %d @ %p\n", chip, size*nmem, fp);\
+		ERRORPRINT("Error reading "#a" "#size" "#nmem"  %d :  %d @ %p\n", chip, size*nmem, fp);\
 		exit(99);\
 	}\
 	fread(a, size, nmem,fp);\

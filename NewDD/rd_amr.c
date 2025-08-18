@@ -201,7 +201,7 @@ int rd_amr(RamsesType *ram, char *infile, int simple_boundary){
 	char ordering2[129];
 	F77read((ordering2),sizeof(char), 128, fp);
 	if(strncmp(ordering2, ram->ordering, 5)!=0){
-		DEBUGPRINT("Ordering is uncompatible %s :: %s\n", ordering2, ram->ordering);
+		ERRORPRINT("Ordering is uncompatible %s :: %s\n", ordering2, ram->ordering);
 		exit(999);
 	}
 

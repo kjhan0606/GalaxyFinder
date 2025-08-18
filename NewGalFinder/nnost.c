@@ -626,9 +626,7 @@ void findsphdensity(SimpleBasicParticleType *bp,int np,int *nearindex, int Numne
     printf("ins=", tmpindx);
     fprintf(stdout,"Terminated with success\n");fflush(stdout);
     */
-#ifdef DEBUG
-    printf("exiting findsphdensity\n");
-#endif
+    DEBUGPRINT0("exiting findsphdensity\n");
 }
 
 void starfindsphdensity(SimpleBasicParticleType *bp,int np,int *nearindex, int Numnear,

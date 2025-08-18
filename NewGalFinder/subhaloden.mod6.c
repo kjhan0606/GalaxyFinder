@@ -2780,14 +2780,10 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 			numcore = finddenpeak(density,NumNeighbor,neighbor,np,&core,1,bp);
 #endif
 		}
-#ifdef DEBUG
-		printf("density calculates\n");
-#endif
+		DEBUGPRINT0("density calculates\n");
 	}
 	{
-#ifdef DEBUG
-		printf("%d numcore detected\n",numcore);
-#endif
+		DEBUGPRINT("%d numcore detected\n",numcore);
 		wp = (WorkingParticle *)Malloc(sizeof(WorkingParticle)*np,PPTR(wp));
 	}
 	if(numcore == 0) {

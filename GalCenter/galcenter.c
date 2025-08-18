@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
 
 	sprintf(dir,"./FoF_Data/FoF.%.5d/",nstep);
 
-	if(Make_Total_Memory()==0){
+	if(Make_Total_Memory(NMEG*MEGABYTE)==0){
 		fprintf(stderr,"P%d Error initializing mem %ldMB\n",myid,NMEG);
 	}
 

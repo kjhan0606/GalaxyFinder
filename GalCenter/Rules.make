@@ -61,8 +61,8 @@ OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL  -DQUADHILBERT -DNENER=0 -DNPRE=8 
 ##################################
 # PG compiler
 ##################################
-FC = mpiifort
-CC = mpiicc
+FC = mpifort
+CC = mpicc
 
 #DFLAGS = -DNMEG=3300L -D_LARGE_FILES -DENDIANCHANGE  -DCHECK_INFORM
 #DFLAGS = -DNMEG=7000L -D_LARGE_FILES -DENDIANCHANGE   #-DCHECK_INFORM

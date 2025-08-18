@@ -23,7 +23,7 @@ AR = ar  rcv
 RANLIB = ranlib
 FFTW = /home/kjhan/local/
 OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 \
-		-DNDUST=4  -DDEBUG -DADV 
+		-DNDUST=4  -DDEBUG=1 -DADV 
 
 INCLUDES = -I$(FFTW)/include
 FC = mpifort
