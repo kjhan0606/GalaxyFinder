@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
 				
 				{
 					if(snp >= 100000) 
-						printf("Now passing throught %d:   %d with offsets= %ldL %ldL\n",
+						DEBUGPRINT("Now passing throught %d:   %d with offsets= %ldL %ldL\n",
 								numhalo, haloq.np, qoffset, soffset);
 					do {
 						MPI_Probe(MPI_ANY_SOURCE,READY,MPI_COMM_WORLD,&mstatus);
