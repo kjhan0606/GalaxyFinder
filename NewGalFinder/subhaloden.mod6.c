@@ -482,9 +482,9 @@ int finddenpeak(float *den,int numneigh,int *neighbor,int np,
 			}
 		}
 	}
-	DEBUGPRINT0("Now before merging peak\n");
+	DEBUGPRINT("Now before merging peak. numcore= %d\n", numcore);
 //	if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,0);
-	numcore = MergingPeak(bp,np,core,numcore,0);
+	if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,0);
 	DEBUGPRINT0("Now after merging peak\n");
 	return numcore;
 }
@@ -884,9 +884,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 	float minden;
 	num = 0;
 	for(i=0;i<numcore;i++) if(core[i].numstar < MINCORENMEM || core[i].starmass < MINCORESTARMASS) num++;
-#ifdef DEBUG
-	printf("SmartFinding: The number of erased core is %d from %d for mincore = %d\n",num,numcore, MINCORENMEM);
-#endif
+	DEBUGPRINT("SmartFinding: The number of erased core is %d from %d for mincore = %d\n",num,numcore, MINCORENMEM);
 	if(num <2) {
 		num = 0;
 		for(i=0;i<numcore;i++) 
@@ -900,6 +898,8 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 		score[num].nmem = core[i].nummem;
 		score[num].core = core + i;
 		score[num].density = wp[core[i].peak].den; /* peak density */
+		DEBUGPRINT("C%d has num= %d peakden= %g coreden= %g\n", i, core[i].nummem,
+				wp[core[i].peak].den, core[i].coredensity);
 		num++; /* num is the total number of cores that is underpopulated
 				  while numcore is the total number of cores. */
 	}
@@ -933,7 +933,11 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 			int mcontact;
 			float corestarmass = 0;
 			int iter = 0;
-			while(iter==0 || fabs(upden-downden)/downden>COREDENRESOLUTION){
+//			while(iter==0 || fabs(upden-downden)/denthr>COREDENRESOLUTION)
+			denthr = 0.5*(upden+downden);
+			DEBUGPRINT("SC%d has upden= %g downden= %g denthr= %g res= %g\n", 
+						i, upden,downden, denthr, COREDENRESOLUTION);
+			do {
  				for(j=0;j<ncontact;j++) {
 					int jj = contactlist[j];
 					UNSET_VISITED(jj);/* Set all the particle not to be visited */
@@ -943,7 +947,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 
 				corestarmass = 0;
 
-				denthr = 0.25*(3.*upden+downden);
+				denthr = 0.5*(upden+downden);
 				SET_VISITED((contactlist[ncontact++] = (score[i].core)->peak));
 				while(now<ncontact && breakflag ==0){
 					long kk = (long)contactlist[now]*(long)NumNeighbor;
@@ -976,7 +980,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 					if(mcontact >= MINCORENMEM && corestarmass >= MINCORESTARMASS) break;
 				}
 				iter ++;
-			}
+			} while(fabs(upden-downden)/denthr>COREDENRESOLUTION && fabs(minden-(score[i].core)->coredensity)>1.);
 			(score[i].core)->coredensity = (denthr = upden);
 
 			// Now scoop up core particles
@@ -1355,13 +1359,9 @@ recycling:
 		if(MINSTELLARMASS >0) numcore = SmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
 		else  numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
 
-#ifdef DEBUG
-		printf("Now before merging peak\n");
-#endif
+		DEBUGPRINT0("Now before merging peak\n");
 		if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,1);
-#ifdef DEBUG
-		printf("Now after merging peak\n");
-#endif
+		DEBUGPRINT0("Now after merging peak\n");
 
 #endif
 
@@ -2759,12 +2759,6 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 			numcore = finddenpeak(density,NumNeighbor,neighbor,np,&core,0,bp);
 		}
 		else {
-	if(0){
-		int iii=1;
-		while(iii) {
-			iii = iii;
-		}
-	}
 			neighbor = (int*)Malloc(sizeof(int)*np*NumNeighbor,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
 			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
