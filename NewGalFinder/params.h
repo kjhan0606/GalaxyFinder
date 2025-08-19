@@ -134,3 +134,9 @@
 // the linking length to finalize the membership
 #define FOFLINK4MEMBERSHIP 0.005
 //*******************
+//
+// the maximum number of linking in water shedding to find core density
+// It should be sufficiently larger than 
+// the maximum number of core particles.
+#define MAXNUMWATERSHEDDING 100000000L
+//*******************

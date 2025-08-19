@@ -980,7 +980,8 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 					if(mcontact >= MINCORENMEM && corestarmass >= MINCORESTARMASS) break;
 				}
 				iter ++;
-			} while(fabs(upden-downden)/denthr>COREDENRESOLUTION && fabs(minden-(score[i].core)->coredensity)>1.);
+			} while(fabs(upden-downden)/denthr>COREDENRESOLUTION 
+					&& fabs(minden-(score[i].core)->coredensity)>1.);
 			(score[i].core)->coredensity = (denthr = upden);
 
 			// Now scoop up core particles
@@ -1185,9 +1186,10 @@ recycling:
 	nthreads = MIN(nthreads, MAXTHREADS);
 #endif
 
-	size_t maxcorenumsize= MIN(np, 10000000);
+	size_t numlinkingwatershedding= MIN(np, MAXNUMWATERSHEDDING);
 
-	Tcontactlist = (int *)Malloc(sizeof(int)*maxcorenumsize*nthreads,PPTR(Tcontactlist));
+	Tcontactlist = (int *)Malloc(sizeof(int)*numlinkingwatershedding*nthreads,
+			PPTR(Tcontactlist));
 
 #ifdef _OPENMP
 #pragma omp parallel for private(j,i)
@@ -1206,7 +1208,7 @@ recycling:
 #ifdef _OPENMP
 		it = omp_get_thread_num();
 #endif
-		int *contactlist = Tcontactlist + (long)it*maxcorenumsize;
+		int *contactlist = Tcontactlist + (long)it*numlinkingwatershedding;
 		for(i=it;i<numcore;i+=nthreads){
 			// Now find core density threshold 
 			float upden = wp[core[i].peak].den;
@@ -1214,7 +1216,8 @@ recycling:
 			float denthr;
 			int mcontact;
 			int ncontact=0, now;
-			while(fabs((upden-downden)/downden) > COREDENRESOLUTION){
+//			while(fabs((upden-downden)/downden) > COREDENRESOLUTION){
+			do{
 				// initialization before a search for the core density 
  				for(j=0;j<ncontact;j++) {
 					int jj = contactlist[j];
@@ -1244,7 +1247,8 @@ recycling:
 					now++;
 				}
 				if(breakflag==0) upden = denthr;
-			}
+			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION && 
+					fabs(minden-(core[i].coredensity))>1.);
 			core[i].coredensity = (denthr = upden);
 			/* Now scoop up core particles */
 			for(j=0;j<ncontact;j++) {
@@ -1337,9 +1341,13 @@ recycling:
 			core[i].nummem = ncontact;
 			core[i].numstar = mcontact;
 			core[i].starmass = corestarmass;
+			float xpix,ypix,zpix;
+			xpix = core[i].cx/TSC_CELL_SIZE+NCELLBUFF/2.;
+			ypix = core[i].cy/TSC_CELL_SIZE+NCELLBUFF/2.;
+			zpix = core[i].cz/TSC_CELL_SIZE+NCELLBUFF/2.;
 			DEBUGPRINT("C%d has number %d in %d den= %g/%g at %g %g %g :: %g %g %g\n",i,
 					core[i].numstar, core[i].nummem, core[i].density, core[i].coredensity,
-					core[i].cx, core[i].cy, core[i].cz, Xmin,Ymin,Zmin);
+					core[i].cx, core[i].cy, core[i].cz, xpix,ypix,zpix);
 		}
 	}
 	Free(Tcontactlist);
@@ -1365,7 +1373,7 @@ recycling:
 
 #endif
 
-		goto recycling; /* go and start again */
+		goto recycling; // go and restart again .
 	}
 
 
@@ -2134,7 +2142,7 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 		nlink = 0;
 		int haloindx = 0;
 #ifdef _OPENMP
-#pragma omp parallel private(j,k)
+#pragma omp parallel private(i,j,k)
 #endif
 		{
 			int pid = omp_get_thread_num();
@@ -2159,6 +2167,7 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 		DEBUGPRINT("Making FoF Tree in the parallel mode for C%d with np= %d\n", icore, num);
 		int iloop=0;
 		do {
+			ilink = 0;
 			if(iloop ==0){
 					linked[0].x = bp[core[icore].peak].x;
 					linked[0].y = bp[core[icore].peak].y;
@@ -2181,7 +2190,7 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 				}
 			}
 			iloop =1;
-			if(j==num) break;
+			if(ilink == 0) break;
 			while(ilink){
 #ifdef _OPENMP
 #pragma omp parallel  private(j)
@@ -2852,9 +2861,7 @@ renumcore :
 			return numcore;
 			*/
 		}
-#ifdef DEBUG
-		printf("total number of cores changes to %d\n",numcore);fflush(stdout);
-#endif
+		DEBUGPRINT("total number of cores changes to %d\n",numcore);fflush(stdout);
 
 		minshellden = 1.e27;
 		maxshellden = -1.e27;
