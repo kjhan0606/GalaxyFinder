@@ -236,7 +236,6 @@ unsigned char setbits(unsigned char x,int p) {
 	return b;
 }
 
-#define MAXTHREADS 64
 
 typedef struct WorkingParticle{
 	float den;
@@ -957,8 +956,9 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 							if(IS_VISITED(new) ==NOT && IS_PEAK(new) == NOT){
 								SET_VISITED(new);
 								contactlist[ncontact++] = new;
-								if(bp[new].type == TYPE_STAR) mcontact ++;
-								corestarmass += bp[new].mass;
+								if(bp[new].type == TYPE_STAR) {
+									mcontact ++; corestarmass += bp[new].mass;
+								}
 							}
 							else if(IS_VISITED(new) == NOT && IS_PEAK(new) !=NOT){
 								downden = denthr;
@@ -1225,8 +1225,10 @@ recycling:
 				}
 				int breakflag = 0; 
 				ncontact = now = 0;
-				denthr = 0.5*(upden+downden); // Trial value 
-				SET_VISITEDT((contactlist[ncontact++] = core[i].peak),it); // Now peak particle is included. 
+				// Trial value 
+				denthr = 0.5*(upden+downden); 
+				// Now peak particle is included. 
+				SET_VISITEDT((contactlist[ncontact++] = core[i].peak),it); 
 				while(now < ncontact && breakflag ==0){
 					long kk = (long)contactlist[now]*(long)NumNeighbor;
 					for(k=0;k<NumNeighbor;k++){
@@ -1247,8 +1249,12 @@ recycling:
 					now++;
 				}
 				if(breakflag==0) upden = denthr;
-			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION && 
-					fabs(minden-(core[i].coredensity))>1.);
+				/*
+				if(i==272) DEBUGPRINT("C%d is testing den(try)= %g upden= %g"
+						"downden= %g peakden= %g breakflag= %d\n", i, denthr, 
+						upden, downden, wp[core[i].peak].den, breakflag);
+						*/
+			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION);
 			core[i].coredensity = (denthr = upden);
 			/* Now scoop up core particles */
 			for(j=0;j<ncontact;j++) {

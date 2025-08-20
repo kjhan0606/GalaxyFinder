@@ -140,3 +140,7 @@
 // the maximum number of core particles.
 #define MAXNUMWATERSHEDDING 100000000L
 //*******************
+//
+//
+// the maximum number of threads
+#define MAXTHREADS 64
