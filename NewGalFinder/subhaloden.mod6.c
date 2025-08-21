@@ -1370,8 +1370,11 @@ recycling:
 		for(i=0;i<np;i++) RESET_WHOLE_FLAGS_WP(i);
 		for(i=0;i<numcore;i++) SET_PEAK(core[i].peak);
 #else
+		/*
 		if(MINSTELLARMASS >0) numcore = SmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
 		else  numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
+		if(MINSTELLARMASS<=0) numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
+		*/
 
 		DEBUGPRINT0("Now before merging peak\n");
 		if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,1);
@@ -1379,7 +1382,7 @@ recycling:
 
 #endif
 
-		goto recycling; // go and restart again .
+//		goto recycling; // go and restart again .
 	}
 
 
