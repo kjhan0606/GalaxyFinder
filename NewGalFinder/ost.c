@@ -801,12 +801,21 @@ void FoF_Make_Tree(FoFTStruct *TREE_START, size_t nnode, FoFTPtlStruct *ptl, siz
     size_t i;
     FoFTStruct *nextFreeNode = TREE_START+1;
     TREE_START->sibling = NULL;
+	/*
     for(i=0;i<np;i++) {
         ptl[i].sibling = ptl + i +1;
         ptl[i].type = TYPE_PTL;
         ptl[i].included = NO;
     }
     ptl[np-1].sibling = NULL;
+	*/
+	FoFTPtlStruct *tmp = ptl;
+	while(tmp){
+		tmp->type = TYPE_PTL;
+		tmp->included = NO;
+		tmp = tmp->sibling;
+	}
+
     TREE_START->daughter = &(ptl[0]);
     TREE_START->Nparticle = np;
     if(recursiveflag == RECURSIVE) nextFreeNode = FoF_divide_node(TREE_START, nextFreeNode, recursiveflag);

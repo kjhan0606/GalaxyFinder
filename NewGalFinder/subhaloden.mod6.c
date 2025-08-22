@@ -1440,7 +1440,7 @@ void Self_Halo_Potent(int np,Vector3d *r,float *mass,float *penergy){
 		recursiveflag = SERIALIZED;
 		Make_Tree(TREE,nnode,ptl,np,theta2,recursiveflag);
 #ifdef _OPENMP
-#pragma omp parallel for private(i,p)
+#pragma omp parallel for private(i,p) schedule(guided)
 #endif
 		for(i=0;i<np;i++){ 
 			p.x = ptl[i].x; p.y = ptl[i].y; p.z = ptl[i].z; 
@@ -1522,7 +1522,7 @@ void External_Halo_Potent(int nend,Vector3d *r,float *mass, float *penergy, int 
 		recursiveflag = SERIALIZED;
 		Make_Tree(TREE,nnode,ptl,snp,theta2,recursiveflag);
 #ifdef _OPENMP
-#pragma omp parallel for private(i,p)
+#pragma omp parallel for private(i,p) schedule(guided)
 #endif
 		for(i=0;i<nend;i++){ 
 			p.x = r[i].x; p.y = r[i].y; p.z = r[i].z; 
@@ -2166,15 +2166,26 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 			int mynp = (iend-istart);
 			if(mynp>0){
 				FoFTPtlStruct *myptl = ptl + istart;
+				/*
 				for(i=0;i<mynp;i++){
 					myptl[i].sibling =  myptl+i+1;
 					myptl[i].included =  NO;
 				}
 				myptl[mynp-1].sibling = NULL;
+				*/
+				for(i=pid;i<num;i+=nthreads){
+					ptl[i].sibling = ptl+i+nthreads;
+					ptl[i].included = NO;
+				}
+				ptl[i-nthreads].sibling = NULL;
+
 				int nodestep = (nnode+nthreads-1)/nthreads;
 				FoFTStruct *mytree = TREE + nodestep*pid;
 				int recursiveflag = SERIALIZED;
+				/*
 				FoF_Make_Tree(mytree,nodestep, myptl,mynp,recursiveflag);
+				*/
+				FoF_Make_Tree(mytree,nodestep, ptl+pid,mynp,recursiveflag);
 			}
 		}
 
@@ -2987,12 +2998,10 @@ renumcore :
 				}
 				Free(tkp);Free(skp);
 				Free(slist); Free(tlist);
-				DEBUGPRINT("S%d in S%d -- C%d ntarget=%d nsource=%d & finally get nmem = %d\n",
+				DEBUGPRINT("S%d/S%d: C%d ntarget=%d nsource=%d & finally get nmem = %d\n",
 						ishell,nshell,icore,ntarget,nsource,nmem);
 			}
-			DEBUGPRINT0("before dumping unbound particles to the rest\n");
 			UnboundShellP2Rest(ishell,bp);/* Turning on the rest flag for unbound shell particles */
-			DEBUGPRINT0("after dumping unbound particles to the rest\n");
 			Free(score);
 		}
 
