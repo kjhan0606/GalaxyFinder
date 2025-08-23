@@ -1199,6 +1199,7 @@ recycling:
 
 
 
+	/*
 #ifdef _OPENMP
 #pragma omp parallel private(i,j,k) num_threads(nthreads)
 #endif
@@ -1209,6 +1210,14 @@ recycling:
 #endif
 		int *contactlist = Tcontactlist + (long)it*numlinkingwatershedding;
 		for(i=it;i<numcore;i+=nthreads){
+		*/
+	{
+#ifdef _OPENMP
+#pragma omp parallel for private(i,j,k) num_threads(nthreads) schedule(dynamic)
+#endif
+		for(i=0;i<numcore;i++){
+			int it = omp_get_thread_num();
+			int *contactlist = Tcontactlist + (long)it*numlinkingwatershedding;
 			// Now find core density threshold 
 			float upden = wp[core[i].peak].den;
 			float downden = minden;
@@ -1248,11 +1257,9 @@ recycling:
 					now++;
 				}
 				if(breakflag==0) upden = denthr;
-				/*
 				if(i==272) DEBUGPRINT("C%d is testing den(try)= %g upden= %g"
 						"downden= %g peakden= %g breakflag= %d\n", i, denthr, 
 						upden, downden, wp[core[i].peak].den, breakflag);
-						*/
 			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION);
 			core[i].coredensity = (denthr = upden);
 			/* Now scoop up core particles */
@@ -1522,7 +1529,7 @@ void External_Halo_Potent(int nend,Vector3d *r,float *mass, float *penergy, int 
 		recursiveflag = SERIALIZED;
 		Make_Tree(TREE,nnode,ptl,snp,theta2,recursiveflag);
 #ifdef _OPENMP
-#pragma omp parallel for private(i,p) schedule(guided)
+#pragma omp parallel for private(i,p) schedule(dynamic)
 #endif
 		for(i=0;i<nend;i++){ 
 			p.x = r[i].x; p.y = r[i].y; p.z = r[i].z; 
@@ -2190,6 +2197,8 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 		}
 
 		int iloop=0;
+		int jjob=0;
+		int nmaxlink = 0;
 		do {
 			ilink = 0;
 			if(iloop ==0){
@@ -2209,6 +2218,7 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 						ptl[j].included = YES;
 						ptl[j].haloindx = haloindx;
 						nlink = 0; ilink = 1;
+						jjob = j;
 						break;
 					}
 				}
@@ -2262,7 +2272,8 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 						);
 			}
 			haloindx ++;
-			if(nlink> 0.5*num) {
+			nmaxlink = MAX(nmaxlink, nlink);
+			if(nmaxlink>= (num-jjob)/2 ) {
 				nlink += ilink;
 				break;
 			}
