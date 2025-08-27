@@ -701,14 +701,10 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 	float minden;
 	num = 0;
 	for(i=0;i<numcore;i++) if(core[i].nummem < MINCORENMEM) {
-#ifdef DEBUG
-		printf("DMSmartingFinding: %d'th core is being erased for %d < mincorenemme= %d\n", i,core[i].nummem,MINCORENMEM);
-#endif
+		DEBUGPRINT("DMSmartingFinding: %d'th core is being erased for %d < mincorenemme= %d\n", i,core[i].nummem,MINCORENMEM);
 		num++;
 	}
-#ifdef DEBUG
-	printf("DMSmartFinding: The number of erased core is %d from %d for mincore = %d\n",num,numcore, MINCORENMEM);
-#endif
+	DEBUGPRINT("DMSmartFinding: The number of erased core is %d from %d for mincore = %d\n",num,numcore, MINCORENMEM);
 	if(num <2) {
 		num = 0;
 		for(i=0;i<numcore;i++) 
@@ -829,9 +825,7 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 			}
 
 			if(mcontact >= MINCORENMEM && corestarmass >= MINCORESTARMASS) {/* restore this as a meaningful peak */
-#ifdef DEBUG
-				printf("New merging core is detected with np= %d in %d cores\n",ncontact,i );
-#endif
+				DEBUGPRINT("New merging core is detected with np= %d in %d cores\n",ncontact,i );
 				SET_PEAK((score[i].core)->peak);
 				SET_SCORE_CONFIRMED(i);
 			}
@@ -865,9 +859,7 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 			core[num++] = core[i];
 		}
 	}
-#ifdef DEBUG
-	printf("Total number of survived cores is %d from %d\n",num,numcore);
-#endif
+	DEBUGPRINT("Total number of survived cores is %d from %d\n",num,numcore);
 	numcore = num;
 	return numcore;
 }
@@ -1757,9 +1749,7 @@ int ALONEHALO(Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid){
 			return nmem;
 		}
 		nmem = CheckSelfTE(kp,(k=nmem),bndflag,NULL);
-#ifdef DEBUG
-		printf("iterating to find bound particles %d:    %d from %d\n",i,nmem,onmem);
-#endif
+		DEBUGPRINT("iterating to find bound particles %d:    %d from %d\n",i,nmem,onmem);
 		/*
 		nmem = CheckSelfTE(kp,(k=nmem),bndflag);
 		*/
@@ -1771,9 +1761,7 @@ int ALONEHALO(Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid){
 	Free(bndflag);
 	for(i=0;i<nmem;i++) SET_MEMBER_ID(KP2BPID(kp,i),haloid);
 //	for(i=0;i<np;i++) SET_MEMBER_ID(i,haloid);
-#ifdef DEBUG
-	printf("alone halo loses member particles from %d to %d\n",np,nmem);
-#endif
+	DEBUGPRINT("alone halo loses member particles from %d to %d\n",np,nmem);
 	return nmem;
 }
 int SINGLEHALO(int nkp,Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid, Coretype *core){
@@ -2023,9 +2011,7 @@ void GetTidalRCenterCore(Coretype *core,int numcore,
 				Free(blist);
 			}
 		}
-#ifdef DEBUG
-		printf("C%d has tidal radius %g in r1=%g\n",sid,core[sid].Rtidal,sqrt(r2));
-#endif
+		DEBUGPRINT("C%d has tidal radius %g in r1=%g\n",sid,core[sid].Rtidal,sqrt(r2));
 		Free(slist);
 	}
 }
@@ -2593,9 +2579,7 @@ void MemberFoF(SimpleBasicParticleType *bp,int np, int numcore, Coretype *core){
 				k--;
 			}
 		}
-#ifdef DEBUG
-		printf("C%d 's # of total members changes from %d to %d\n",i,num,k);
-#endif
+		DEBUGPRINT("C%d 's # of total members changes from %d to %d\n",i,num,k);
 	}
 	Free(TREE);Free(linked);Free(ptl);
 }
