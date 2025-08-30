@@ -47,7 +47,7 @@ typedef struct Box{
 typedef struct HaloQ{
     size_t np,npstar,npgas,npdm,npsink;
     POSTYPE x,y,z;
-    double mass, mstar,mgas,mdm,msink;
+    float mass, mstar,mgas,mdm,msink;
     float vx,vy,vz;
 }HaloQ;
 

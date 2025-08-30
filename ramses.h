@@ -19,16 +19,6 @@ typedef char familytype;
 /* You have to read these lines carefully before running it */
 
 
-#define WHERESTR  "[file %s, line %d]: "
-#define WHEREARG  __FILE__, __LINE__
-#define DEBUGPRINT2(...)       fprintf(stderr, __VA_ARGS__);
-#define DEBUGPRINT(_fmt, ...)  do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)}while(0)
-#define DEBUGPRINT0(_fmt) do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG)} while(0)
-
-#define ERRORPRINT(_fmt, ...)  do{DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)}while(0)
-#define ERRORPRINT0(_fmt) do{DEBUGPRINT2(WHERESTR _fmt, WHEREARG)} while(0)
-
-
 
 /*
 #define NSPLIT 1024
@@ -84,12 +74,13 @@ typedef struct PmType{
 #endif
 #ifndef NBODY
 	dptype tp,zp; /* in ramses units */
-	dptype mass0; /* in unit of Msun/h */
 #ifdef NCHEM
 	dptype chem[NCHEM]; /*number of chemical elements*/
 #endif
-	dptype birth_d;
-	int partp;
+	dptype mass0; /* in unit of Msun/h */
+#ifdef FBK
+	dptype fbk;
+#endif
 #endif
 }PmType;
 
@@ -122,15 +113,15 @@ typedef struct AGNType{
 typedef struct HydroCellType{
 	dptype x,y,z,cellsize; /* the center position and size of cell in cMpc/h */
 	float vx,vy,vz; /* physical velocity in km/second */
-	dptype den; /* simulation density of the cell. 
+	float den; /* simulation density of the cell. 
 				  A factor of scale_d should be multiplied to get the real density in gr/cm^3 */
 	float temp; /* gas temperature in K/mu/density */
 	float metallicity;  /* metallicity Z */
 #ifdef NCHEM
 	float chem[NCHEM];
 #endif
-#ifdef NDUST
-	float dust[NDUST];
+#ifdef NION
+	float ion[NION];
 #endif
 
 //	float Fe, H, O; /* in mass fractions */
@@ -146,15 +137,15 @@ typedef struct GasType{
 #ifdef NCHEM
 	float chem[NCHEM];
 #endif
-#ifdef NDUST
-	float dust[NDUST];
+#ifdef NION
+	float ion[NION];
 #endif
 	float mass; /* Msun/h */
 
 //	float Fe, H, O; /* in mass fractions */ 
 //	int ilevel; 
 //	idtype indx;
-//	dptype potent, fx,fy,fz;
+	dptype potent, fx,fy,fz;
 } GasType;
 
 /******************************************************************************/
@@ -175,7 +166,7 @@ typedef struct MeshType{
 
 typedef struct HydroType{
 	dptype *uold, *unew;
-//	dptype *phi, *fxyz;
+	dptype *phi, *fxyz;
 }HydroType;
 
 
@@ -183,7 +174,7 @@ typedef struct HydroType{
 typedef struct RamsesType{
 	int npart, nsink,nleafcell,ngas;
 	int nindsink;
-	int ncpu, icpu, ndim;
+	int ncpu, icpu, ndim, nthr;
 	int nrestart,nrestart_quad;
 	int localseed[IRandNumSize];
 	 int  nstar_tot;
@@ -212,7 +203,7 @@ typedef struct RamsesType{
 	dptype mpcscale_l, kmscale_v;
 
 	int nvar,nboundary, ncoarse, nener;
-	int imetal, ichem, idust, nelt, inener;
+	int imetal, ichem, iion, nelt, inener;
 
 	int neq_chem,rt;
 	dptype gamma_rad[512];
@@ -234,13 +225,21 @@ typedef struct RamsesType{
 }RamsesType;
 
 
+#define WHERESTR  "[file %s, line %d]: "
+#define WHEREARG  __FILE__, __LINE__
+#define DEBUGPRINT2(...)       fprintf(stdout, __VA_ARGS__)
+#define DEBUGPRINT(_fmt, ...)  do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__);}while(0)
+#define DEBUGPRINT0(_fmt) do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG);}while(0)
+#define LOGPRINT(_fmt, ...)  do{if(LOG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__);}while(0)
+#define LOGPRINT0(_fmt) do{if(LOG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG);}while(0)
+
 
 
 #define F77read(a, size, nmem, fp) do{\
 	int _nn,chip;\
 	_nn=fread(&chip, sizeof(int), 1,fp);\
 	if(chip!=size*nmem) {\
-		ERRORPRINT("Error reading "#a" "#size" "#nmem"  %d :  %d @ %p\n", chip, size*nmem, fp);\
+		DEBUGPRINT("Error reading "#a" "#size" "#nmem"  %d :  %d @ %p\n", chip, size*nmem, fp);\
 		exit(99);\
 	}\
 	fread(a, size, nmem,fp);\
@@ -261,7 +260,7 @@ void rd_info(RamsesType *, char *);
 
 int rd_amr(RamsesType *, char *, int);
 int rd_hydro(RamsesType *, char *);
-//int rd_grav(RamsesType *, char *);
+int rd_grav(RamsesType *, char *);
 int rd_part(RamsesType *, char *);
 int rd_sink(RamsesType *, char *);
 int ascii_sink(RamsesType *, char *, int);

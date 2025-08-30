@@ -992,7 +992,8 @@ void lagFindStellarCore(
 		Coretype **Core,
 		int *NumCore,  // return value for number of core
 		int maxnumcore,
-		int **Nearindex // index array for neighbor network
+		int **Nearindex, // index array for neighbor network
+		int ptype
 		){
 	Coretype *core = *Core;
 	int numcore;
@@ -1055,9 +1056,14 @@ void lagFindStellarCore(
 		ncells = mx*ny*nz;
 		denGrid = (float*)Malloc(sizeof(float)*ncells,PPTR(denGrid));
 		{	
+			/*
+			LOGPRINT("np= %d nx/y/z= %d %d %d xmin/ymin/zmin = %g %g %g / %g %g %g cellsize= %g\n",
+					np, nx,ny,nz,xmin,ymin,zmin,xmax,ymax,zmax,cellsize);
+					*/
 			void assign_density_TSC(SimpleBasicParticleType *, int, float *, int, int, int,
-				double, double, double, double);
-			assign_density_TSC(bp, np, denGrid, nx,ny,nz,xmin,ymin,zmin,cellsize);
+				double, double, double, double, int);
+			assign_density_TSC(bp, np, denGrid, nx,ny,nz,xmin,ymin,zmin,cellsize,
+					ptype);
 		}
 		if(0){
 
@@ -1094,21 +1100,41 @@ void lagFindStellarCore(
 			linkedListGrid[i].np = 0;
 		}
 		int halfnbuff = NCELLBUFF/2;
-		int nstar = 0;
-		for(i=0;i<np;i++){
-			if(bp[i].type == TYPE_STAR){
-				long ir = rint((bp[i].x-xmin)/cellsize);
-				long jr = rint((bp[i].y-ymin)/cellsize);
-				long kr = rint((bp[i].z-zmin)/cellsize);
-				long ioff = ir+mx*(jr+ny*kr);
-				SimpleBasicParticleType *tmp = linkedListGrid[ioff].bp;
-				linkedListGrid[ioff].bp = bp+i;
-				linkedListGrid[ioff].np ++;
-				bp[i].bp = tmp;
-				nstar ++;
+		if(ptype == TYPE_STAR){
+			int nstar = 0;
+			for(i=0;i<np;i++){
+				if(bp[i].type == TYPE_STAR){
+					long ir = rint((bp[i].x-xmin)/cellsize);
+					long jr = rint((bp[i].y-ymin)/cellsize);
+					long kr = rint((bp[i].z-zmin)/cellsize);
+					long ioff = ir+mx*(jr+ny*kr);
+					SimpleBasicParticleType *tmp = linkedListGrid[ioff].bp;
+					linkedListGrid[ioff].bp = bp+i;
+					linkedListGrid[ioff].np ++;
+					bp[i].bp = tmp;
+					nstar ++;
+				}
 			}
+			DEBUGPRINT("After building LinkedList with nstar= %d\n", nstar);
 		}
-		DEBUGPRINT("After building LinkedList with nstar= %d\n", nstar);
+		else if (ptype == TYPE_ALL) {
+			int nparticles = 0;
+			for(i=0;i<np;i++){
+//				if(bp[i].type == TYPE_STAR)
+				{
+					long ir = rint((bp[i].x-xmin)/cellsize);
+					long jr = rint((bp[i].y-ymin)/cellsize);
+					long kr = rint((bp[i].z-zmin)/cellsize);
+					long ioff = ir+mx*(jr+ny*kr);
+					SimpleBasicParticleType *tmp = linkedListGrid[ioff].bp;
+					linkedListGrid[ioff].bp = bp+i;
+					linkedListGrid[ioff].np ++;
+					bp[i].bp = tmp;
+					nparticles ++;
+				}
+			}
+			DEBUGPRINT("After building LinkedList with all_type = %d\n", nparticles);
+		}
 		numcore = 0;
 		int nthreads;
 #ifdef _OPENMP
@@ -1124,6 +1150,7 @@ void lagFindStellarCore(
 		}
 		int num_cores[nthreads];
 		for(i=0;i<nthreads;i++) num_cores[i] = 0;
+		DEBUGPRINT("%d threads are ready\n", nthreads);
 #ifdef _OPENMP
 #pragma omp parallel for private(i,j,k)
 #endif
@@ -1137,43 +1164,41 @@ void lagFindStellarCore(
 						int i1,j1,k1;
 						for(k1=-1;k1<2;k1++) for(j1=-1;j1<2;j1++) for(i1=-1;i1<2;i1++){
 							long joff = ioff+i1 + mx*(long)(j1 + ny*k1);
-							if(joff != ioff && denGrid[ioff]<=denGrid[joff]){
+							if(joff != ioff && denGrid[ioff]<=denGrid[joff] ){
 								peakflag = 0;
 								break;
 							}
 						}
-						if(peakflag == 1){
-							/*
+						if(peakflag == 1 && linkedListGrid[ioff].np >0 ){
 							SimpleBasicParticleType *tmp = linkedListGrid[ioff].bp;
 							float maxden = -1.e20;
-							int ibp;
+							int ibp=-1;
 							while(tmp){
 								ibp = tmp-bp;
 								if(densph[ibp] > maxden){
 									maxden = densph[ibp];
-									tmp = tmp->bp;
 								}
+								tmp = tmp->bp;
 							}
-							core[numcore].peak = ibp; 
-							core[numcore].cx = bp[ibp].x; 
-							core[numcore].cy = bp[ibp].y; 
-							core[numcore].cz = bp[ibp].z; 
-							core[numcore].density = maxden;
-							numcore ++;
-							*/
-							num_cores[thread_id] ++; 
+							if(ibp>0) num_cores[thread_id] ++; 
 						}
 					}
 				}
 			}
 		}
 		numcore = 0;
-		for(i=0;i<nthreads;i++) numcore += num_cores[i];
+		for(i=0;i<nthreads;i++) {
+//			DEBUGPRINT("T%d has numcores= %d\n", i, num_cores[i]);
+			numcore += num_cores[i];
+		}
 		DEBUGPRINT("The number of cores: %d in initial finding\n", numcore);
 
 		int ioff_cores[nthreads];
 		ioff_cores[0] =0;
-		for(i=1;i<nthreads;i++) ioff_cores[i] = ioff_cores[i-1] + num_cores[i-1];
+		for(i=1;i<nthreads;i++) {
+			ioff_cores[i] = ioff_cores[i-1] + num_cores[i-1];
+//			DEBUGPRINT("T%d has core offset= %d\n", i, ioff_cores[i]);
+		}
 		numcore =0;
 #ifdef _OPENMP
 #pragma omp parallel for private(i,j,k) firstprivate(numcore)
@@ -1189,15 +1214,15 @@ void lagFindStellarCore(
                         int i1,j1,k1;
                         for(k1=-1;k1<2;k1++) for(j1=-1;j1<2;j1++) for(i1=-1;i1<2;i1++){
                             long joff = ioff+i1 + mx*(long)(j1 + ny*k1);
-                            if(joff != ioff && denGrid[ioff]<=denGrid[joff]){
+                            if(joff != ioff && denGrid[ioff]<=denGrid[joff]) {
                                 peakflag = 0;
                                 break;
                             }
                         }
-                        if(peakflag == 1){
+                        if(peakflag == 1 && linkedListGrid[ioff].np >0 ){
                             SimpleBasicParticleType *tmp = linkedListGrid[ioff].bp;
                             float maxden = -1.e20;
-                            long ibp;
+                            long ibp=-1;
 							long jbp;
                             while(tmp){
                                 ibp = tmp-bp;
@@ -1207,12 +1232,19 @@ void lagFindStellarCore(
                                 }
                                 tmp = tmp->bp;
                             }
-                            core[koff+numcore].peak = jbp; 
-                            core[koff+numcore].cx = bp[jbp].x; 
-                            core[koff+numcore].cy = bp[jbp].y; 
-                            core[koff+numcore].cz = bp[jbp].z; 
-                            core[koff+numcore].density = maxden;
-                            numcore ++;
+							if(ibp > 0){
+	                            core[koff+numcore].peak = jbp; 
+								core[koff+numcore].cx = bp[jbp].x; 
+								core[koff+numcore].cy = bp[jbp].y; 
+								core[koff+numcore].cz = bp[jbp].z; 
+								core[koff+numcore].density = maxden;
+								/*
+								LOGPRINT("p%d has c%d with koff= %d xyz= %g %g %g rho= %g\n",
+										thread_id, koff+numcore, koff, bp[jbp].x,
+										bp[jbp].y, bp[jbp].z,maxden);
+										*/
+								numcore ++;
+							}
                         }
                     }
                 }
@@ -1220,7 +1252,12 @@ void lagFindStellarCore(
         }
 		numcore = 0;
 		for(i=0;i<nthreads;i++) numcore += num_cores[i];
-		DEBUGPRINT("The number of cores: %d before MergingPeak\n", numcore);
+		if(ptype == TYPE_STAR){
+			DEBUGPRINT("The number of stellar cores: %d before MergingPeak\n", numcore);
+		}
+		else {
+			DEBUGPRINT("The number of All-type  cores: %d before MergingPeak\n", numcore);
+		}
 		Free(linkedListGrid);
 		Free(denGrid);
 

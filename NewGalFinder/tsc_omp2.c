@@ -168,7 +168,9 @@ void assign_density_TSC(SimpleBasicParticleType *bp, int np, float *den,
 		double Xmin,
 		double Ymin,
 		double Zmin,
-		double cellsize){
+		double cellsize,
+		int ptype
+		){
 	int nid,myid=0;
 	int NZWIDTH=4;
 	double pmas0,p05;
@@ -241,7 +243,7 @@ void assign_density_TSC(SimpleBasicParticleType *bp, int np, float *den,
 		long long i;
 #pragma omp parallel for num_threads(mthreads)
 		for(i=0;i<np;i++){
-			if(bp[i].type != TYPE_STAR) continue;
+			if(ptype != TYPE_ALL & bp[i].type != ptype) continue;
 			double xp;
 			if(nxyz == nx) {
 				xp = (bp[i].x-Xmin)/cellsize;
@@ -281,7 +283,7 @@ void assign_density_TSC(SimpleBasicParticleType *bp, int np, float *den,
 		int idthread = Omp_get_thread_num() + 1;
 		long long i;
 		for(i=0;i<np;i++){
-			if(bp[i].type != TYPE_STAR) continue;
+			if(ptype != TYPE_ALL && bp[i].type != ptype) continue;
 			if(target[i] != -idthread) continue;
 #ifdef XYZDBL
 			double xp,yp,zp;
@@ -394,7 +396,7 @@ void assign_density_TSC(SimpleBasicParticleType *bp, int np, float *den,
 		int idthread = Omp_get_thread_num()+1;
 		long long i;
 		for(i=0;i<np;i++){
-			if(bp[i].type != TYPE_STAR) continue;
+			if(ptype != TYPE_ALL && bp[i].type != ptype) continue;
 			if(target[i] != idthread) continue;
 #ifdef XYZDBL
 			double xp,yp,zp;
@@ -502,3 +504,4 @@ void assign_density_TSC(SimpleBasicParticleType *bp, int np, float *den,
 
 	Free(target);
 }
+

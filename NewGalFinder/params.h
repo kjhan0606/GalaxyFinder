@@ -81,13 +81,13 @@
 //*******************
 // (obsolete) minimum smoothing length 
 // for stellar density in cMpc/h
-#define MIN_CONST_R_SMOOTHING 0.005 
+#define MIN_CONST_R_SMOOTHING 0.005
 //*******************
 
 //*******************
 // The cellsize for TSC of the stellar density 
 // in unit of cMpc/h
-#define TSC_CELL_SIZE 0.005 
+#define TSC_CELL_SIZE 0.002
 //*******************
 
 //*******************
@@ -99,7 +99,7 @@
 // lower the stellar density 
 // and PEAKTHRESHOLD should be 
 // lowered accordingly.
-#define Gaussian_Smoothing_Length 0.010 
+#define Gaussian_Smoothing_Length 0.004
 //*******************
 //
 //*******************

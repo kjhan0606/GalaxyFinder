@@ -22,17 +22,16 @@ $(PROGS): $(OBJS)
 AR = ar  rcv
 RANLIB = ranlib
 FFTW = /home/kjhan/local/
-OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 \
-		-DNDUST=4  -DDEBUG=1 -DADV 
+OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=3 -DADV
 
 INCLUDES = -I$(FFTW)/include
 FC = mpifort
 CC = mpicc
 
-DFLAGS = -DNMEG=450000L #-D_LARGE_FILES #-DCHECK_INFORM
+DFLAGS = -DNMEG=90000L #-D_LARGE_FILES #-DCHECK_INFORM
 
 FFLAGS = $(FDFLAGS) $(OPT)  -mcmodel=medium
-CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES)  #-DDEBUG
+CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES)  -DDEBUG=0 -DLOG=1
 
 
 LIBS = -L$(FFTW)/lib -lsrfftw -lsfftw -lm

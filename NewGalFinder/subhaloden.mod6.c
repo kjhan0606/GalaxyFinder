@@ -701,10 +701,14 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 	float minden;
 	num = 0;
 	for(i=0;i<numcore;i++) if(core[i].nummem < MINCORENMEM) {
-		DEBUGPRINT("DMSmartingFinding: %d'th core is being erased for %d < mincorenemme= %d\n", i,core[i].nummem,MINCORENMEM);
+#ifdef DEBUG
+		printf("DMSmartingFinding: %d'th core is being erased for %d < mincorenemme= %d\n", i,core[i].nummem,MINCORENMEM);
+#endif
 		num++;
 	}
-	DEBUGPRINT("DMSmartFinding: The number of erased core is %d from %d for mincore = %d\n",num,numcore, MINCORENMEM);
+#ifdef DEBUG
+	printf("DMSmartFinding: The number of erased core is %d from %d for mincore = %d\n",num,numcore, MINCORENMEM);
+#endif
 	if(num <2) {
 		num = 0;
 		for(i=0;i<numcore;i++) 
@@ -825,7 +829,9 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 			}
 
 			if(mcontact >= MINCORENMEM && corestarmass >= MINCORESTARMASS) {/* restore this as a meaningful peak */
-				DEBUGPRINT("New merging core is detected with np= %d in %d cores\n",ncontact,i );
+#ifdef DEBUG
+				printf("New merging core is detected with np= %d in %d cores\n",ncontact,i );
+#endif
 				SET_PEAK((score[i].core)->peak);
 				SET_SCORE_CONFIRMED(i);
 			}
@@ -859,7 +865,9 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 			core[num++] = core[i];
 		}
 	}
-	DEBUGPRINT("Total number of survived cores is %d from %d\n",num,numcore);
+#ifdef DEBUG
+	printf("Total number of survived cores is %d from %d\n",num,numcore);
+#endif
 	numcore = num;
 	return numcore;
 }
@@ -1249,9 +1257,11 @@ recycling:
 					now++;
 				}
 				if(breakflag==0) upden = denthr;
-				if(i==272) DEBUGPRINT("C%d is testing den(try)= %g upden= %g"
+				/*
+				DEBUGPRINT("C%d is testing den(try)= %g upden= %g"
 						"downden= %g peakden= %g breakflag= %d\n", i, denthr, 
 						upden, downden, wp[core[i].peak].den, breakflag);
+						*/
 			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION);
 			core[i].coredensity = (denthr = upden);
 			/* Now scoop up core particles */
@@ -1356,6 +1366,10 @@ recycling:
 	}
 	Free(Tcontactlist);
 	DEBUGPRINT("Now Found the core densities for %d cores\n",numcore);
+	for(i=0;i<numcore;i++){
+		DEBUGPRINT("C%d has nstar= %d npall= %d xyz= %g %g %g\n", 
+				i, core[i].numstar,core[i].nummem, core[i].cx, core[i].cy, core[i].cz);
+	}
 	if(iflag ==0){
 		/* Deleting peaks of core particles less than minimum number */
 		iflag = 1;
@@ -1749,7 +1763,9 @@ int ALONEHALO(Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid){
 			return nmem;
 		}
 		nmem = CheckSelfTE(kp,(k=nmem),bndflag,NULL);
-		DEBUGPRINT("iterating to find bound particles %d:    %d from %d\n",i,nmem,onmem);
+#ifdef DEBUG
+		printf("iterating to find bound particles %d:    %d from %d\n",i,nmem,onmem);
+#endif
 		/*
 		nmem = CheckSelfTE(kp,(k=nmem),bndflag);
 		*/
@@ -1761,7 +1777,9 @@ int ALONEHALO(Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid){
 	Free(bndflag);
 	for(i=0;i<nmem;i++) SET_MEMBER_ID(KP2BPID(kp,i),haloid);
 //	for(i=0;i<np;i++) SET_MEMBER_ID(i,haloid);
-	DEBUGPRINT("alone halo loses member particles from %d to %d\n",np,nmem);
+#ifdef DEBUG
+	printf("alone halo loses member particles from %d to %d\n",np,nmem);
+#endif
 	return nmem;
 }
 int SINGLEHALO(int nkp,Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid, Coretype *core){
@@ -2011,7 +2029,9 @@ void GetTidalRCenterCore(Coretype *core,int numcore,
 				Free(blist);
 			}
 		}
-		DEBUGPRINT("C%d has tidal radius %g in r1=%g\n",sid,core[sid].Rtidal,sqrt(r2));
+#ifdef DEBUG
+		printf("C%d has tidal radius %g in r1=%g\n",sid,core[sid].Rtidal,sqrt(r2));
+#endif
 		Free(slist);
 	}
 }
@@ -2791,6 +2811,16 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 	}
 	{
 		if(findstarnum(bp,np)<= NUMNEIGHBOR || findstarmass(bp,np)<MINSTELLARMASS){
+			/*
+			neighbor = (int*)Malloc(sizeof(int)*np*NumNeighbor,PPTR(neighbor));
+			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
+			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
+
+			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *, 
+					Coretype **, int *, int, int **, int);
+			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
+					&neighbor, TYPE_ALL);
+					*/
 			neighbor = (int*)Malloc(sizeof(int)*np*NumNeighbor,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
 			void findsphdensity(SimpleBasicParticleType *,int ,int *, int , float *);
@@ -2804,15 +2834,9 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
 #ifdef ADV
 			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *, 
-					Coretype **, int *, int, int **);
+					Coretype **, int *, int, int **, int);
 			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
-					&neighbor);
-			/*
-			void findStellarCore(SimpleBasicParticleType *, int, int, float *, 
-					Coretype **, int *, int, int **);
-			findStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
-					&neighbor);
-					*/
+					&neighbor, TYPE_STAR);
 #else
 			neighbor = (int*)Malloc(sizeof(int)*np*(long)NumNeighbor,PPTR(neighbor));
 			void starfindsphdensity(SimpleBasicParticleType *,int ,int *, int , float *);
@@ -2824,6 +2848,9 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 	}
 	{
 		DEBUGPRINT("%d numcore detected\n",numcore);
+		for(i=0;i<numcore;i++){
+			DEBUGPRINT("C%d has ipeak= %d\n", i, core[i].peak);
+		}
 		wp = (WorkingParticle *)Malloc(sizeof(WorkingParticle)*np,PPTR(wp));
 	}
 	if(numcore == 0) {
