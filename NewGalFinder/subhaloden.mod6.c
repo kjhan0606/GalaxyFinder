@@ -190,45 +190,46 @@ void mklocalize(SimpleBasicParticleType *bp,lint np,float *xinit,float *yinit,
 #define WP_REST  0x80
 */
 
-#define RESET_WHOLE_FLAGS_WP(x) (wp[x].u.flag  = WP_RESET)
+#define RESET_WHOLE_FLAGS_WP(x) (wp[x].flag  = WP_RESET)
 
-#define SET_VISITED(x) (wp[x].u.flag |= WP_VISITED)
-#define SET_PEAK(x) (wp[x].u.flag |= WP_PEAK)
-#define SET_CORE(x) (wp[x].u.flag |= WP_CORE)
-#define SET_SHELL(x) (wp[x].u.flag |= WP_SHELL)
-#define SET_BOUND(x) (wp[x].u.flag |= WP_BOUND)
-#define SET_REMAINING(x) (wp[x].u.flag |= WP_REMAINING)
+#define SET_VISITED(x) (wp[x].flag |= WP_VISITED)
+#define SET_PEAK(x) (wp[x].flag |= WP_PEAK)
+#define SET_CORE(x) (wp[x].flag |= WP_CORE)
+#define SET_SHELL(x) (wp[x].flag |= WP_SHELL)
+#define SET_BOUND(x) (wp[x].flag |= WP_BOUND)
+#define SET_REMAINING(x) (wp[x].flag |= WP_REMAINING)
 
-#define UNSET_VISITED(x) (wp[x].u.flag &= (~WP_VISITED))
-#define UNSET_PEAK(x) (wp[x].u.flag &= (~WP_PEAK))
-#define UNSET_CORE(x) (wp[x].u.flag &= (~WP_CORE))
-#define UNSET_SHELL(x) (wp[x].u.flag &= (~WP_SHELL))
-#define UNSET_BOUND(x) (wp[x].u.flag &= (~WP_BOUND))
-#define UNSET_REMAINING(x) (wp[x].u.flag &= (~WP_REMAINING))
+#define UNSET_VISITED(x) (wp[x].flag &= (~WP_VISITED))
+#define UNSET_PEAK(x) (wp[x].flag &= (~WP_PEAK))
+#define UNSET_CORE(x) (wp[x].flag &= (~WP_CORE))
+#define UNSET_SHELL(x) (wp[x].flag &= (~WP_SHELL))
+#define UNSET_BOUND(x) (wp[x].flag &= (~WP_BOUND))
+#define UNSET_REMAINING(x) (wp[x].flag &= (~WP_REMAINING))
 
-#define IS_PEAK(x) (wp[x].u.flag & WP_PEAK)
-#define IS_VISITED(x) (wp[x].u.flag & WP_VISITED)
-#define IS_CORE(x) (wp[x].u.flag & WP_CORE)
-#define IS_SHELL(x) (wp[x].u.flag & WP_SHELL)
-#define IS_BOUND(x) (wp[x].u.flag & WP_BOUND)
-#define IS_REMAINING(x) (wp[x].u.flag & WP_REMAINING)
+#define IS_PEAK(x) (wp[x].flag & WP_PEAK)
+#define IS_VISITED(x) (wp[x].flag & WP_VISITED)
+#define IS_CORE(x) (wp[x].flag & WP_CORE)
+#define IS_SHELL(x) (wp[x].flag & WP_SHELL)
+#define IS_BOUND(x) (wp[x].flag & WP_BOUND)
+#define IS_REMAINING(x) (wp[x].flag & WP_REMAINING)
 
-#define TOGGLE_PEAK(x) (wp[x].u.flag ^= WP_PEAK)
-#define TOGGLE_VISITED(x) (wp[x].u.flag ^= WP_VISITED)
-#define TOGGLE_CORE(x) (wp[x].u.flag ^= WP_CORE)
-#define TOGGLE_SHELL(x) (wp[x].u.flag ^= WP_SHELL)
-#define TOGGLE_BOUND(x) (wp[x].u.flag ^= WP_BOUND)
-#define TOGGLE_REMAINING(x) (wp[x].u.flag ^= WP_REMAINING)
+#define TOGGLE_PEAK(x) (wp[x].flag ^= WP_PEAK)
+#define TOGGLE_VISITED(x) (wp[x].flag ^= WP_VISITED)
+#define TOGGLE_CORE(x) (wp[x].flag ^= WP_CORE)
+#define TOGGLE_SHELL(x) (wp[x].flag ^= WP_SHELL)
+#define TOGGLE_BOUND(x) (wp[x].flag ^= WP_BOUND)
+#define TOGGLE_REMAINING(x) (wp[x].flag ^= WP_REMAINING)
 
-#define SET_MEMBER_ID(a,b) (wp[a].haloid=b)
-
-
+////////
+#define RESET_WHOLE_FLAGS_WPT(x) (int _i;for(_i=0;_i<MAXTHREADS;_i++) wp[x].u.flag2[_i]  = WP_RESET)
 #define SET_VISITEDT(x,it) (wp[x].u.flag2[it] |= WP_VISITED)
 #define UNSET_VISITEDT(x,it) (wp[x].u.flag2[it] &= (~WP_VISITED))
 #define IS_VISITEDT(x,it) (wp[x].u.flag2[it] & WP_VISITED)
 #define TOGGLE_VISITEDT(x,it) (wp[x].u.flag2[it] ^= WP_VISITED)
 
-
+#define SET_MEMBER_ID(a,b) (wp[a].haloid=b)
+////////
+//
 
 unsigned char setbits(unsigned char x,int p) {
     unsigned char b;
@@ -239,11 +240,12 @@ unsigned char setbits(unsigned char x,int p) {
 
 typedef struct WorkingParticle{
 	float den;
+	int haloid;
+	unsigned char flag;
 	union{
-		unsigned char flag;
+//		unsigned char flag;
 		unsigned char flag2[MAXTHREADS];
 	} u;
-	int haloid;
 } WorkingParticle;
 WorkingParticle *wp;
 
@@ -1185,6 +1187,8 @@ recycling:
 	nthreads = MIN(nthreads, MAXTHREADS);
 #endif
 
+
+
 	size_t numlinkingwatershedding= MIN(np, MAXNUMWATERSHEDDING);
 
 	Tcontactlist = (int *)Malloc(sizeof(int)*numlinkingwatershedding*nthreads,
@@ -1197,6 +1201,8 @@ recycling:
 		for(i=0;i<nthreads;i++) UNSET_VISITEDT(j,i);
 	}
 
+	for(i=0;i<np;i++) RESET_WHOLE_FLAGS_WP(i);
+	for(i=0;i<numcore;i++) SET_PEAK(core[i].peak);
 
 
 	/*
@@ -1264,20 +1270,31 @@ recycling:
 						*/
 			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION);
 			core[i].coredensity = (denthr = upden);
+			if(0){ 
+				int nmem=0;
+				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
+				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			}
 			/* Now scoop up core particles */
 			for(j=0;j<ncontact;j++) {
 				int jj = contactlist[j];
 				UNSET_VISITEDT(jj,it);
 			}
-			ncontact = now = 0;
 
+			if(0){ 
+				int nmem=0;
+				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
+				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			}
+
+			/*
+			ncontact = now = 0;
 			float corestarmass = 0;
 			mcontact = 0;
 			if(bp[core[i].peak].type == TYPE_STAR) {
 				mcontact ++;
 				corestarmass += bp[core[i].peak].mass;
 			}
-
 			SET_VISITEDT((contactlist[ncontact++] = core[i].peak),it);
 			while(now<ncontact){
 				long kk = (long)contactlist[now]*(long)NumNeighbor;
@@ -1297,16 +1314,43 @@ recycling:
 				}
 				now++;
 			}
-			for(j=0;j<ncontact;j++) {
+			*/
+
+			mcontact = 0;
+			float corestarmass = 0;
+			for(j=0;j<ncontact;j++){
+				int jj = contactlist[j];
+				if(bp[jj].type == TYPE_STAR){
+					mcontact ++;
+					corestarmass += bp[jj].mass;
+				}
+			}
+
+			if(0){
+				int nmem=0;
+				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
+				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			}
+			for(j=0;j<ncontact;j++) {// make sure these lines are thread-safe
 				SET_CORE(contactlist[j]);
 				SET_BOUND(contactlist[j]);
 				UNSET_REMAINING(contactlist[j]);
 				SET_MEMBER_ID(contactlist[j],i);
 			}
+			if(0){ 
+				int nmem=0;
+				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
+				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			}
 
 			for(j=0;j<ncontact;j++) {
 				int jj = contactlist[j];
 				UNSET_VISITEDT(jj,it);
+			}
+			if(0){ 
+				int nmem=0;
+				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
+				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
 			}
 
 			/* Now core[i].center is temporarily considered as the center for tidal radius calculation.*/
@@ -1352,6 +1396,11 @@ recycling:
 				core[i].cx = cx; core[i].cy = cy; core[i].cz = cz;
 				core[i].cvx = cvx; core[i].cvy = cvy; core[i].cvz = cvz;
 			}
+			if(0){ 
+				int nmem=0;
+				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
+				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			}
 			core[i].nummem = ncontact;
 			core[i].numstar = mcontact;
 			core[i].starmass = corestarmass;
@@ -1371,7 +1420,7 @@ recycling:
 				i, core[i].numstar,core[i].nummem, core[i].cx, core[i].cy, core[i].cz);
 	}
 	if(iflag ==0){
-		/* Deleting peaks of core particles less than minimum number */
+		// Deleting peaks of core particles less than minimum number 
 		iflag = 1;
 #ifdef OLD
 		newnmem  =0;
@@ -1382,17 +1431,13 @@ recycling:
 		for(i=0;i<np;i++) RESET_WHOLE_FLAGS_WP(i);
 		for(i=0;i<numcore;i++) SET_PEAK(core[i].peak);
 #else
-		/*
-		if(MINSTELLARMASS >0) numcore = SmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
-		else  numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
-		if(MINSTELLARMASS<=0) numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
-		*/
+//		if(MINSTELLARMASS >0) numcore = SmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
+//		else  numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
+//		if(MINSTELLARMASS<=0) numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
 
-		/*
-		DEBUGPRINT0("Now before merging peak\n");
-		if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,1);
-		DEBUGPRINT0("Now after merging peak\n");
-		*/
+//		DEBUGPRINT0("Now before merging peak\n");
+//		if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,1);
+//		DEBUGPRINT0("Now after merging peak\n");
 
 #endif
 
@@ -1519,6 +1564,9 @@ void External_Halo_Potent(int nend,Vector3d *r,float *mass, float *penergy, int 
 	    TREE = (TStruct *) Malloc(sizeof(TStruct)*nnode,PPTR(TREE)); 
 		ptl = (TPtlStruct *) Malloc(sizeof(TPtlStruct)*snp,PPTR(ptl)); 
 		dptype Mvir = 0; 
+#ifdef _OPENMP
+#pragma omp parallel for private(i) reduction(+:Mvir)
+#endif
 		for(i=0;i<snp;i++){ 
 			ptl[i].type = TYPE_PTL; 
 			ptl[i].x = sr[i].x; ptl[i].y = sr[i].y; ptl[i].z = sr[i].z; 
@@ -1836,12 +1884,6 @@ int iflag = 1;
 void AdGetTidalRCenterCore(Coretype *core,int numcore,
 		Coresorttype *score,int ncore,SimpleBasicParticleType *bp,int np){
 	int i,j,k;
-	/*
-	int sid,bid,inum;
-	int snp,bnp,mtmp;
-	float dist,tmpx,tmpy,tmpz,dist2,r2,r1;
-	double scx,scy,scz,bcx,bcy,bcz;
-	*/
 #ifdef OLD_TIDAL
 	if(iflag ==1) {
 		int mkRtidal(void);
@@ -1850,39 +1892,40 @@ void AdGetTidalRCenterCore(Coretype *core,int numcore,
 	}
 #endif
 
-	Memtype *member;
-	member = (Memtype *)Malloc(sizeof(Memtype)*numcore,PPTR(member));
+	Memtype *core2member;
+	core2member = (Memtype *)Malloc(sizeof(Memtype)*numcore,PPTR(core2member));
 	for(i=0;i<numcore;i++) {
-		member[i].num = 0;
-		member[i].tmass = 0;
+		core2member[i].num = 0;
+		core2member[i].tmass = 0;
 	}
-	for(i=0;i<np;i++) if(wp[i].haloid>=0) (member[wp[i].haloid].num)++;
+	for(i=0;i<np;i++) if(wp[i].haloid>=0) (core2member[wp[i].haloid].num)++;
+//	DEBUGPRINT(" C2 core has %d members\n", core2member[2].num);
 	for(i=0;i<numcore;i++){
-		if(member[i].num ==0) {
-			member[i].List = NULL;
-			member[i].mass = NULL;
+		if(core2member[i].num ==0) {
+			core2member[i].List = NULL;
+			core2member[i].mass = NULL;
 		}
 		else {
-			member[i].List = (Vector3d*) Malloc(sizeof(Vector3d)*member[i].num,PPTR(member[i].List));
-			member[i].mass = (float*) Malloc(sizeof(float)*member[i].num,PPTR(member[i].mass));
-			member[i].num = 0;
-			member[i].tmass = 0;
+			core2member[i].List = (Vector3d*) Malloc(sizeof(Vector3d)*core2member[i].num,PPTR(core2member[i].List));
+			core2member[i].mass = (float*) Malloc(sizeof(float)*core2member[i].num,PPTR(core2member[i].mass));
+			core2member[i].num = 0;
+			core2member[i].tmass = 0;
 		}
 	}
 	for(i=0;i<np;i++)
 		if(wp[i].haloid>=0) {
 			k = wp[i].haloid;
-			((member[k].List)+member[k].num)->x = bp[i].x;
-			((member[k].List)+member[k].num)->y = bp[i].y;
-			((member[k].List)+member[k].num)->z = bp[i].z;
-			*((member[k].mass)+member[k].num) = bp[i].mass;
-			(member[k].num)++;
-			member[k].tmass += bp[i].mass;
+			((core2member[k].List)+core2member[k].num)->x = bp[i].x;
+			((core2member[k].List)+core2member[k].num)->y = bp[i].y;
+			((core2member[k].List)+core2member[k].num)->z = bp[i].z;
+			*((core2member[k].mass)+core2member[k].num) = bp[i].mass;
+			(core2member[k].num)++;
+			core2member[k].tmass += bp[i].mass;
 		}
 #ifdef _OPENMP
-#pragma omp parallel private(i,j,k)
+#pragma omp parallel private(i,k)
 #endif
-	if(1){
+	{
 #ifdef _OPENMP
 		int it = omp_get_thread_num();
 		int nthreads = omp_get_num_threads();
@@ -1891,75 +1934,78 @@ void AdGetTidalRCenterCore(Coretype *core,int numcore,
 		for(i=0;i<ncore;i++)
 #endif
 		{
-			int sid = SCOREID2COREID(i);
-			int snp = member[sid].num;
-			core[sid].Rtidal = MAX_TIDAL_R;
+			int coreID = SCOREID2COREID(i);
+			int npCore = core2member[coreID].num;
+			core[coreID].Rtidal = MAX_TIDAL_R;
 	
-			double scx = core[sid].cx; double scy = core[sid].cy; double scz = core[sid].cz;
-			core[sid].nummem = snp;
-			if(snp>0){
-				for(j=i+1;j<ncore;j++){
-					int bid = SCOREID2COREID(j);
-					int bnp = member[bid].num;
-					double bmass = member[bid].tmass;
-					double bcx = core[bid].cx; double bcy = core[bid].cy; double bcz = core[bid].cz;
-					double r2 = (bcx-scx)*(bcx-scx)+(bcy-scy)*(bcy-scy)+(bcz-scz)*(bcz-scz);
-					if(bnp>0){
+			double coreX = core[coreID].cx; double coreY = core[coreID].cy; double coreZ = core[coreID].cz;
+			core[coreID].nummem = npCore;
+			if(npCore>0){
+				int jdcore;
+				for(jdcore=i+1;jdcore<ncore;jdcore++){
+					int countCoreID = SCOREID2COREID(jdcore);
+					int bnpCore = core2member[countCoreID].num;
+					double bmass = core2member[countCoreID].tmass;
+					double bcoreX = core[countCoreID].cx; double bcoreY = core[countCoreID].cy; double bcoreZ = core[countCoreID].cz;
+					double r2 = (bcoreX-coreX)*(bcoreX-coreX)+
+						(bcoreY-coreY)*(bcoreY-coreY)+
+						(bcoreZ-coreZ)*(bcoreZ-coreZ);
+					if(bnpCore>0){
 #ifndef OLD_TIDAL
 						float Mvir=0;
 						int inum = 0;
-						for(k=0;k<bnp;k++){
-							float tmpx = ((member[bid].List+k)->x) - bcx;
-							float tmpy = ((member[bid].List+k)->y) - bcy;
-							float tmpz = ((member[bid].List+k)->z) - bcz;
-							float dist2 = tmpx*tmpx+tmpy*tmpy+tmpz*tmpz;
+						for(k=0;k<bnpCore;k++){
+							double tmpx = ((core2member[countCoreID].List+k)->x) - bcoreX;
+							double tmpy = ((core2member[countCoreID].List+k)->y) - bcoreY;
+							double tmpz = ((core2member[countCoreID].List+k)->z) - bcoreZ;
+							double dist2 = tmpx*tmpx+tmpy*tmpy+tmpz*tmpz;
 							if(dist2< r2) {
-								Mvir += member[bid].mass[k];
+								Mvir += core2member[countCoreID].mass[k];
 								inum++;
 							}
 						}
 						if(inum >0){
-							int mtmp = member[sid].tmass /Mvir * NUM_MASS;
+							int mtmp = core2member[coreID].tmass /Mvir * NUM_MASS;
 							if(mtmp >= NUM_MASS) {
-								core[sid].Rtidal = sqrt(r2)*0.5;
+								core[coreID].Rtidal = sqrt(r2)*0.5; //  middle 
 							}
 							else {
 								double tidal_radius;
-								double mratio = member[sid].tmass/Mvir;
-								tidal_radius  = get_tidal_ellipse(snp,sid,inum,bid,bnp,core, Mvir, mratio,bmass);
+								double mratio = core2member[coreID].tmass/Mvir;
+								tidal_radius  = get_tidal_ellipse(npCore,coreID,inum,countCoreID,bnpCore,core, Mvir, mratio,bmass);
 								tidal_radius = MIN(tidal_radius,0.5);
-								core[sid].Rtidal = MIN(core[sid].Rtidal, sqrt(r2)*tidal_radius);
+								core[coreID].Rtidal = MIN(core[coreID].Rtidal, sqrt(r2)*tidal_radius);
 							}
 						}
 						else{
-							core[sid].Rtidal = MIN(core[sid].Rtidal, MAX_TIDAL_R);
+							core[coreID].Rtidal = MIN(core[coreID].Rtidal, MAX_TIDAL_R);
 						}
 #else
-						float mratio = member[sid].tmass/bmass;
+						float mratio = core2member[coreID].tmass/bmass;
 						float Rvir = pow(3.*bmass/(4.L*M_PI*vv*RHOC),0.3333333333333L);
 						float dist_over_Rv = sqrt(r2)/Rvir;
-						float nfw_c = get_concentration(member[bid].tmass);
+						float nfw_c = get_concentration(core2member[countCoreID].tmass);
 						float nfw_rtidal(float, float, float);
 						float tidal_radius = nfw_rtidal(mratio, dist_over_Rv, nfw_c);
 						tidal_radius = MIN(tidal_radius,0.5);
-						core[sid].Rtidal = MIN(core[sid].Rtidal, sqrt(r2)*tidal_radius);
+						core[coreID].Rtidal = MIN(core[coreID].Rtidal, sqrt(r2)*tidal_radius);
 	
 #endif
 					}
 				}
 			}
 			else {
-				core[sid].Rtidal = 0.;
+				core[coreID].Rtidal = 0.;
 			}
-			DEBUGPRINT("C%d has tidal radius %g for mass = %g\n",sid,core[sid].Rtidal,member[sid].tmass);
+			DEBUGPRINT("C%d has tidal radius %g for mass = %g\n",coreID,core[coreID].Rtidal,core2member[coreID].tmass);
 		}
 	}
 
 	for(i=numcore-1;i>=0;i--) {
-		Free(member[i].List);
-		Free(member[i].mass);
+		Free(core2member[i].List);
+		Free(core2member[i].mass);
 	}
-	Free(member);
+	Free(core2member);
 }
 int GetMemList(int np,int haloid, int *plist){
 	int i,j,k;

@@ -910,6 +910,9 @@ void findStellarCore(
 	}
 	Free(ptl); Free(p);
 	DEBUGPRINT("The number of cores : %d and before MergingPeak\n", numcore);
+	for(i=0;i<numcore;i++){
+		DEBUGPRINT("p%d: %g %g %g\n", i,core[i].cx, core[i].cy,core[i].cz);
+	}
 
 
 

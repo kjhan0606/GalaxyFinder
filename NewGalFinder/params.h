@@ -9,7 +9,7 @@
 //*******************
 // fractional error to measure 
 // the core density in ratio
-#define COREDENRESOLUTION (1.e-4) 
+#define COREDENRESOLUTION (1.e-3) 
 //*******************
 
 
@@ -26,13 +26,13 @@
 //*******************
 // the minimum number of star/dm 
 // particles to identify a core 
-#define MINCORENMEM 100 
+#define MINCORENMEM 30 
 //*******************
 
 //*******************
 // the number of neighbors to build 
 // the neighbor network 
-#define NUMNEIGHBOR 10 
+#define NUMNEIGHBOR 15 
 //*******************
 
 //*******************
@@ -55,7 +55,7 @@
 //*******************
 // the minimun stellar mass of the FoF halo 
 // for galaxy finding with stellar density 
-#define MINSTELLARMASS 1.e7  
+#define MINSTELLARMASS 2.e6  
 //*******************
 //--------------------------------
 
@@ -81,13 +81,13 @@
 //*******************
 // (obsolete) minimum smoothing length 
 // for stellar density in cMpc/h
-#define MIN_CONST_R_SMOOTHING 0.005
+#define MIN_CONST_R_SMOOTHING 0.010
 //*******************
 
 //*******************
 // The cellsize for TSC of the stellar density 
 // in unit of cMpc/h
-#define TSC_CELL_SIZE 0.002
+#define TSC_CELL_SIZE 0.004
 //*******************
 
 //*******************
@@ -99,7 +99,7 @@
 // lower the stellar density 
 // and PEAKTHRESHOLD should be 
 // lowered accordingly.
-#define Gaussian_Smoothing_Length 0.004
+#define Gaussian_Smoothing_Length 0.008
 //*******************
 //
 //*******************

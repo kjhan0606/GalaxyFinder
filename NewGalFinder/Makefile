@@ -22,7 +22,7 @@ $(PROGS): $(OBJS)
 AR = ar  rcv
 RANLIB = ranlib
 FFTW = /home/kjhan/local/
-OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=3 -DADV
+
 
 INCLUDES = -I$(FFTW)/include
 FC = mpifort
@@ -31,10 +31,19 @@ CC = mpicc
 DFLAGS = -DNMEG=90000L #-D_LARGE_FILES #-DCHECK_INFORM
 
 FFLAGS = $(FDFLAGS) $(OPT)  -mcmodel=medium
-CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES)  -DDEBUG=0 -DLOG=1
+CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES)  -DDEBUG=1 -DLOG=1
 
 
-LIBS = -L$(FFTW)/lib -lsrfftw -lsfftw -lm
+
+######
+# 2025.Sep version
+# OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=3 -DADV
+#LIBS = -L$(FFTW)/lib -lsrfftw -lsfftw -lm
+######
+# 2025.Oct version
+OPT = -O3  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=3 -DADV
+LIBS = -L$(FFTW)/lib -lfftw3f_omp -lfftw3f -lm
+######
 
 #--- Suffix-based compilation rules
 .SUFFIXES: .exe .o .c .f .F

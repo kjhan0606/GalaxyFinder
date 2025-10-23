@@ -1,8 +1,13 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
+#include <omp.h>
+#ifdef FFTW2
 #include<srfftw.h>
 #include<sfftw.h>
+#else
+#include <fftw3.h>
+#endif
 #include "ramses.h"
 
 
@@ -14,28 +19,50 @@ void gaussian_Smoothing(float *denGrid,int nx,int ny,int nz,
 
 	long ncells =  mx*ny*nz;
 
-	rfftwnd_plan p, pinv;
 	double scale;
 	double NORM;
+	int nthreads=1;
 
 	scale = 1.L/((double)nx*(double)ny*(double)nz);
 
+#ifdef FFTW2
+	fftw_real *a = (fftw_real*)fftw_malloc(sizeof(fftw_real)*ncells);
+	fftw_complex *A = (fftw_complex*)a;
+	rfftwnd_plan p, pinv;
 	p = rfftw3d_create_plan(nz,ny,nx,FFTW_REAL_TO_COMPLEX,
 			FFTW_ESTIMATE | FFTW_IN_PLACE);
 	pinv = rfftw3d_create_plan(nz, ny, nx, FFTW_COMPLEX_TO_REAL,
                                 FFTW_ESTIMATE | FFTW_IN_PLACE);
+#else
+#pragma omp parallel
+	{
+#pragma omp critical
+		{
+			nthreads = omp_get_num_threads();
+		}
 
-	/*
-	fftw_real *a = (fftw_real*)denGrid;
-	*/
-	fftw_real *a = (fftw_real*)fftw_malloc(sizeof(fftw_real)*ncells);
+	}
+	fftwf_plan_with_nthreads(nthreads);
+
+	float *a = (float *)fftwf_malloc(sizeof(float )*ncells);
+	fftwf_complex *A = (fftwf_complex*)a;
+	fftwf_plan p, pinv;
+	p = fftwf_plan_dft_r2c_3d(nz, ny, nx, a, A,  FFTW_ESTIMATE);
+	pinv = fftwf_plan_dft_c2r_3d(nz, ny, nx, A, a,  FFTW_ESTIMATE);
+#endif
+
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
 	for(i=0;i<ncells;i++) a[i] = denGrid[i];
-	fftw_complex *A = (fftw_complex*)a;
 
+	LOGPRINT("just before forward fftw for nx= %d %d %d with nthreads= %d\n", nx,ny,nz, nthreads);
+#ifdef FFTWV2
 	rfftwnd_one_real_to_complex(p,a,NULL);
+#else
+	fftwf_execute(p);
+#endif
+	LOGPRINT("just after forward fftw for nx= %d %d %d\n", nx,ny,nz);
 
 	RG = RG/cellsize;
 
@@ -64,15 +91,25 @@ void gaussian_Smoothing(float *denGrid,int nx,int ny,int nz,
 		}
 	}
 
+#ifdef FFTWV2
 	rfftwnd_one_complex_to_real(pinv,A, NULL);
+#else
+	fftwf_execute(pinv);
+#endif
 
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
 	for(i=0;i<ncells;i++) denGrid[i] = a[i]*scale;
+#ifdef FFTWV2
 	fftw_free(a);
 	rfftwnd_destroy_plan(p);
 	rfftwnd_destroy_plan(pinv);
+#else
+	fftwf_free(a);
+	fftwf_destroy_plan(p);
+	fftwf_destroy_plan(pinv);
+#endif
 	DEBUGPRINT0("Now exit the Gaussian Smoothing Job\n");
 }
