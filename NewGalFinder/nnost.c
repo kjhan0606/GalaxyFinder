@@ -78,7 +78,7 @@ Box findbox(TPtlStruct *ptl, int nend){
 
 
 #define SubCellDecision(a,b) ((a)>(b)? 1:0)
-#define DivideNode(ThisNode,nparticles) ((ThisNode->nodesize > 0.5*MINCELLWIDTH ? YES:NO) && (nparticles>=MIN_CELL_PARTICLE_NUM ? YES:NO))
+#define DivideNode(ThisNode,nparticles) ((ThisNode->nodesize > 0.5*MINCELLWIDTH ? yes:no) && (nparticles>=MIN_CELL_PARTICLE_NUM ? yes:no))
 
 TStruct *calThreadFreeNodeStart(size_t navail, size_t twork, size_t mys,size_t myf, 
 		TStruct *work, TStruct *nextFreeNode){
@@ -166,7 +166,7 @@ TStruct *new_divide_node_Near(TStruct *motherNode, TStruct *nextFreeNode, int re
 	// lastOffsping: the terminal point of the current offsprings
 	lastOffspring = NULL;
 	for(i=0;i<8;i++) {
-		if( divideThisNode(motherNode, tmpnode[i].Nparticle) ){
+		if( divideThisNode(motherNode, tmpnode[i].Nparticle)){
 			newDaughter->daughter = tmpnode[i].daughter;
 			newDaughter->Nparticle = tmpnode[i].Nparticle;
 			if(lastOffspring) ((GENERAL_TPtl_POINTER*) lastOffspring)->sibling = newDaughter;
@@ -187,7 +187,7 @@ TStruct *new_divide_node_Near(TStruct *motherNode, TStruct *nextFreeNode, int re
 	if(recursiveflag == RECURSIVE){
 		TStruct *NextJobNode = firstDaughter;
 		for(i=0;i<8;i++){
-			if(divideThisNode(motherNode, tmpnode[i].Nparticle) ){
+			if(divideThisNode(motherNode, tmpnode[i].Nparticle)){
 				nextFreeNode = new_divide_node_Near(NextJobNode,nextFreeNode, recursiveflag);
 				NextJobNode ++;
 			}
@@ -255,7 +255,7 @@ void new_Make_Tree_Near(
 
 
 
-int near_open(particle *point, TStruct *tree, int npneigh, float maxdist , int Num_neighbor){
+enum boolean near_open(particle *point, TStruct *tree, int npneigh, float maxdist , int Num_neighbor){
 	dptype tmpx,tmpy,tmpz,dist2, r2, dist, r;
 	if(npneigh >= Num_neighbor) {
 		tmpx = point->x - tree->monox;

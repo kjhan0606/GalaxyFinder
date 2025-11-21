@@ -11,8 +11,10 @@
 #define RECURSIVE 1
 #define PTHREAD 0
 #define SERIALIZED -1
+/*
 #define YES 1
 #define NO 0
+*/
 
 typedef float PosType;
 

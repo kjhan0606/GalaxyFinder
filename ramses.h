@@ -43,8 +43,10 @@ int NSPLIT= 512;
 
 #define IRandNumSize 4
 
+/*
 #define YES 1
 #define NO 0
+*/
 
 
 typedef struct CommType{
@@ -225,13 +227,36 @@ typedef struct RamsesType{
 }RamsesType;
 
 
+/*
 #define WHERESTR  "[file %s, line %d]: "
 #define WHEREARG  __FILE__, __LINE__
-#define DEBUGPRINT2(...)       fprintf(stdout, __VA_ARGS__)
-#define DEBUGPRINT(_fmt, ...)  do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__);}while(0)
-#define DEBUGPRINT0(_fmt) do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG);}while(0)
-#define LOGPRINT(_fmt, ...)  do{if(LOG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__);}while(0)
-#define LOGPRINT0(_fmt) do{if(LOG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG);}while(0)
+#define DEBUGPRINT2(...)       fprintf(stderr, __VA_ARGS__)
+#define LOGPRINT2(...)       fprintf(stdout, __VA_ARGS__)
+#define DEBUGPRINT(_fmt, ...)  do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__);fflush(stdout);}while(0)
+#define DEBUGPRINT0(_fmt) do{if(DEBUG) DEBUGPRINT2(WHERESTR _fmt, WHEREARG);fflush(stdout);}while(0)
+#define LOGPRINT(_fmt, ...)  do{if(LOG) LOGPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__);fflush(stdout);}while(0)
+#define LOGPRINT0(_fmt) do{if(LOG) LOGPRINT2(WHERESTR _fmt, WHEREARG);fflush(stdout);}while(0)
+*/
+#define WHERESTR        "[file %s, line %d]: "
+#define WHEREARG        __FILE__, __LINE__
+
+// stderr#  # # # #  # # . # #  # # #  # #  #  # #  # #  (##)
+#define DEBUGPRINT(_fmt, ...) \
+    do { \
+        if (DEBUG) { \
+            fprintf(stderr, WHERESTR _fmt, WHEREARG, ##__VA_ARGS__); \
+            fflush(stderr); \
+        } \
+    } while(0)
+
+// stdout# #  # # # #  # # . # #  # # #  # #  #  # #  # #  (##)
+#define LOGPRINT(_fmt, ...) \
+    do { \
+        if (LOG) { \
+            fprintf(stdout, WHERESTR _fmt, WHEREARG, ##__VA_ARGS__); \
+            fflush(stdout); \
+        } \
+    } while(0)
 
 
 

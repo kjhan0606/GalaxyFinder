@@ -30,12 +30,14 @@
 */
 
 enum where {OUT=0, IN=1, CROSS=2};
+enum boolean {YES,NO, ENCLOSE};
+
+
 #define divideThisNode(thisNode,nparticles) ((thisNode->nodesize > 0.5*MINCELLWIDTH ? yes:no) && (nparticles>=MIN_CELL_PARTICLE_NUM ? yes:no))
 typedef struct FoFPosition {
     POSTYPE x,y,z;
 } FoFPosition;
 
-enum boolean {YES,NO, ENCLOSE};
 
 
 
