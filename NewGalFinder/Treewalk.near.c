@@ -85,6 +85,7 @@ BeginEndTree divide_node_Near(TStruct *TREE_START,TStruct *NewTree,
 		p2ptl = p2ptl->sibling;
 	}
 	ThisTree->dist2 = distmax;
+	ThisTree->dist = sqrt(distmax);
 	p2ptl = ptl;
 	x0 = box.x;
 	y0 = box.y;
@@ -100,14 +101,26 @@ BeginEndTree divide_node_Near(TStruct *TREE_START,TStruct *NewTree,
 		tmpbox[i].y = y0+((i%4)/2)*halfw;
 		tmpbox[i].z = z0+(i/4)*halfw;
 	}
+	dptype x2,y2,z2;
+	x2 = box.x + halfw;
+	y2 = box.y + halfw;
+	z2 = box.z + halfw;
 
 	while(p2ptl != NULL){
+		/*
 		mx = (int)((p2ptl->x - x0)*inv_halfw);
 		my = (int)((p2ptl->y - y0)*inv_halfw);
 		mz = (int)((p2ptl->z - z0)*inv_halfw);
 		mx = MIN(1,MAX(0,mx));
 		my = MIN(1,MAX(0,my));
 		mz = MIN(1,MAX(0,mz));
+		*/
+		if(p2ptl->x > x2)mx = 1;
+		else mx = 0;
+		if(p2ptl->y > y2)my = 1;
+		else my = 0;
+		if(p2ptl->z > z2)mz = 1;
+		else mz = 0;
 		mnode = mx + 2*my + 4*mz;
 		tmpnode[mnode].Nparticle ++; 
 		tmpptr = tmpnode[mnode].daughter;

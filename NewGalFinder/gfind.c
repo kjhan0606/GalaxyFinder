@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 #else
 	if(argc != 2 && argc != 4){
 		if(myid == motherrank)
-		fprintf(stderr,"%.... hfind.exe [nstep] \n");
+		fprintf(stderr,".... hfind.exe [nstep] \n");
 		exit(1);
 	}
 #endif
@@ -370,7 +370,7 @@ int main(int argc, char *argv[]) {
 }
 				FREAD(sbp,&haloq,fp, omep);
 				numhalo ++;
-				if(numhalo%1000==0) printf("Now passing through %d:   %d for snp= %ld offsets= %ldL %ldL\n",numhalo, snend, snp, qoffset, soffset);
+				if(numhalo%1000==0) printf("Now passing through %lld:   %d for snp= %d offsets= %ldL %ldL\n",numhalo, snend, snp, qoffset, soffset);
 				/*
 				if(snp > 5 && snp > 100000 && numhalo > 1278000) 
 				if(snp > 5 && snp > 1000000) ===> fails
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
 				
 				{
 //					if(snp >= 100000) 
-						LOGPRINT("Now passing through %d:   %d with offsets= %ldL %ldL\n",
+						LOGPRINT("Now passing through %lld:   %zu with offsets= %ldL %ldL\n",
 								numhalo, haloq.np, qoffset, soffset);
 					do {
 						MPI_Probe(MPI_ANY_SOURCE,READY,MPI_COMM_WORLD,&mstatus);
@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
 					MPI_Recv(ptl2halonum,rnp,MPI_INT,mstatus.MPI_SOURCE,PT2H_TAG, MPI_COMM_WORLD,&cstatus);
 					MPI_Probe(mstatus.MPI_SOURCE,MPEAK_TAG,MPI_COMM_WORLD, &cstatus);
 					MPI_Recv(&mpeak,1,MPI_INT,mstatus.MPI_SOURCE,MPEAK_TAG, MPI_COMM_WORLD,&cstatus);
-					if(1) fprintf(stdout,"receiving from %d with %d particles : %ld : %ld\n",
+					if(1) fprintf(stdout,"receiving from %d with %d particles : %lld : %lld\n",
 								mstatus.MPI_SOURCE,rnp,iii,shalonum); fflush(stdout);
 					write_data(rbp,ptl2halonum,rnp);
 				}
@@ -502,7 +502,7 @@ int main(int argc, char *argv[]) {
 					char outf[9000];
 					sprintf(outf,"CHECK/indcheck.%.5d.%.5d", nstep, myid);
 					FILE *wp = fopen(outf,"a");
-					fprintf(wp, "%ld %d", inumhalo, snp);
+					fprintf(wp, "%lld %d", inumhalo, snp);
 					fflush(wp);
 					fclose(wp);
 				}

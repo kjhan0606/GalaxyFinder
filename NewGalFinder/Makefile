@@ -25,8 +25,8 @@ FFTW = /home/kjhan/local/
 
 
 INCLUDES = -I$(FFTW)/include
-FC = mpifort
-CC = mpicc
+FC = mpiifx
+CC = mpiicx
 
 DFLAGS = -DNMEG=90000L #-D_LARGE_FILES #-DCHECK_INFORM
 

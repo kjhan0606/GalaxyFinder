@@ -185,6 +185,9 @@ void mklocalize(SimpleBasicParticleType *bp,lint np,float *xinit,float *yinit,
 #define WP_SHELL 0x08
 #define WP_BOUND 0x10
 #define WP_REMAINING 0x20
+
+
+#define WP_VISITEDT 0x01
 /*
 #define WP_BOUND 0x40
 #define WP_REST  0x80
@@ -221,31 +224,30 @@ void mklocalize(SimpleBasicParticleType *bp,lint np,float *xinit,float *yinit,
 #define TOGGLE_REMAINING(x) (wp[x].flag ^= WP_REMAINING)
 
 ////////
-#define RESET_WHOLE_FLAGS_WPT(x) (int _i;for(_i=0;_i<MAXTHREADS;_i++) wp[x].u.flag2[_i]  = WP_RESET)
-#define SET_VISITEDT(x,it) (wp[x].u.flag2[it] |= WP_VISITED)
-#define UNSET_VISITEDT(x,it) (wp[x].u.flag2[it] &= (~WP_VISITED))
-#define IS_VISITEDT(x,it) (wp[x].u.flag2[it] & WP_VISITED)
-#define TOGGLE_VISITEDT(x,it) (wp[x].u.flag2[it] ^= WP_VISITED)
+#define RESET_WHOLE_FLAGS_WPT(x) (int _i;for(_i=0;_i<MAXTHREADS;_i++) wp[x].flag2[_i]  = WP_RESET)
+#define SET_VISITEDT(x,it) (wp[x].flag2[it] |= WP_VISITEDT)
+#define UNSET_VISITEDT(x,it) (wp[x].flag2[it] &= (~WP_VISITEDT))
+#define IS_VISITEDT(x,it) (wp[x].flag2[it] & WP_VISITEDT)
+#define TOGGLE_VISITEDT(x,it) (wp[x].flag2[it] ^= WP_VISITEDT)
 
 #define SET_MEMBER_ID(a,b) (wp[a].haloid=b)
 ////////
 //
 
+/*
 unsigned char setbits(unsigned char x,int p) {
     unsigned char b;
 	b = x|(~((~0)<<1) << (p-1));
 	return b;
 }
+*/
 
 
 typedef struct WorkingParticle{
 	float den;
 	int haloid;
 	unsigned char flag;
-	union{
-//		unsigned char flag;
-		unsigned char flag2[MAXTHREADS];
-	} u;
+	unsigned char flag2[MAXTHREADS];
 } WorkingParticle;
 WorkingParticle *wp;
 
@@ -411,10 +413,10 @@ int  MergingPeak(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore, 
 
 	return numcore;
 }
-int finddenpeak(float *den,int numneigh,int *neighbor,int np,
+int finddenpeak(float *den,int numneigh,long long *neighbor,int np,
 		Coretype **Core, int jflag, SimpleBasicParticleType *bp){
 	Coretype *core = *Core;
-	long i,j,k;
+	long long i,j,k;
 	float *me,*you;
 	int iflag;
 	numcore = 0;
@@ -464,7 +466,7 @@ int finddenpeak(float *den,int numneigh,int *neighbor,int np,
 				}
 				if(iflag == 1){
 					if(numcore >= MAXNUMCORE){
-						fprintf(stderr,"Error exceeding the number of cores: %d :: %d   %d   \n", numcore, i, np);
+						fprintf(stderr,"Error exceeding the number of cores: %d :: %lld   %d   \n", numcore, i, np);
 						exit(999);
 					}
 					core[numcore].peak = i;
@@ -485,7 +487,7 @@ int finddenpeak(float *den,int numneigh,int *neighbor,int np,
 	}
 	DEBUGPRINT("Now before merging peak. numcore= %d\n", numcore);
 //	if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,0);
-	DEBUGPRINT0("Now after merging peak\n");
+	DEBUGPRINT("Now after merging peak\n");
 	return numcore;
 }
 void Dump2WorkingParticle(float *density,int np,Coretype *core,int numcore){
@@ -606,9 +608,9 @@ void SaveRemainingParticles2LastShell(int np,Coretype  *core,int numcore){
 		exit(999);
 	}
 }
-void GetShellParticlesPeaks(int np,int *neighbor,int NumNeighbor,
+void GetShellParticlesPeaks(int np,long long *neighbor,int NumNeighbor,
 		Coretype *core,int numcore, float dthreshold){
-	long i,j,k,jj,kk;
+	long long i,j,k,jj,kk;
 	int icore,*contactlist,nlist=0;
 	int numenclosedpeaks;
 	int now,new;
@@ -627,7 +629,7 @@ void GetShellParticlesPeaks(int np,int *neighbor,int NumNeighbor,
 		now = nlist = 0;
 		SET_VISITED((contactlist[nlist++]= core[nowcore].peak));
 		while(now<nlist){
-			kk = (long)contactlist[now]*(long)NumNeighbor;
+			kk = (long long)contactlist[now]*(long long)NumNeighbor;
 			for(k=0;k<NumNeighbor;k++){
 				new = neighbor[kk];
 				if(wp[new].den > dthreshold && IS_VISITED(new) == NOT){
@@ -695,7 +697,7 @@ int coresortden(const void *a,const void *b){
 /* This function is trying to merge the underpopulated cores to
  * fulfill the core criterion (> MINCOREMEM) */
 int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
-		int *neighbor,int NumNeighbor){
+		long long *neighbor,int NumNeighbor){
 	int i,j,k;
 	int num;
 	int *contactlist;
@@ -770,7 +772,7 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 				denthr = 0.25*(3.*upden+downden);
 				SET_VISITED((contactlist[ncontact++] = (score[i].core)->peak));
 				while(now<ncontact && breakflag ==0){
-					long kk = (long)contactlist[now]*(long)NumNeighbor;
+					long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
 					for(k=0;k<NumNeighbor;k++){
 						new = neighbor[kk];
 						if(wp[new].den>denthr){
@@ -816,7 +818,7 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 
 			SET_VISITED((contactlist[ncontact++] = (score[i].core)->peak));
 			while(now<ncontact){
-				long kk = (long)contactlist[now]*(long)NumNeighbor;
+				long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
 				for(k=0;k<NumNeighbor;k++){
 					new = neighbor[kk];
 					if(wp[new].den > denthr && IS_VISITED(new) == NOT){
@@ -876,8 +878,8 @@ int DMSmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore
 /* This function is trying to merge the underpopulated cores to
  * fulfill the core criterion (> MINCOREMEM) */
 int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
-		int *neighbor,int NumNeighbor){
-	long i,j,k;
+		long long *neighbor,int NumNeighbor){
+	long long i,j,k;
 	int num;
 	int *contactlist;
 	Coresortdentype *score;
@@ -898,7 +900,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 		score[num].nmem = core[i].nummem;
 		score[num].core = core + i;
 		score[num].density = wp[core[i].peak].den; /* peak density */
-		DEBUGPRINT("C%d has num= %d peakden= %g coreden= %g\n", i, core[i].nummem,
+		DEBUGPRINT("C%lld has num= %d peakden= %g coreden= %g\n", i, core[i].nummem,
 				wp[core[i].peak].den, core[i].coredensity);
 		num++; /* num is the total number of cores that is underpopulated
 				  while numcore is the total number of cores. */
@@ -935,7 +937,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 			int iter = 0;
 //			while(iter==0 || fabs(upden-downden)/denthr>COREDENRESOLUTION)
 			denthr = 0.5*(upden+downden);
-			DEBUGPRINT("SC%d has upden= %g downden= %g denthr= %g res= %g\n", 
+			DEBUGPRINT("SC%lld has upden= %g downden= %g denthr= %g res= %g\n", 
 						i, upden,downden, denthr, COREDENRESOLUTION);
 			do {
  				for(j=0;j<ncontact;j++) {
@@ -950,7 +952,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 				denthr = 0.5*(upden+downden);
 				SET_VISITED((contactlist[ncontact++] = (score[i].core)->peak));
 				while(now<ncontact && breakflag ==0){
-					long kk = (long)contactlist[now]*(long)NumNeighbor;
+					long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
 					for(k=0;k<NumNeighbor;k++){
 						new = neighbor[kk];
 						if(wp[new].den>denthr){
@@ -998,7 +1000,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 
 			SET_VISITED((contactlist[ncontact++] = (score[i].core)->peak));
 			while(now<ncontact){
-				long kk = (long)contactlist[now]*(long)NumNeighbor;
+				long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
 				for(k=0;k<NumNeighbor;k++){
 					new = neighbor[kk];
 					if(wp[new].den > denthr && IS_VISITED(new) == NOT){
@@ -1014,7 +1016,7 @@ int SmartFinding(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore,
 
 			if(mcontact >= MINCORENMEM && corestarmass >= MINCORESTARMASS) {
 				// restore this as a meaningful peak 
-				DEBUGPRINT("New merging core is detected with np= %d in %d cores\n",ncontact,i );
+				DEBUGPRINT("New merging core is detected with np= %d in %lld cores\n",ncontact,i );
 				SET_PEAK((score[i].core)->peak);
 				SET_SCORE_CONFIRMED(i);
 			}
@@ -1161,7 +1163,7 @@ double get_tidal_ellipse(int np, int myid, int mp, int uid, int mpall, Coretype 
 	return res;
 }
 
-int  FindCoreDensity(SimpleBasicParticleType *bp,int np,int *neighbor,
+int  FindCoreDensity(SimpleBasicParticleType *bp,int np,long long *neighbor,
 		int NumNeighbor,Coretype *core,int numcore){
 	int i,j,k;
 //	float denthr,upden,downden;
@@ -1223,14 +1225,13 @@ recycling:
 #endif
 		for(i=0;i<numcore;i++){
 			int it = omp_get_thread_num();
-			int *contactlist = Tcontactlist + (long)it*numlinkingwatershedding;
+			int *contactlist = Tcontactlist + (long long)it*numlinkingwatershedding;
 			// Now find core density threshold 
 			float upden = wp[core[i].peak].den;
 			float downden = minden;
 			float denthr;
 			int mcontact;
 			int ncontact=0, now;
-//			while(fabs((upden-downden)/downden) > COREDENRESOLUTION){
 			do{
 				// initialization before a search for the core density 
  				for(j=0;j<ncontact;j++) {
@@ -1242,9 +1243,10 @@ recycling:
 				// Trial value 
 				denthr = 0.5*(upden+downden); 
 				// Now peak particle is included. 
-				SET_VISITEDT((contactlist[ncontact++] = core[i].peak),it); 
+				contactlist[ncontact++] = core[i].peak;
+				SET_VISITEDT(core[i].peak,it); 
 				while(now < ncontact && breakflag ==0){
-					long kk = (long)contactlist[now]*(long)NumNeighbor;
+					long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
 					for(k=0;k<NumNeighbor;k++){
 						int new = neighbor[kk];
 						if(wp[new].den>denthr) {
@@ -1253,7 +1255,6 @@ recycling:
 								contactlist[ncontact++] = new;
 							}
 							else if(IS_VISITEDT(new,it) == NOT && IS_PEAK(new) != NOT){
-								downden = denthr;
 								breakflag = 1;
 								break;
 							}
@@ -1263,28 +1264,47 @@ recycling:
 					now++;
 				}
 				if(breakflag==0) upden = denthr;
-				/*
-				DEBUGPRINT("C%d is testing den(try)= %g upden= %g"
-						"downden= %g peakden= %g breakflag= %d\n", i, denthr, 
-						upden, downden, wp[core[i].peak].den, breakflag);
-						*/
+				else if(breakflag==1) downden = denthr;
 			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION);
 			core[i].coredensity = (denthr = upden);
-			if(0){ 
-				int nmem=0;
-				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
-				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
-			}
 			/* Now scoop up core particles */
 			for(j=0;j<ncontact;j++) {
 				int jj = contactlist[j];
 				UNSET_VISITEDT(jj,it);
 			}
-
-			if(0){ 
-				int nmem=0;
-				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
-				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			{
+				int breakflag = 0; 
+				ncontact = now = 0;
+				// Trial value 
+				// Now peak particle is included. 
+				contactlist[ncontact++] = core[i].peak;
+				SET_VISITEDT(core[i].peak,it); 
+				while(now < ncontact){
+					long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
+					for(k=0;k<NumNeighbor;k++){
+						int new = neighbor[kk];
+						if(wp[new].den>denthr) {
+							if(IS_VISITEDT(new,it) == NOT && IS_PEAK(new) == NOT){
+								SET_VISITEDT(new,it);
+								contactlist[ncontact++] = new;
+							}
+							else if(IS_VISITEDT(new,it) == NOT && IS_PEAK(new) != NOT){
+								breakflag = 1;
+								break;
+							}
+						}
+						kk ++;
+					}
+					now++;
+				}
+				if(breakflag ==1) { //no coredensity is found. discard this peak.
+					ncontact = 0;
+				}
+			}
+			/* Now scoop up core particles */
+			for(j=0;j<ncontact;j++) {
+				int jj = contactlist[j];
+				UNSET_VISITEDT(jj,it);
 			}
 
 			/*
@@ -1297,7 +1317,7 @@ recycling:
 			}
 			SET_VISITEDT((contactlist[ncontact++] = core[i].peak),it);
 			while(now<ncontact){
-				long kk = (long)contactlist[now]*(long)NumNeighbor;
+				long long kk = (long long)contactlist[now]*(long long)NumNeighbor;
 				for(k=0;k<NumNeighbor;k++){
 					int new = neighbor[kk];
 					if(wp[new].den > denthr && IS_VISITEDT(new,it) == NOT){
@@ -1326,31 +1346,16 @@ recycling:
 				}
 			}
 
-			if(0){
-				int nmem=0;
-				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
-				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
-			}
 			for(j=0;j<ncontact;j++) {// make sure these lines are thread-safe
 				SET_CORE(contactlist[j]);
 				SET_BOUND(contactlist[j]);
 				UNSET_REMAINING(contactlist[j]);
 				SET_MEMBER_ID(contactlist[j],i);
 			}
-			if(0){ 
-				int nmem=0;
-				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
-				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
-			}
 
 			for(j=0;j<ncontact;j++) {
 				int jj = contactlist[j];
 				UNSET_VISITEDT(jj,it);
-			}
-			if(0){ 
-				int nmem=0;
-				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
-				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
 			}
 
 			/* Now core[i].center is temporarily considered as the center for tidal radius calculation.*/
@@ -1396,11 +1401,30 @@ recycling:
 				core[i].cx = cx; core[i].cy = cy; core[i].cz = cz;
 				core[i].cvx = cvx; core[i].cvy = cvy; core[i].cvz = cvz;
 			}
-			if(0){ 
-				int nmem=0;
-				for(j=0;j<np;j++) if(wp[j].haloid == 2) nmem++;
-				DEBUGPRINT(" C2 has nmem= %d\n", nmem);
+			/*
+			if(i==1){ 
+				FILE *wwp = fopen("C1.out","w");
+				for(j=0;j<ncontact;j++) fprintf(wwp,"%g %g %g %g %d\n",
+						bp[contactlist[j]].x/TSC_CELL_SIZE+NCELLBUFF/2.,
+						bp[contactlist[j]].y/TSC_CELL_SIZE+NCELLBUFF/2.,
+						bp[contactlist[j]].z/TSC_CELL_SIZE+NCELLBUFF/2.,
+						wp[contactlist[j]].den,
+						contactlist[j]
+						);
+				fclose(wwp);
 			}
+			if(i==697){ 
+				FILE *wwp = fopen("C697.out","w");
+				for(j=0;j<ncontact;j++) fprintf(wwp,"%g %g %g %g %d\n",
+						bp[contactlist[j]].x/TSC_CELL_SIZE+NCELLBUFF/2.,
+						bp[contactlist[j]].y/TSC_CELL_SIZE+NCELLBUFF/2.,
+						bp[contactlist[j]].z/TSC_CELL_SIZE+NCELLBUFF/2.,
+						wp[contactlist[j]].den,
+						contactlist[j]
+						);
+				fclose(wwp);
+			}
+			*/
 			core[i].nummem = ncontact;
 			core[i].numstar = mcontact;
 			core[i].starmass = corestarmass;
@@ -1408,8 +1432,9 @@ recycling:
 			xpix = core[i].cx/TSC_CELL_SIZE+NCELLBUFF/2.;
 			ypix = core[i].cy/TSC_CELL_SIZE+NCELLBUFF/2.;
 			zpix = core[i].cz/TSC_CELL_SIZE+NCELLBUFF/2.;
-			DEBUGPRINT("C%d has number %d in %d den= %g/%g at %g %g %g :: %g %g %g\n",i,
-					core[i].numstar, core[i].nummem, core[i].density, core[i].coredensity,
+			DEBUGPRINT("C%d has number %d in %d with mstar= %g den= %g/%g at %g %g %g :: %g %g %g\n",i,
+					core[i].numstar, core[i].nummem, core[i].starmass,
+					core[i].density, core[i].coredensity,
 					core[i].cx, core[i].cy, core[i].cz, xpix,ypix,zpix);
 		}
 	}
@@ -1435,9 +1460,9 @@ recycling:
 //		else  numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
 //		if(MINSTELLARMASS<=0) numcore = DMSmartFinding(bp,np,core,numcore,neighbor,NumNeighbor);
 
-//		DEBUGPRINT0("Now before merging peak\n");
+//		DEBUGPRINT("Now before merging peak\n");
 //		if(numcore > 10) numcore = MergingPeak(bp,np,core,numcore,1);
-//		DEBUGPRINT0("Now after merging peak\n");
+//		DEBUGPRINT("Now after merging peak\n");
 
 #endif
 
@@ -1886,7 +1911,7 @@ void AdGetTidalRCenterCore(Coretype *core,int numcore,
 	int i,j,k;
 #ifdef OLD_TIDAL
 	if(iflag ==1) {
-		int mkRtidal(void);
+		void mkRtidal(void);
 		(void)mkRtidal();
 		iflag = 0;
 	}
@@ -2141,7 +2166,7 @@ int withinFoFRange(ompFoFParticleType *ptl, int i,int j){
 	}
 	return 0;
 }
-int uniteFoF(ompFoFParticleType *ptl, int i,int j){
+void uniteFoF(ompFoFParticleType *ptl, int i,int j){
 	int root_i = findUpperLink(ptl, i);
 	int root_j = findUpperLink(ptl, j);
 	if(root_i != root_j) {
@@ -2204,8 +2229,8 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 		size_t nnode = MAX(65*10000,num/2);
 		FoFTStruct *TREE;
 		particle *linked;
-		DEBUGPRINT("Making FoF Tree in the parallel mode for C%d with np= %d & nnode= %d currentMemStack= %ld\n", 
-				icore, num, nnode, CurMemStack);
+		DEBUGPRINT("Making FoF Tree in the parallel mode for C%d with np= %d & nnode= %zu currentMemStack= %lld\n", 
+				icore, num, nnode, CurMemStack());
 		TREE = (FoFTStruct *)Malloc(sizeof(FoFTStruct)*nnode,PPTR(TREE));
 		linked = (particle *)Malloc(sizeof(particle)*num,PPTR(linked));
 
@@ -2414,7 +2439,7 @@ void MemberStarFoF(SimpleBasicParticleType *bp,int np, int numcore, Coretype *co
 		}
 		*/
 		DEBUGPRINT("C%d is now doing the stellar" 
-				" FoF with num= %d with nnode= %d\n", 
+				" FoF with num= %d with nnode= %zu\n", 
 				i,num,nnode);
 		recursiveflag = SERIALIZED;
 		FoF_Make_Tree(TREE,nnode, ptl,num,recursiveflag);
@@ -2619,7 +2644,7 @@ void MemberFoF(SimpleBasicParticleType *bp,int np, int numcore, Coretype *core){
 #endif
 			}
 			if(mlink <= 5){
-				for(j=0;j<num;j++) ptl[j].included == NO;
+				for(j=0;j<num;j++) ptl[j].included = NO;
 			}
 			else {
 				p.x = ptl[imax].x;
@@ -2836,7 +2861,8 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 	int i,j,k,bid;
 	float xinit,yinit,zinit;
 	float xmax,ymax,zmax;
-	int *neighbor,NumNeighbor,numcore;
+	long long *neighbor;
+	int NumNeighbor,numcore;
 	float dthreshold;
 	float *density;
 	Kptype *kp,*skp,*tkp;
@@ -2867,30 +2893,30 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
 					&neighbor, TYPE_ALL);
 					*/
-			neighbor = (int*)Malloc(sizeof(int)*np*NumNeighbor,PPTR(neighbor));
+			neighbor = (long long*)Malloc(sizeof(long long)*np*NumNeighbor,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
-			void findsphdensity(SimpleBasicParticleType *,int ,int *, int , float *);
+			void findsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
 			findsphdensity(bp,np,neighbor,NumNeighbor,density);
 			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
 			numcore = finddenpeak(density,NumNeighbor,neighbor,np,&core,0,bp);
 		}
 		else {
-			neighbor = (int*)Malloc(sizeof(int)*np*NumNeighbor,PPTR(neighbor));
+			neighbor = (long long*)Malloc(sizeof(long long)*np*NumNeighbor,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
 			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
 #ifdef ADV
 			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *, 
-					Coretype **, int *, int, int **, int);
+					Coretype **, int *, int, long long *, int);
 			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
-					&neighbor, TYPE_STAR);
+					neighbor, TYPE_STAR);
 #else
-			neighbor = (int*)Malloc(sizeof(int)*np*(long)NumNeighbor,PPTR(neighbor));
-			void starfindsphdensity(SimpleBasicParticleType *,int ,int *, int , float *);
+			neighbor = (long long*)Malloc(sizeof(long long)*np*(long)NumNeighbor,PPTR(neighbor));
+			void starfindsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
 			starfindsphdensity(bp,np,neighbor,NumNeighbor,density);
 			numcore = finddenpeak(density,NumNeighbor,neighbor,np,&core,1,bp);
 #endif
 		}
-		DEBUGPRINT0("density calculates\n");
+		DEBUGPRINT("density calculates\n");
 	}
 	{
 		DEBUGPRINT("%d numcore detected\n",numcore);
@@ -3092,9 +3118,9 @@ renumcore :
 			int *tlist,ntarget,jcore,*halonmem;
 			int kk,nbound;
 #ifdef DEBUG
-			DEBUGPRINT0("\n\n\n");
+			DEBUGPRINT("\n\n\n");
 			DEBUGPRINT("#### BOUNDITER %d",i);
-			DEBUGPRINT0("\n\n\n");
+			DEBUGPRINT("\n\n\n");
 #endif
 			Coresorttype *score;
 			score = (Coresorttype*)Malloc(sizeof(Coresorttype)*numcore,PPTR(score));

@@ -46,6 +46,7 @@ float interpole(float *mM, float *rsdist, int np, float massratio){
 			}
 		}
 	}
+	return 0;
 }
 /*
 float cinit = 1;
@@ -74,7 +75,7 @@ float nfw_rtidal(float mM, float dRv, float c){
 	return res;
 }
 
-int mkRtidal(void){
+void mkRtidal(void){
 	int nrs, nc, nd,nm;
 
 	int i,j,k;

@@ -78,5 +78,5 @@ BeginEndTree divide_node_Near(TStruct *,TStruct *, TPtlStruct *, Box ,TStruct *)
 int Find_Near(particle *,int ,TStruct *, TPtlStruct *,float *, int*,float*, float *);
 int Limited_Find_Near(particle *,int ,TStruct *, TPtlStruct *,float *, int*,float*, float *);
 Box findsphbox(TPtlStruct *, int );
-void findsphdensity(SimpleBasicParticleType *,int ,int *, int , float *);
-void starfindsphdensity(SimpleBasicParticleType *,int ,int *, int , float *);
+void findsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
+void starfindsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);

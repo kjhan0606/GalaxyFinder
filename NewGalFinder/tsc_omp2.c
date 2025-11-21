@@ -496,7 +496,7 @@ void assign_density_TSC(SimpleBasicParticleType *bp, int np, float *den,
 #endif
 	for(long i=0;i<ngrid;i++) den[i] *= volfact; // return to density in cubic kpc
 
-	DEBUGPRINT0("Now exit the main tsc\n");
+	DEBUGPRINT("Now exit the main tsc\n");
 
 
 

@@ -20,7 +20,7 @@ INT8 SSSSMake_Total_Memory(){
 	size = NMEG * MEGABYTE;
 	for(i=0;i<5;i++){
 			FREE = (void*)malloc(i*300L*MEGABYTE);
-			if(FREE) printf("Suceed in %ld\n",i*600L*MEGABYTE);
+			if(FREE) printf("Suceed in %lld\n",i*600L*MEGABYTE);
 			free(FREE);
 	}
 	return 1;
@@ -71,12 +71,12 @@ INT8 Make_Total_Memory(INT8 size){
 	START_TOTAL_MEMORY = FREE;
 	if(FREE == NULL){
 		size /= MEGABYTE;
-		fprintf(stderr,"Error when initializing %ld Mbytes memory space\n",size);
+		fprintf(stderr,"Error when initializing %lld Mbytes memory space\n",size);
 		return 0;
 	}
 	else {
 		size /= MEGABYTE;
-		fprintf(stderr,"Initializing %ld Mbytes memory space\n",size);
+		fprintf(stderr,"Initializing %lld Mbytes memory space\n",size);
 		return 1;
 	}
 }
@@ -105,7 +105,7 @@ void *Malloc(INT8 size, void **src){
 	void *value;
 	char *a;
 	if(size == 0) {
-		printf("Warning : size %ld is being allocated\n",size);
+		printf("Warning : size %lld is being allocated\n",size);
 		return NULL;
 	}
 	if(size == MYINFINITY){
@@ -116,7 +116,7 @@ void *Malloc(INT8 size, void **src){
 			size = tsize - ( (INT8)((char *)Memory[Current_Stack-1].Starting-
 					(char *)START_TOTAL_MEMORY) + Memory[Current_Stack-1].Size);
 		}
-		printf("change allocated memory size from infinity to %ld\n",size);
+		printf("change allocated memory size from infinity to %lld\n",size);
 	}
 	Memory[Current_Stack].Size = size;
 	Memory[Current_Stack].Starting = FREE;
@@ -132,11 +132,11 @@ void *Malloc(INT8 size, void **src){
 	if(FREE > (void *)((char *)START_TOTAL_MEMORY + tsize)) {
 		INT8 tmptsize;
 		FREE = (void *)((char *)FREE-size); /* restore the original mem */
-		fprintf(stderr,"Error allocating memory %ld bytes in Malloc()\n",size);
+		fprintf(stderr,"Error allocating memory %lld bytes in Malloc()\n",size);
 		fprintf(stderr,"need more %d bytes \n",(int)(size - 
 					(tsize-((char *)FREE-(char *)START_TOTAL_MEMORY))));
                 tmptsize = NMEG;
-		fprintf(stderr,"total memory is %ld Mbytes\n",tmptsize);
+		fprintf(stderr,"total memory is %lld Mbytes\n",tmptsize);
 		value = NULL;
 		value = (void *) malloc(size);
 
@@ -232,7 +232,7 @@ void *Realloc(void *a, INT8 size,void **src){
 	}
 	if(a == NULL){
 		printf("Strange in Realloc ");
-		printf("%p  size of %ld\n",src,size);fflush(stdout);
+		printf("%p  size of %lld\n",src,size);fflush(stdout);
 		a = (void *)Malloc(size,src);
 		return a;
 	}
@@ -253,7 +253,7 @@ void *Realloc(void *a, INT8 size,void **src){
 		(char *)START_TOTAL_MEMORY + size)) {
 	*/
 	if(tsize < (INT8)((char *)FREE-(char *)START_TOTAL_MEMORY + diffsize)) {
-		fprintf(stderr,"Error allocating memory %ld bytes in Realloc()\n",size);
+		fprintf(stderr,"Error allocating memory %lld bytes in Realloc()\n",size);
 		fprintf(stderr,"need more %d bytes \n",(int)(size - 
 					(tsize-((char *)FREE-(char *)START_TOTAL_MEMORY))));
 		fflush(stderr);
@@ -379,7 +379,7 @@ void StackPosition(void *a){
 	INT8 i;
 	for(i=0;i<Current_Stack;i++){
 		if((char *)a == Memory[i].Starting){
-			printf("Now at stack # %ld in %ld\n",i,Current_Stack);fflush(stdout);
+			printf("Now at stack # %lld in %lld\n",i,Current_Stack);fflush(stdout);
 		}
 	}
 }

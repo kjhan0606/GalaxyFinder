@@ -16,20 +16,26 @@
 
 // imported from nnost.h
 #define MINCELLWIDTH 1.E-6
-#define MAX_NUM_NEAR 128
+//#define MAX_NUM_NEAR 128
+#define MAX_NUM_NEAR 32
 #define MIN_CELL_PARTICLE_NUM 10
 #define RECURSIVE 1
 #define PTHREAD 0
 #define SERIALIZED -1
-#define YES 1
-#define NO 0
+#define yes 1
+#define no 0
 #define NEW 2
+/*
 #define ENCLOSE 2
+*/
+
 enum where {OUT=0, IN=1, CROSS=2};
-#define divideThisNode(thisNode,nparticles) ((thisNode->nodesize > 0.5*MINCELLWIDTH ? YES:NO) && (nparticles>=MIN_CELL_PARTICLE_NUM ? YES:NO))
+#define divideThisNode(thisNode,nparticles) ((thisNode->nodesize > 0.5*MINCELLWIDTH ? yes:no) && (nparticles>=MIN_CELL_PARTICLE_NUM ? yes:no))
 typedef struct FoFPosition {
     POSTYPE x,y,z;
 } FoFPosition;
+
+enum boolean {YES,NO, ENCLOSE};
 
 
 
@@ -111,6 +117,7 @@ typedef struct FoFBeginEndTree{
 	void *EndTree;
 	void *EndPtl;
 } FoFBeginEndTree;
+
 
 
 /* for Fof */

@@ -30,7 +30,7 @@ int nullfct1() { return 1;}
 #endif
 
 #define SubCellDicision(a,b) ((a)>(b)? 1:0)
-#define DivideNode(ThisNode,nparticles) ((ThisNode->nodesize > 0.5*MINCELLWIDTH ? YES:NO) & (nparticles>=MIN_CELL_PARTICLE_NUM ? YES:NO))
+#define DivideNode(ThisNode,nparticles) ((ThisNode->nodesize > 0.5*MINCELLWIDTH ? yes:no) & (nparticles>=MIN_CELL_PARTICLE_NUM ? yes:no))
 
 FoFTStruct *calFoFThreadFreeNodeStart(size_t navail, size_t twork, size_t mys,size_t myf, 
 		FoFTStruct *work, FoFTStruct *nextFreeNode){
@@ -257,7 +257,7 @@ typedef struct pthreadStruct{
     int nptl, id, nthreads, haloid;
 } pthreadStruct;
 
-int pthreadFoFGroup(void *args){
+void pthreadFoFGroup(void *args){
     pthreadStruct *p = (pthreadStruct *)args;
     POSTYPE fof_link = p->fof_link;
     FoFTStruct *tree = p->tree;

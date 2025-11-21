@@ -111,5 +111,5 @@ void gaussian_Smoothing(float *denGrid,int nx,int ny,int nz,
 	fftwf_destroy_plan(p);
 	fftwf_destroy_plan(pinv);
 #endif
-	DEBUGPRINT0("Now exit the Gaussian Smoothing Job\n");
+	DEBUGPRINT("Now exit the Gaussian Smoothing Job\n");
 }

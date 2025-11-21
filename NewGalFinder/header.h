@@ -69,7 +69,7 @@
 #define INIT_NP 1000000
 
 #define OUTPUTFILE "HFIND.DAT"
-int NODE_NUM_SIZE,NODE_SIZE_STRIDE;
+//int NODE_NUM_SIZE,NODE_SIZE_STRIDE;
 static int NODE_BUFFER=1;
 typedef int lint;
 /*

@@ -32,7 +32,9 @@
 //*******************
 // the number of neighbors to build 
 // the neighbor network 
-#define NUMNEIGHBOR 15 
+// the bigger the better
+// it should be no larger than MAX_NUM_NEAR in tree.h
+#define NUMNEIGHBOR 32 
 //*******************
 
 //*******************

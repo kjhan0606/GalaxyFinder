@@ -56,7 +56,7 @@ typedef struct DMParticle{
 } DMParticle;
 
 typedef struct particle {
-	float x,y,z;
+	dptype x,y,z;
 } particle;
 typedef struct pforce {
 	float x,y,z;
@@ -64,5 +64,5 @@ typedef struct pforce {
 
 void Make_NN_Tree(TStruct *,size_t, TPtlStruct *,size_t ,int );
 TStruct *divide_nn_node(TStruct *,TStruct *, int); 
-int Find_Near(particle *,int ,TStruct *, TPtlStruct *,PosType *, int *, float *, float *);
-int Find_Near2(particle *, int , TStruct *, TPtlStruct *, size_t , PosType *, int *, float *, float*);
+int Find_Near(particle *,int ,TStruct *, TPtlStruct *,PosType *, long long *, float *, float *);
+int Find_Near2(particle *, int , TStruct *, TPtlStruct *, size_t , PosType *, long long *, float *, float*);

@@ -35,7 +35,6 @@ void i_force_spline(){
 	}
 
 	for(i=1;i<NSPLINE;i++){
-		double f();
 		double xp2,xp1,x,xm1,xm2;
 		double  dx, fp, fpp;
 		/*
@@ -91,7 +90,6 @@ void i_potent_spline(){
 	}
 
 	for(i=1;i<NSPLINE;i++){
-		double g();
 		double xp2,xp1,x,xm1,xm2;
 		double  dx, gp, gpp;
 		/*
