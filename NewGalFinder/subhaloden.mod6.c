@@ -590,6 +590,7 @@ void SaveRemainingParticles2LastShell(int np,Coretype  *core,int numcore){
 	}
 	else if(nshell ==0){
 		SHELL2P(nshell) = Malloc(sizeof(int)*nrest,PPTR(SHELL2P(nshell)));
+		NSHELL2P(nshell) = 0;
 		for(i=0;i<np;i++)
 			if(IS_CORE(i) == NOT && IS_SHELL(i) ==NOT) {
 				SET_SHELL(i);
