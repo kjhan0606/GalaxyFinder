@@ -2575,8 +2575,8 @@ renumcore :
 		for(i=0;i<np;i++){ /* set the minium value with the minimum particle density */
 			minshellden = MIN(minshellden,wp[i].den);
 		}
-		minshellden = log10(minshellden);
-		maxshellden = log10(maxshellden);
+		minshellden = log10(minshellden+1);
+		maxshellden = log10(maxshellden+1);
 		nshell = 0;
 		if(np>1000) {
 			nshelldivide = MAX(NSHELLDIVIDE,NSHELLDIVIDE*log10((double)np*1.5));
@@ -2587,7 +2587,7 @@ renumcore :
 		for(i=0;i<nshelldivide;i++){
 			dthreshold = minshellden + (nshelldivide-1-i)*
 				(maxshellden-minshellden)/(float)nshelldivide;
-			dthreshold = pow(10.,dthreshold);
+			dthreshold = pow(10.,dthreshold)-1;
 			GetShellParticlesPeaks(np,neighbor,NumNeighbor,core,numcore,dthreshold);
 		}
 		SaveRemainingParticles2LastShell(np,core,numcore);
