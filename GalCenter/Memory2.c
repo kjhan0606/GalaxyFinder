@@ -1,1 +1,0 @@
-../GalFinder/Memory2.c

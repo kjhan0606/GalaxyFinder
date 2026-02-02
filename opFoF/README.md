@@ -4,6 +4,21 @@
 
 ---
 
+## Quick Links
+
+| Document | Description |
+|----------|-------------|
+| [Quick Start Guide](docs/QUICKSTART.md) | Get running in 5 minutes |
+| [Algorithm Details](docs/ALGORITHM.md) | In-depth FoF algorithm description |
+| [Data Structures](docs/DATA_STRUCTURES.md) | Complete structure reference |
+| [Configuration Guide](docs/CONFIGURATION.md) | All configuration options |
+| [Examples](docs/EXAMPLES.md) | Usage examples and workflows |
+| [Output Format](docs/OUTPUT_FORMAT.md) | Binary format specification |
+| [API Reference](docs/API.md) | Function documentation |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)

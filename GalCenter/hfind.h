@@ -1,1 +1,1 @@
-../GalFinder/hfind.h
+../NewGalFinder/hfind.h

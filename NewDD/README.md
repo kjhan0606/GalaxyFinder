@@ -4,6 +4,17 @@ A tool for reading RAMSES simulation snapshot data and decomposing the domain in
 
 ---
 
+## Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| [QUICKSTART.md](QUICKSTART.md) | Get started in 5 minutes |
+| [CONFIGURATION.md](CONFIGURATION.md) | Advanced configuration options |
+| [PIPELINE.md](PIPELINE.md) | PGalF pipeline integration guide |
+| [README4GADGET.md](README4GADGET.md) | GADGET HDF5 adaptation guide |
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -694,10 +705,21 @@ Segmentation fault (core dumped)
 
 This package is part of the PGalF (Parallel Galaxy Finder) pipeline:
 
-- **GalCenter**: Galaxy center finding
-- **GalFinder**: Galaxy finding algorithm
-- **NewGalFinder**: New galaxy finder
-- **opFoF**: OpenMP parallel Friends-of-Friends
+- **NewDD**: Domain decomposition (this package)
+- **opFoF**: OpenMP parallel Friends-of-Friends halo finder
+- **NewGalFinder**: Galaxy identification within halos
+- **GalCenter**: Precise galaxy center finding
+
+For detailed pipeline information, see [PIPELINE.md](PIPELINE.md).
+
+---
+
+## Additional Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)**: Step-by-step quick start guide for new users
+- **[CONFIGURATION.md](CONFIGURATION.md)**: Advanced configuration and performance tuning
+- **[PIPELINE.md](PIPELINE.md)**: Complete PGalF pipeline integration guide
+- **[README4GADGET.md](README4GADGET.md)**: Guide for adapting NewDD to read GADGET HDF5 format
 
 ---
 

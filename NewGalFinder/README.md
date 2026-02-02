@@ -447,8 +447,13 @@ The code handles four particle families:
 
 Detailed documentation is available in the `docs/` directory:
 
-- **[ALGORITHM.md](docs/ALGORITHM.md)**: In-depth description of all algorithms including density estimation, peak finding, water-shedding, boundedness testing, and tidal radius calculation
-- **[DATA_STRUCTURES.md](docs/DATA_STRUCTURES.md)**: Complete reference for all data structures, particle types, tree structures, and memory layout
+| Document | Description |
+|----------|-------------|
+| **[ALGORITHM.md](docs/ALGORITHM.md)** | In-depth algorithm descriptions: density estimation, peak finding, water-shedding, boundedness testing, tidal radius |
+| **[DATA_STRUCTURES.md](docs/DATA_STRUCTURES.md)** | Complete reference for particle types, tree structures, output formats, and memory layout |
+| **[CONFIGURATION.md](docs/CONFIGURATION.md)** | Parameter tuning guide for different resolutions and science cases |
+| **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** | Common issues, error messages, and solutions |
+| **[EXAMPLES.md](docs/EXAMPLES.md)** | Practical usage examples, job scripts, and Python code for reading outputs |
 
 ### Related Components
 

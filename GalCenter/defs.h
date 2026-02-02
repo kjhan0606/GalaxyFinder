@@ -1,1 +1,1 @@
-../GalFinder/defs.h
+../NewGalFinder/defs.h

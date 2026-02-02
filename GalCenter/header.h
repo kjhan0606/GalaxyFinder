@@ -1,1 +1,1 @@
-../GalFinder/header.h
+../NewGalFinder/header.h

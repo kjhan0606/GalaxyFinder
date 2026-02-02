@@ -1,1 +1,1 @@
-../GalFinder/Memory.h
+../NewGalFinder/Memory.h

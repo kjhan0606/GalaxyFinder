@@ -1,0 +1,399 @@
+# NewDD Advanced Configuration Guide
+
+This guide covers advanced configuration options for optimizing NewDD performance and adapting it to different simulation setups.
+
+---
+
+## Table of Contents
+
+1. [Compilation Options](#compilation-options)
+2. [Memory Configuration](#memory-configuration)
+3. [MPI Settings](#mpi-settings)
+4. [Simulation-Specific Settings](#simulation-specific-settings)
+5. [Input Path Configuration](#input-path-configuration)
+6. [Output Configuration](#output-configuration)
+7. [Performance Tuning](#performance-tuning)
+8. [Custom Builds](#custom-builds)
+
+---
+
+## Compilation Options
+
+### Makefile Variables
+
+Edit the `Makefile` to configure compilation:
+
+```makefile
+# Compiler selection
+CC = mpicc              # MPI compiler (default)
+# CC = gcc              # Non-MPI build
+# CC = icc              # Intel compiler
+
+# Optimization flags
+OPT = -O3 -DNENER=0 -DNPRE=8 -DNMEG=20000 -DWGROUPSIZE=5 \
+      -DUSE_MPI -DQUADHILBERT -DREAD_SINK -DNCHEM=9 -DNDUST=4
+```
+
+### Preprocessor Macros Reference
+
+| Macro | Type | Default | Description |
+|-------|------|---------|-------------|
+| `USE_MPI` | Flag | Defined | Enable MPI parallelization |
+| `QUADHILBERT` | Flag | Defined | Use long double for Hilbert curves |
+| `READ_SINK` | Flag | Defined | Enable sink particle reading |
+| `NMEG` | Integer | 20000 | Memory pool size in MB |
+| `WGROUPSIZE` | Integer | 5 | I/O synchronization group size |
+| `NCHEM` | Integer | 9 | Number of chemical species |
+| `NDUST` | Integer | 4 | Number of dust species |
+| `NENER` | Integer | 0 | Number of radiation energy groups |
+| `NPRE` | Integer | 8 | Precision indicator |
+
+---
+
+## Memory Configuration
+
+### NMEG Parameter
+
+The `NMEG` parameter controls the memory pool size:
+
+```makefile
+-DNMEG=20000    # 20 GB memory pool (default)
+-DNMEG=10000    # 10 GB (medium simulations)
+-DNMEG=5000     # 5 GB (small simulations)
+-DNMEG=40000    # 40 GB (very large simulations)
+```
+
+### Memory Estimation
+
+Approximate memory per CPU domain:
+
+```
+Memory = (AMR mesh) + (Particles) + (Hydro) + (Overhead)
+       ≈ 40 MB + (npart × 120 bytes) + (ngrid × 800 bytes) + 100 MB
+```
+
+Example calculation:
+```
+For ncpu=512, with ~1M particles and ~500K cells per domain:
+Memory ≈ 40 + (1M × 120B) + (500K × 800B) + 100 MB
+       ≈ 40 + 120 + 400 + 100 = 660 MB per domain
+Total for 32 processes: 660 × 16 domains/proc ≈ 10.5 GB
+```
+
+### Recommended Settings by Simulation Size
+
+| Simulation | ncpu | Particles | NMEG | Notes |
+|------------|------|-----------|------|-------|
+| Small | < 64 | < 256³ | 5000 | Development/testing |
+| Medium | 64-256 | 512³ | 10000 | Production |
+| Large | 256-1024 | 1024³ | 20000 | High-resolution |
+| Very Large | > 1024 | > 1024³ | 40000+ | Flagship runs |
+
+---
+
+## MPI Settings
+
+### WGROUPSIZE Parameter
+
+Controls I/O synchronization grouping:
+
+```makefile
+-DWGROUPSIZE=5     # 5 ranks per I/O group (default)
+-DWGROUPSIZE=1     # No grouping (maximum parallelism)
+-DWGROUPSIZE=10    # Larger groups (reduce I/O contention)
+```
+
+**Tuning Guidelines**:
+- Shared filesystem (Lustre, GPFS): Use larger WGROUPSIZE (5-10)
+- Local SSD: Use smaller WGROUPSIZE (1-3)
+- Network bottleneck: Increase WGROUPSIZE
+
+### MPI Process Count
+
+```bash
+# Rule: np should divide ncpu evenly
+# Good: ncpu=512, np=32 (512/32 = 16 domains per process)
+mpirun -np 32 ./newdd.exe 100 128
+
+# Bad: ncpu=512, np=30 (512/30 = 17.07, uneven distribution)
+# This will still work but with load imbalance
+```
+
+### Process Affinity
+
+For optimal performance, set process affinity:
+
+```bash
+# OpenMPI
+mpirun -np 32 --bind-to core ./newdd.exe 100 128
+
+# Intel MPI
+mpirun -np 32 -genv I_MPI_PIN=1 ./newdd.exe 100 128
+
+# SLURM
+srun --cpu-bind=cores -n 32 ./newdd.exe 100 128
+```
+
+---
+
+## Simulation-Specific Settings
+
+### Chemical Species (NCHEM)
+
+Match your RAMSES simulation settings:
+
+```makefile
+# No chemistry
+-DNCHEM=0
+
+# Standard chemistry (H, He, C, N, O, Fe, etc.)
+-DNCHEM=9
+
+# Extended chemistry
+-DNCHEM=15
+```
+
+### Dust Species (NDUST)
+
+```makefile
+# No dust
+-DNDUST=0
+
+# Standard dust model
+-DNDUST=4
+
+# Extended dust model
+-DNDUST=8
+```
+
+### Radiation (NENER)
+
+```makefile
+# No radiation
+-DNENER=0
+
+# Radiation hydrodynamics
+-DNENER=3
+```
+
+### Sink Particles
+
+```makefile
+# Enable sink reading (black holes)
+-DREAD_SINK
+
+# Disable sink reading (remove flag)
+# (Simply don't include -DREAD_SINK)
+```
+
+---
+
+## Input Path Configuration
+
+### Default Path Structure
+
+NewDD expects RAMSES output in the parent directory:
+
+```
+../output_XXXXX/
+```
+
+### Modifying Input Path
+
+Edit `rd_info.c` to change the input path:
+
+```c
+// In rd_info.c, find and modify:
+sprintf(fname, "../output_%05d/info_%05d.txt", istep, istep);
+
+// Change to custom path:
+sprintf(fname, "/data/simulations/run1/output_%05d/info_%05d.txt", istep, istep);
+
+// Or relative path:
+sprintf(fname, "../../MySimulation/output_%05d/info_%05d.txt", istep, istep);
+```
+
+### Environment Variable Support
+
+Add environment variable support:
+
+```c
+// In rd_info.c:
+char *basepath = getenv("RAMSES_PATH");
+if (basepath == NULL) basepath = "..";
+sprintf(fname, "%s/output_%05d/info_%05d.txt", basepath, istep, istep);
+```
+
+Then run:
+```bash
+export RAMSES_PATH=/data/simulations/run1
+mpirun -np 32 ./newdd.exe 100 128
+```
+
+---
+
+## Output Configuration
+
+### Output Directory
+
+Default output structure:
+```
+FoF_Data/NewDD.XXXXX/
+```
+
+### Modifying Output Path
+
+Edit `utils.c` to change output location:
+
+```c
+// In SplitDump function:
+sprintf(outdir, "FoF_Data/NewDD.%05d", istep);
+
+// Change to:
+sprintf(outdir, "/scratch/output/NewDD.%05d", istep);
+```
+
+### Output File Naming
+
+Default naming convention:
+```
+SN.XXXXX.[TYPE].[SLAB].dat
+```
+
+Components:
+- `XXXXX`: 5-digit snapshot number
+- `TYPE`: DM, STAR, GAS, or SINK
+- `SLAB`: 5-digit slab index
+
+---
+
+## Performance Tuning
+
+### I/O Optimization
+
+**Buffered Writing**:
+```c
+// In utils.c, increase buffer size:
+setvbuf(fp, NULL, _IOFBF, 1024*1024);  // 1 MB buffer
+```
+
+**Parallel Filesystem Settings** (Lustre):
+```bash
+# Set stripe count for output directory
+lfs setstripe -c 16 FoF_Data/
+```
+
+### Sorting Optimization
+
+The code uses quicksort. For very large datasets, consider:
+
+```c
+// In utils.c, switch to parallel sort for large arrays:
+#ifdef USE_PARALLEL_SORT
+if (n > 1000000) {
+    parallel_quicksort(array, n);
+} else {
+    quicksort(array, n);
+}
+#endif
+```
+
+### Memory Access Patterns
+
+Optimize for cache efficiency:
+```makefile
+# Intel compiler with optimization reports
+CC = icc
+CFLAGS = -O3 -xHost -qopt-report=5
+```
+
+---
+
+## Custom Builds
+
+### Build Profiles
+
+Create different build profiles in Makefile:
+
+```makefile
+# Development build (fast compile, debug symbols)
+dev:
+	$(CC) -O0 -g -DNMEG=5000 -DUSE_MPI $(SOURCES) -o newdd_dev.exe
+
+# Production build (optimized)
+prod:
+	$(CC) -O3 -DNMEG=20000 -DUSE_MPI -DQUADHILBERT $(SOURCES) -o newdd.exe
+
+# Debug build (with sanitizers)
+debug:
+	$(CC) -O0 -g -fsanitize=address -DNMEG=5000 $(SOURCES) -o newdd_debug.exe
+
+# Profile build
+profile:
+	$(CC) -O2 -pg -DNMEG=20000 -DUSE_MPI $(SOURCES) -o newdd_prof.exe
+```
+
+### Simulation-Specific Configurations
+
+```makefile
+# Horizon-AGN configuration
+horizon:
+	$(CC) -O3 -DNMEG=30000 -DUSE_MPI -DQUADHILBERT -DREAD_SINK \
+	      -DNCHEM=9 -DNDUST=4 -DNENER=0 $(SOURCES) -o newdd_horizon.exe
+
+# NewHorizon configuration
+newhorizon:
+	$(CC) -O3 -DNMEG=40000 -DUSE_MPI -DQUADHILBERT -DREAD_SINK \
+	      -DNCHEM=11 -DNDUST=4 -DNENER=0 $(SOURCES) -o newdd_nh.exe
+
+# Minimal build (no extras)
+minimal:
+	$(CC) -O3 -DNMEG=10000 -DUSE_MPI $(SOURCES) -o newdd_min.exe
+```
+
+---
+
+## Configuration Checklist
+
+Before running, verify:
+
+- [ ] NCHEM matches RAMSES namelist `nchem`
+- [ ] NDUST matches RAMSES namelist `ndust`
+- [ ] NENER matches RAMSES namelist `nener`
+- [ ] NMEG is sufficient for your simulation size
+- [ ] WGROUPSIZE is appropriate for your filesystem
+- [ ] READ_SINK is set if simulation has black holes
+- [ ] Input path points to correct RAMSES output
+- [ ] Output directory has write permissions
+- [ ] MPI process count divides ncpu
+
+---
+
+## Diagnostic Flags
+
+Add diagnostic output for troubleshooting:
+
+```makefile
+# Verbose output
+-DVERBOSE
+
+# Debug memory allocation
+-DDEBUG_MEMORY
+
+# Timing information
+-DTIMING
+```
+
+Example with diagnostics:
+```makefile
+OPT = -O3 -DNMEG=20000 -DUSE_MPI -DVERBOSE -DTIMING
+```
+
+---
+
+## See Also
+
+- [README.md](README.md) - Full documentation
+- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
+- [PIPELINE.md](PIPELINE.md) - Pipeline integration
+- [README4GADGET.md](README4GADGET.md) - GADGET support
