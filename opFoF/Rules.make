@@ -15,7 +15,7 @@ RANLIB = ranlib
 ####      KIAS PG Compiler                          #####
 #########################################################
 AR = ar rcv
-FC = mpiifort
+FC = mpiifc
 CC = mpiicc
 F90C = mpiifort
 #OPT = -DPGCC -mcmodel=medium -tp nehalem-64 -fast -mp -fastsse

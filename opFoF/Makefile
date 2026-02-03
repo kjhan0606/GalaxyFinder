@@ -32,7 +32,7 @@ new:
 	$(MAKE) all
 
 clean: 
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(PROGS)
 	for subdir in $(SUBDIRS); do \
 		(cd $$subdir && $(MAKE) clean);\
 	done 
