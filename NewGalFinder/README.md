@@ -403,7 +403,7 @@ Per worker rank:
 | `Memory2.c` | Stack-based memory allocator |
 | `utils.c` | MPI utilities (BIG_MPI_Send/Recv) |
 | `nrutil.c` | Numerical Recipes utilities |
-| `b2l.c` | Binary-to-long conversions |
+| `b2l.c` | Big-to-Little Endian conversions |
 | `spline.mod2.f` | Fortran spline interpolation |
 | `Treewalk.near.c` | Tree traversal for neighbors |
 
