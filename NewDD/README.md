@@ -1,6 +1,6 @@
 # NewDD: RAMSES Z-Directional Slab Decomposition Package
 
-A tool for reading RAMSES simulation snapshot data and decomposing the domain into slabs along the X-axis direction. Designed for efficient post-processing of large-scale cosmological simulation data.
+A tool for reading RAMSES simulation snapshot data and decomposing the domain into slabs along the Z-axis direction. Designed for efficient post-processing of large-scale cosmological simulation data.
 
 ---
 
@@ -38,11 +38,11 @@ A tool for reading RAMSES simulation snapshot data and decomposing the domain in
 
 ## Overview
 
-**NewDD** (New Domain Decomposition) is a tool for processing RAMSES (Rasterized N-body Adaptive Refinement Tree) simulation output data. It decomposes the simulation domain into vertical slabs along the X-axis, reorganizing data into a format optimized for parallel analysis and Friends-of-Friends (FoF) galaxy finding algorithms.
+**NewDD** (New Domain Decomposition) is a tool for processing RAMSES (Rasterized N-body Adaptive Refinement Tree) simulation output data. It decomposes the simulation domain into vertical slabs along the Z-axis, reorganizing data into a format optimized for parallel analysis and Friends-of-Friends (FoF) galaxy finding algorithms.
 
 ### Key Features
 
-- **Z-directional slab decomposition**: Uniformly partitions the simulation box along the X-axis
+- **Z-directional slab decomposition**: Uniformly partitions the simulation box along the Z-axis
 - **MPI parallelization**: Efficient parallel I/O for large-scale datasets
 - **Multi-component processing**: Simultaneous handling of dark matter, stars, gas cells, and sinks (black holes)
 - **Unit conversion**: Automatic conversion from simulation units to physical units (cMpc/h, km/s, Msun/h)
@@ -61,7 +61,7 @@ A tool for reading RAMSES simulation snapshot data and decomposing the domain in
 
 ### Data Processing
 - Leaf gas cell extraction
-- Sorting particles/cells by X-coordinate
+- Sorting particles/cells by Z-coordinate
 - Domain decomposition into user-specified number of slabs
 - Unit conversion (code units → physical units)
 
@@ -389,7 +389,7 @@ Input: RAMSES snapshot (output_XXXXX/)
   │      │      └─ Extract only finest resolution gas cells
   │      │      └─ Compute cell masses and properties
   │      │
-  │      ├─ f) Sort by X-coordinate
+  │      ├─ f) Sort by Z-coordinate
   │      │      └─ dmsortx(), starsortx(), gassortx(), sinksortx()
   │      │
   │      └─ g) Slab decomposition and output (SplitDump)
@@ -401,7 +401,7 @@ Input: RAMSES snapshot (output_XXXXX/)
 ### Slab Decomposition Algorithm (SplitDump)
 
 ```c
-1. Divide X-axis into nsplit bins:
+1. Divide Z-axis into nsplit bins:
    step = (xmax - xmin) / nsplit
    xpos[i] = xmin + i * step
 

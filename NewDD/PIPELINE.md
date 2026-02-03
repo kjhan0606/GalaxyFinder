@@ -18,7 +18,7 @@ This document describes how NewDD integrates with the PGalF (Parallel Galaxy Fin
                    ▼
          ┌─────────────────┐
          │     NewDD       │  ← Domain Decomposition
-         │  (This Package) │     (X-axis slab partitioning)
+         │  (This Package) │     (Z-axis slab partitioning)
          └────────┬────────┘
                   │
                   │  Output: FoF_Data/NewDD.XXXXX/
@@ -79,7 +79,7 @@ This document describes how NewDD integrates with the PGalF (Parallel Galaxy Fin
 - `SN.XXXXX.[SLAB].info` - Metadata files
 
 **Key Features**:
-- X-axis slab decomposition
+- Z-axis slab decomposition
 - Unit conversion to physical units
 - MPI parallel I/O
 
