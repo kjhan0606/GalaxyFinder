@@ -22,7 +22,7 @@ RAMSES Output → NewDD → opFoF → NewGalFinder → Galaxy Catalogs
 
 ### 0. Configure Build System
 ```bash
-# Default configuration (Intel OneAPI compilers, optimized build)
+# Default configuration (Intel OneAPI mpiicx/mpiifx compilers, optimized build)
 ./configure
 
 # Debug build
@@ -77,8 +77,8 @@ The project uses a `configure` script to generate Makefiles for all subdirectori
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--cc=CC` | `mpicc` | C compiler for GalCenter/NewDD |
-| `--fc=FC` | `mpifort` | Fortran compiler for GalCenter/NewDD |
+| `--cc=CC` | `mpiicx` | C compiler for GalCenter/NewDD |
+| `--fc=FC` | `mpiifx` | Fortran compiler for GalCenter/NewDD |
 | `--galfinder-cc=CC` | `mpiicx` | C compiler for NewGalFinder |
 | `--galfinder-fc=FC` | `mpiifx` | Fortran compiler for NewGalFinder |
 | `--fftw=PATH` | `/home/kjhan/local` | FFTW installation path |

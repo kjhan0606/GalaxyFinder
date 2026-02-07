@@ -13,8 +13,8 @@ TOPDIR="$(cd "$(dirname "$0")" && pwd)"
 #--------------------------------------------------
 
 # Common compilers
-CC="mpicc"
-FC="mpifort"
+CC="mpiicx"
+FC="mpiifx"
 
 # GalFinder (NewGalFinder) can use different compilers (Intel OneAPI)
 GALFINDER_CC="mpiicx"

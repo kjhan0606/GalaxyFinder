@@ -133,7 +133,7 @@ make all
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--cc=CC` | `mpicc` | C compiler |
+| `--cc=CC` | `mpiicx` | C compiler |
 | `--opt=FLAGS` | `-O3` | Optimization flags |
 | `--debug` | - | Use `-g` debug flags |
 | `--newdd-nmeg=N` | `20000` | Memory pool size (MB) |

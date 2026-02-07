@@ -57,8 +57,8 @@ make galcenter
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--cc=CC` | `mpicc` | C compiler |
-| `--fc=FC` | `mpifort` | Fortran compiler |
+| `--cc=CC` | `mpiicx` | C compiler |
+| `--fc=FC` | `mpiifx` | Fortran compiler |
 | `--opt=FLAGS` | `-O3` | Optimization flags |
 | `--debug` | - | Use `-g` debug flags |
 | `--openmp=FLAGS` | `-qopenmp` | OpenMP flags |
@@ -78,7 +78,7 @@ make clean    # Remove object files and executables
 ```
 
 **Requirements:**
-- MPI compiler (mpicc or mpiicx)
+- MPI compiler (mpiicx or mpicc)
 - OpenMP support
 - Math library (-lm)
 
