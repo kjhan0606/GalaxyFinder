@@ -41,14 +41,44 @@ RAMSES Output → NewDD → opFoF → NewGalFinder → GalCenter → Galaxy Cata
 
 ## Building
 
+### Using configure (Recommended)
+
 ```bash
+# From the top-level GalaxyFinder directory:
+./configure                               # Default settings
+./configure --debug                       # Debug build
+./configure --galcenter-nmeg=10000        # Custom NMEG
+
+# Build GalCenter
+make galcenter
+```
+
+#### Key configure options for GalCenter
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--cc=CC` | `mpicc` | C compiler |
+| `--fc=FC` | `mpifort` | Fortran compiler |
+| `--opt=FLAGS` | `-O3` | Optimization flags |
+| `--debug` | - | Use `-g` debug flags |
+| `--openmp=FLAGS` | `-qopenmp` | OpenMP flags |
+| `--galcenter-nmeg=N` | `5000` | Memory pool size (MB) |
+| `--galcenter-nchem=N` | `9` | Number of chemical species |
+| `--galcenter-ndust=N` | `4` | Number of dust species |
+
+Run `./configure --help` for the full list of options.
+
+### Direct Build (Alternative)
+
+```bash
+cd GalCenter
 make all      # Build galcenter.exe
 make new      # Clean and rebuild
 make clean    # Remove object files and executables
 ```
 
 **Requirements:**
-- MPI compiler (mpicc)
+- MPI compiler (mpicc or mpiicx)
 - OpenMP support
 - Math library (-lm)
 
@@ -114,10 +144,10 @@ Master-slave design:
 
 ## Configuration
 
-Key parameters in `Rules.make`:
-- `NMEG=5000L` - Memory per processor (5000 MB)
-- OpenMP enabled via `-qopenmp`
-- Debug symbols via `-g`
+Key parameters are set by the top-level `./configure` script:
+- `NMEG=5000L` - Memory per processor (change with `--galcenter-nmeg=N`)
+- OpenMP enabled via `-qopenmp` (change with `--openmp=FLAGS` or `--no-openmp`)
+- Optimization via `-O3` (change with `--opt=FLAGS` or `--debug`)
 
 ## Related Modules
 

@@ -1,0 +1,228 @@
+#!/bin/bash
+#--------------------------------------------------
+# configure script for GalaxyFinder
+#
+# Usage: ./configure [OPTIONS]
+# Run ./configure --help for available options.
+#--------------------------------------------------
+
+TOPDIR="$(cd "$(dirname "$0")" && pwd)"
+
+#--------------------------------------------------
+# Default values
+#--------------------------------------------------
+
+# Common compilers
+CC="mpicc"
+FC="mpifort"
+
+# GalFinder (NewGalFinder) can use different compilers (Intel OneAPI)
+GALFINDER_CC="mpiicx"
+GALFINDER_FC="mpiifx"
+
+# Paths
+FFTW_PATH="/home/kjhan/local"
+
+# Optimization
+OPT="-O3"
+OPENMP="-qopenmp"
+
+# Common preprocessor defines
+NENER="0"
+NPRE="8"
+
+# GalCenter defaults
+GALCENTER_NMEG="5000"
+GALCENTER_NCHEM="9"
+GALCENTER_NDUST="4"
+
+# NewGalFinder defaults
+GALFINDER_NMEG="90000"
+GALFINDER_NCHEM="3"
+GALFINDER_FFTW_LIBS="-lfftw3f_omp -lfftw3f"
+
+# NewDD defaults
+NEWDD_NMEG="20000"
+NEWDD_NCHEM="9"
+NEWDD_NDUST="4"
+NEWDD_WGROUPSIZE="5"
+
+#--------------------------------------------------
+# Help message
+#--------------------------------------------------
+print_help() {
+    cat << EOF
+Usage: ./configure [OPTIONS]
+
+Configure GalaxyFinder build system.
+Generates Makefiles for GalCenter, NewGalFinder, and NewDD.
+
+Compiler options:
+  --cc=CC                  C compiler for GalCenter/NewDD [default: $CC]
+  --fc=FC                  Fortran compiler for GalCenter/NewDD [default: $FC]
+  --galfinder-cc=CC        C compiler for NewGalFinder [default: $GALFINDER_CC]
+  --galfinder-fc=FC        Fortran compiler for NewGalFinder [default: $GALFINDER_FC]
+
+Path options:
+  --fftw=PATH              FFTW installation path [default: $FFTW_PATH]
+
+Build options:
+  --opt=FLAGS              Optimization flags [default: $OPT]
+  --debug                  Use debug flags (-g) instead of optimization
+  --openmp=FLAGS           OpenMP flags [default: $OPENMP]
+  --no-openmp              Disable OpenMP
+
+Preprocessor defines (common):
+  --nener=N                NENER value [default: $NENER]
+  --npre=N                 NPRE value [default: $NPRE]
+
+GalCenter options:
+  --galcenter-nmeg=N       NMEG for GalCenter [default: $GALCENTER_NMEG]
+  --galcenter-nchem=N      NCHEM for GalCenter [default: $GALCENTER_NCHEM]
+  --galcenter-ndust=N      NDUST for GalCenter [default: $GALCENTER_NDUST]
+
+NewGalFinder options:
+  --galfinder-nmeg=N       NMEG for NewGalFinder [default: $GALFINDER_NMEG]
+  --galfinder-nchem=N      NCHEM for NewGalFinder [default: $GALFINDER_NCHEM]
+  --galfinder-fftw-libs=L  FFTW link flags [default: $GALFINDER_FFTW_LIBS]
+
+NewDD options:
+  --newdd-nmeg=N           NMEG for NewDD [default: $NEWDD_NMEG]
+  --newdd-nchem=N          NCHEM for NewDD [default: $NEWDD_NCHEM]
+  --newdd-ndust=N          NDUST for NewDD [default: $NEWDD_NDUST]
+  --newdd-wgroupsize=N     WGROUPSIZE for NewDD [default: $NEWDD_WGROUPSIZE]
+
+Examples:
+  ./configure                              # Use all defaults
+  ./configure --debug                      # Debug build
+  ./configure --cc=mpiicx --fc=mpiifx      # Use Intel OneAPI for all
+  ./configure --fftw=/usr/local             # Custom FFTW path
+  ./configure --galfinder-nchem=9           # Change NCHEM for GalFinder
+EOF
+}
+
+#--------------------------------------------------
+# Parse command-line options
+#--------------------------------------------------
+for arg in "$@"; do
+    case $arg in
+        --cc=*)                  CC="${arg#*=}" ;;
+        --fc=*)                  FC="${arg#*=}" ;;
+        --galfinder-cc=*)        GALFINDER_CC="${arg#*=}" ;;
+        --galfinder-fc=*)        GALFINDER_FC="${arg#*=}" ;;
+        --fftw=*)                FFTW_PATH="${arg#*=}" ;;
+        --opt=*)                 OPT="${arg#*=}" ;;
+        --debug)                 OPT="-g" ;;
+        --openmp=*)              OPENMP="${arg#*=}" ;;
+        --no-openmp)             OPENMP="" ;;
+        --nener=*)               NENER="${arg#*=}" ;;
+        --npre=*)                NPRE="${arg#*=}" ;;
+        --galcenter-nmeg=*)      GALCENTER_NMEG="${arg#*=}" ;;
+        --galcenter-nchem=*)     GALCENTER_NCHEM="${arg#*=}" ;;
+        --galcenter-ndust=*)     GALCENTER_NDUST="${arg#*=}" ;;
+        --galfinder-nmeg=*)      GALFINDER_NMEG="${arg#*=}" ;;
+        --galfinder-nchem=*)     GALFINDER_NCHEM="${arg#*=}" ;;
+        --galfinder-fftw-libs=*) GALFINDER_FFTW_LIBS="${arg#*=}" ;;
+        --newdd-nmeg=*)          NEWDD_NMEG="${arg#*=}" ;;
+        --newdd-nchem=*)         NEWDD_NCHEM="${arg#*=}" ;;
+        --newdd-ndust=*)         NEWDD_NDUST="${arg#*=}" ;;
+        --newdd-wgroupsize=*)    NEWDD_WGROUPSIZE="${arg#*=}" ;;
+        --help|-h)               print_help; exit 0 ;;
+        *)
+            echo "Error: Unknown option: $arg"
+            echo "Run ./configure --help for usage."
+            exit 1
+            ;;
+    esac
+done
+
+#--------------------------------------------------
+# Display configuration
+#--------------------------------------------------
+echo "=============================================="
+echo " GalaxyFinder Configuration"
+echo "=============================================="
+echo ""
+echo " Common:"
+echo "   CC             = $CC"
+echo "   FC             = $FC"
+echo "   OPT            = $OPT"
+echo "   OpenMP         = ${OPENMP:-disabled}"
+echo "   NENER          = $NENER"
+echo "   NPRE           = $NPRE"
+echo ""
+echo " GalCenter:"
+echo "   NMEG           = $GALCENTER_NMEG"
+echo "   NCHEM          = $GALCENTER_NCHEM"
+echo "   NDUST          = $GALCENTER_NDUST"
+echo ""
+echo " NewGalFinder:"
+echo "   CC             = $GALFINDER_CC"
+echo "   FC             = $GALFINDER_FC"
+echo "   FFTW           = $FFTW_PATH"
+echo "   FFTW_LIBS      = $GALFINDER_FFTW_LIBS"
+echo "   NMEG           = $GALFINDER_NMEG"
+echo "   NCHEM          = $GALFINDER_NCHEM"
+echo ""
+echo " NewDD:"
+echo "   NMEG           = $NEWDD_NMEG"
+echo "   NCHEM          = $NEWDD_NCHEM"
+echo "   NDUST          = $NEWDD_NDUST"
+echo "   WGROUPSIZE     = $NEWDD_WGROUPSIZE"
+echo ""
+
+#--------------------------------------------------
+# Function to generate Makefile from template
+#--------------------------------------------------
+generate_makefile() {
+    local infile="$1"
+    local outfile="$2"
+
+    if [ ! -f "$infile" ]; then
+        echo "ERROR: Template not found: $infile"
+        return 1
+    fi
+
+    sed \
+        -e "s|@CC@|${CC}|g" \
+        -e "s|@FC@|${FC}|g" \
+        -e "s|@GALFINDER_CC@|${GALFINDER_CC}|g" \
+        -e "s|@GALFINDER_FC@|${GALFINDER_FC}|g" \
+        -e "s|@OPT@|${OPT}|g" \
+        -e "s|@OPENMP@|${OPENMP}|g" \
+        -e "s|@FFTW_PATH@|${FFTW_PATH}|g" \
+        -e "s|@NENER@|${NENER}|g" \
+        -e "s|@NPRE@|${NPRE}|g" \
+        -e "s|@GALCENTER_NMEG@|${GALCENTER_NMEG}|g" \
+        -e "s|@GALCENTER_NCHEM@|${GALCENTER_NCHEM}|g" \
+        -e "s|@GALCENTER_NDUST@|${GALCENTER_NDUST}|g" \
+        -e "s|@GALFINDER_NMEG@|${GALFINDER_NMEG}|g" \
+        -e "s|@GALFINDER_NCHEM@|${GALFINDER_NCHEM}|g" \
+        -e "s|@GALFINDER_FFTW_LIBS@|${GALFINDER_FFTW_LIBS}|g" \
+        -e "s|@NEWDD_NMEG@|${NEWDD_NMEG}|g" \
+        -e "s|@NEWDD_NCHEM@|${NEWDD_NCHEM}|g" \
+        -e "s|@NEWDD_NDUST@|${NEWDD_NDUST}|g" \
+        -e "s|@NEWDD_WGROUPSIZE@|${NEWDD_WGROUPSIZE}|g" \
+        "$infile" > "$outfile"
+
+    echo "  Generated: $outfile"
+}
+
+#--------------------------------------------------
+# Generate Makefiles
+#--------------------------------------------------
+echo "Generating Makefiles..."
+
+generate_makefile "$TOPDIR/Makefile.in"            "$TOPDIR/Makefile"
+generate_makefile "$TOPDIR/GalCenter/Makefile.in"  "$TOPDIR/GalCenter/Makefile"
+generate_makefile "$TOPDIR/NewGalFinder/Makefile.in" "$TOPDIR/NewGalFinder/Makefile"
+generate_makefile "$TOPDIR/NewDD/Makefile.in"      "$TOPDIR/NewDD/Makefile"
+
+echo ""
+echo "Configuration complete."
+echo "Run 'make' to build all, or 'make <target>' for individual builds."
+echo "  make all          - Build everything"
+echo "  make galcenter    - Build GalCenter only"
+echo "  make galfinder    - Build NewGalFinder only"
+echo "  make newdd        - Build NewDD only"
+echo "  make clean        - Clean all"

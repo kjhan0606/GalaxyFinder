@@ -7,6 +7,8 @@
 #include "ramses.h"
 #include "params.h"
 #include "Memory.h"
+#include "newdd.h"
+
 
 int nid=1, myid=0;
 
@@ -177,7 +179,7 @@ int main(int argc, char **argv){
 			}
 			
 			qsort(dm, ndm, sizeof(DmType), dmsortx);
-			printf("P%d End of sorting %d dm\n", myid, ndm);
+			printf("P%d End of sorting %zu dm\n", myid, ndm);
 			SplitDump(&ram, dm, ndm, DM, istep, icpu,sinmul, nsplit);
 
 		printf("P%d stage 7 done \n",myid);
@@ -195,7 +197,7 @@ int main(int argc, char **argv){
 		printf("P%d stage 8 done \n",myid);
 		//	if(nstar > 0){
 				qsort(star, nstar, sizeof(StarType), starsortx);
-				printf("P%d End of sorting %d star\n", myid, nstar);
+				printf("P%d End of sorting %zu star\n", myid, nstar);
 				SplitDump(&ram, star, nstar,STAR, istep, icpu,sinmul, nsplit);
 		//	}
 			Free(dm);
@@ -209,7 +211,7 @@ int main(int argc, char **argv){
 			fclose(wp);
 		}
 		cleanup_ramses(&ram);
-		printf("Current memory stack %d\n", CurMemStack());fflush(stdout);
+		printf("Current memory stack %lld\n", CurMemStack());fflush(stdout);
 	}
 #ifdef USE_MPI
 	MPI_Finalize();

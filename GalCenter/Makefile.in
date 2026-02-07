@@ -14,12 +14,12 @@ RANLIB = ranlib
 #--------------------------------------------------
 # Compiler settings (configured by ../configure)
 #--------------------------------------------------
-FC = mpiifx
-CC = mpiicx
+FC = @FC@
+CC = @CC@
 
-OPT = -g  -qopenmp -DINDEX -DVarPM   -DXYZDBL  -DQUADHILBERT -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 -DNDUST=4
+OPT = @OPT@  @OPENMP@ -DINDEX -DVarPM   -DXYZDBL  -DQUADHILBERT -DNENER=@NENER@ -DNPRE=@NPRE@ -DREAD_SINK -DNCHEM=@GALCENTER_NCHEM@ -DNDUST=@GALCENTER_NDUST@
 
-DFLAGS = -DNMEG=5000L -D_LARGE_FILES
+DFLAGS = -DNMEG=@GALCENTER_NMEG@L -D_LARGE_FILES
 
 FFLAGS = $(FDFLAGS) $(OPT)  -mcmodel=medium
 CFLAGS = $(DFLAGS)  $(OPT)

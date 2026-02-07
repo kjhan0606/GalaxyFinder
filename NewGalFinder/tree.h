@@ -30,7 +30,7 @@
 */
 
 enum where {OUT=0, IN=1, CROSS=2};
-enum boolean {YES,NO, ENCLOSE};
+enum boolean {YES=1,NO=0, ENCLOSE=2};
 
 
 #define divideThisNode(thisNode,nparticles) ((thisNode->nodesize > 0.5*MINCELLWIDTH ? yes:no) && (nparticles>=MIN_CELL_PARTICLE_NUM ? yes:no))

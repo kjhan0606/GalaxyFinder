@@ -80,6 +80,8 @@ typedef struct PmType{
 	dptype chem[NCHEM]; /*number of chemical elements*/
 #endif
 	dptype mass0; /* in unit of Msun/h */
+	dptype birth_d;
+	int partp;
 #ifdef FBK
 	dptype fbk;
 #endif
@@ -122,6 +124,9 @@ typedef struct HydroCellType{
 #ifdef NCHEM
 	float chem[NCHEM];
 #endif
+#ifdef NDUST
+	float dust[NDUST];
+#endif
 #ifdef NION
 	float ion[NION];
 #endif
@@ -138,6 +143,9 @@ typedef struct GasType{
 	float metallicity;  /* metallicity Z */
 #ifdef NCHEM
 	float chem[NCHEM];
+#endif
+#ifdef NDUST
+	float dust[NDUST];
 #endif
 #ifdef NION
 	float ion[NION];
@@ -205,7 +213,7 @@ typedef struct RamsesType{
 	dptype mpcscale_l, kmscale_v;
 
 	int nvar,nboundary, ncoarse, nener;
-	int imetal, ichem, iion, nelt, inener;
+	int imetal, ichem, idust, iion, nelt, inener;
 
 	int neq_chem,rt;
 	dptype gamma_rad[512];
@@ -256,6 +264,19 @@ typedef struct RamsesType{
             fprintf(stdout, WHERESTR _fmt, WHEREARG, ##__VA_ARGS__); \
             fflush(stdout); \
         } \
+    } while(0)
+
+// stderr (always prints, no conditional)
+#define ERRORPRINT(_fmt, ...) \
+    do { \
+        fprintf(stderr, WHERESTR _fmt, WHEREARG, ##__VA_ARGS__); \
+        fflush(stderr); \
+    } while(0)
+
+#define ERRORPRINT0(_fmt) \
+    do { \
+        fprintf(stderr, WHERESTR _fmt, WHEREARG); \
+        fflush(stderr); \
     } while(0)
 
 

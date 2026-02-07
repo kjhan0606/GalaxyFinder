@@ -155,20 +155,27 @@ SN.XXXXX.DM.[SLAB].dat
 ```
 StarType structure:
 ├── Position, velocity, mass (same as DM)
-├── tp    - Birth time (scale factor)
-├── zp    - Metallicity (mass fraction)
-└── chem  - Chemical abundances (if NCHEM > 0)
+├── tp       - Birth time (scale factor)
+├── zp       - Metallicity (mass fraction)
+├── chem     - Chemical abundances (if NCHEM > 0)
+├── mass0    - Initial mass [Msun/h]
+├── birth_d  - Dust birth parameter
+└── partp    - Particle pointer/index
 ```
 
 **Gas Data**: `SN.XXXXX.GAS.[SLAB].dat`
 ```
 GasType structure:
 ├── Position, velocity
-├── cellsize  - Cell size [cMpc/h]
-├── den       - Density [code units]
-├── temp      - Temperature [K/mu]
-├── mass      - Cell mass [Msun/h]
-└── metallicity - Metal fraction
+├── cellsize    - Cell size [cMpc/h]
+├── den         - Density [code units]
+├── temp        - Temperature [K/mu]
+├── metallicity - Metal fraction
+├── chem        - Chemical composition (if NCHEM > 0)
+├── dust        - Dust species mass fractions (if NDUST > 0)
+├── mass        - Cell mass [Msun/h]
+├── potent      - Gravitational potential
+└── fx, fy, fz  - Gravitational force
 ```
 
 ---
@@ -325,11 +332,14 @@ PGalF_Project/
 import numpy as np
 
 # Check NewDD output
+# Adjust NCHEM value to match your compilation flags
+NCHEM = 9
 dm_dtype = np.dtype([('x','f8'),('y','f8'),('z','f8'),
                      ('vx','f8'),('vy','f8'),('vz','f8'),
                      ('mass','f8'),('id','i8'),
-                     ('levelp','i4'),('family','i1'),
-                     ('tp','f8'),('zp','f8'),('chem','f8',9)])
+                     ('levelp','i4'),('family','i1'),('tag','i1'),
+                     ('tp','f8'),('zp','f8'),('chem','f8',NCHEM),
+                     ('mass0','f8'),('birth_d','f8'),('partp','i4')])
 
 dm = np.fromfile('FoF_Data/NewDD.00050/SN.00050.DM.00000.dat',
                  dtype=dm_dtype)

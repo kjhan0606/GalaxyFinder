@@ -20,26 +20,74 @@ RAMSES Output → NewDD → opFoF → NewGalFinder → Galaxy Catalogs
 
 ## Quick Start
 
-### 1. Domain Decomposition
+### 0. Configure Build System
 ```bash
-cd NewDD
-make all
-mpirun -np 8 ./newdd.exe <snapshot> <nsplit>
+# Default configuration (Intel OneAPI compilers, optimized build)
+./configure
+
+# Debug build
+./configure --debug
+
+# Custom compilers and FFTW path
+./configure --cc=mpicc --fc=mpifort --fftw=/path/to/fftw
+
+# See all options
+./configure --help
 ```
 
-### 2. Halo Finding
+### 1. Build All Components
+```bash
+make all          # Build everything
+# Or build individually:
+make galcenter    # Build GalCenter only
+make galfinder    # Build NewGalFinder only
+make newdd        # Build NewDD only
+```
+
+### 2. Domain Decomposition
+```bash
+mpirun -np 8 ./NewDD/newdd.exe <snapshot> <nsplit>
+```
+
+### 3. Halo Finding
 ```bash
 cd opFoF
 make this
 mpirun -np 8 ./opfof.exe <snapshot> <nfiles>
 ```
 
-### 3. Galaxy Finding
+### 4. Galaxy Finding
 ```bash
-cd NewGalFinder
-make all
-mpirun -np 64 ./gfind.exe <snapshot>
+mpirun -np 64 ./NewGalFinder/gfind.exe <snapshot>
 ```
+
+## Build System
+
+The project uses a `configure` script to generate Makefiles for all subdirectories from `Makefile.in` templates.
+
+| File | Description |
+|------|-------------|
+| `configure` | Build configuration script |
+| `Makefile.in` | Top-level Makefile template |
+| `GalCenter/Makefile.in` | GalCenter Makefile template |
+| `NewGalFinder/Makefile.in` | NewGalFinder Makefile template |
+| `NewDD/Makefile.in` | NewDD Makefile template |
+
+### Configure Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--cc=CC` | `mpicc` | C compiler for GalCenter/NewDD |
+| `--fc=FC` | `mpifort` | Fortran compiler for GalCenter/NewDD |
+| `--galfinder-cc=CC` | `mpiicx` | C compiler for NewGalFinder |
+| `--galfinder-fc=FC` | `mpiifx` | Fortran compiler for NewGalFinder |
+| `--fftw=PATH` | `/home/kjhan/local` | FFTW installation path |
+| `--opt=FLAGS` | `-O3` | Optimization flags |
+| `--debug` | - | Use `-g` debug flags |
+| `--openmp=FLAGS` | `-qopenmp` | OpenMP flags |
+| `--no-openmp` | - | Disable OpenMP |
+
+Per-component options (e.g., `--galcenter-nmeg=N`, `--galfinder-nchem=N`, `--newdd-ndust=N`) are also available. Run `./configure --help` for the full list.
 
 ## Shared Files
 

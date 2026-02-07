@@ -126,22 +126,40 @@ Remaining unassigned particles are linked to cores using FoF with linking length
 
 ### Build Instructions
 
-```bash
-# Edit Makefile to set FFTW path
-vim Makefile
-# Set: FFTW = /path/to/fftw3
+Use the top-level `configure` script to generate the Makefile from `Makefile.in`:
 
-# Build the code
-make clean
-make all
+```bash
+# From the GalaxyFinder top-level directory:
+./configure                              # Default settings
+./configure --fftw=/path/to/fftw3        # Custom FFTW path
+./configure --galfinder-nchem=9          # Custom NCHEM
+
+# Build NewGalFinder
+make galfinder
 
 # Verify executable
-ls -la gfind.exe
+ls -la NewGalFinder/gfind.exe
 ```
+
+#### Key configure options for NewGalFinder
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--galfinder-cc=CC` | `mpiicx` | C compiler |
+| `--galfinder-fc=FC` | `mpiifx` | Fortran compiler |
+| `--fftw=PATH` | `/home/kjhan/local` | FFTW installation path |
+| `--galfinder-nmeg=N` | `90000` | Memory pool size (MB) |
+| `--galfinder-nchem=N` | `3` | Number of chemical species |
+| `--galfinder-fftw-libs=L` | `-lfftw3f_omp -lfftw3f` | FFTW link flags |
+| `--opt=FLAGS` | `-O3` | Optimization flags |
+| `--debug` | - | Use `-g` debug flags |
+| `--openmp=FLAGS` | `-qopenmp` | OpenMP flags |
+
+Run `./configure --help` for the full list of options.
 
 ### Compiler Flags
 
-The default compilation uses:
+After running `configure`, the generated Makefile will contain:
 
 ```makefile
 CC = mpiicx

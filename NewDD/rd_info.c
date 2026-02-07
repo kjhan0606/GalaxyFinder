@@ -8,6 +8,7 @@
 
 #include "ramses.h"
 #include "Memory.h"
+#include "newdd.h"
 
 #define MAX(a,b) ( (a)>(b) ? (a): (b) )
 

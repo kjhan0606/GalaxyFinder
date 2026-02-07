@@ -15,21 +15,29 @@ Before starting, ensure you have:
 
 ---
 
-## Step 1: Build
+## Step 1: Configure and Build
 
 ```bash
-cd NewDD
-make clean
-make all
+# From the top-level GalaxyFinder directory:
+./configure
+make newdd
+```
+
+Or with custom options:
+```bash
+./configure --debug --newdd-nmeg=10000
+make newdd
 ```
 
 Expected output:
 ```
-mpicc -c -O3 ... rd_info.c
-mpicc -c -O3 ... rd_amr.c
+==============================================
+ GalaxyFinder Configuration
+==============================================
 ...
-Building newdd.exe...
-Done.
+Generating Makefiles...
+  Generated: .../NewDD/Makefile
+...
 ```
 
 ---
@@ -152,15 +160,15 @@ size = num_particles * sizeof(DmType)
 ## Example: Complete Workflow
 
 ```bash
-# 1. Build
-cd NewDD
-make clean && make all
+# 1. Configure and build (from GalaxyFinder directory)
+./configure
+make newdd
 
 # 2. Check simulation info
 grep -E "ncpu|nlevelmax|boxlen" ../output_00050/info_00050.txt
 
 # 3. Run decomposition
-mpirun -np 16 ./newdd.exe 50 128
+mpirun -np 16 ./NewDD/newdd.exe 50 128
 
 # 4. Verify output
 ls -la FoF_Data/NewDD.00050/ | head -20

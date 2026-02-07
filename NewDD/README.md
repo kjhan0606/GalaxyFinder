@@ -112,7 +112,42 @@ NewDD/
 
 ## Build Instructions
 
-### Basic Build
+### Using configure (Recommended)
+
+The recommended way to build NewDD is through the top-level `configure` script, which generates the Makefile from `Makefile.in`:
+
+```bash
+# From the top-level GalaxyFinder directory:
+./configure                     # Default settings
+./configure --debug             # Debug build
+./configure --newdd-nmeg=30000  # Custom NMEG
+
+# Build NewDD only
+make newdd
+
+# Or build everything
+make all
+```
+
+#### Key configure options for NewDD
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--cc=CC` | `mpicc` | C compiler |
+| `--opt=FLAGS` | `-O3` | Optimization flags |
+| `--debug` | - | Use `-g` debug flags |
+| `--newdd-nmeg=N` | `20000` | Memory pool size (MB) |
+| `--newdd-nchem=N` | `9` | Number of chemical species |
+| `--newdd-ndust=N` | `4` | Number of dust species |
+| `--newdd-wgroupsize=N` | `5` | I/O sync group size |
+| `--nener=N` | `0` | Number of radiation energy groups |
+| `--npre=N` | `8` | Precision indicator |
+
+Run `./configure --help` for the full list of options.
+
+### Direct Build (Alternative)
+
+You can also build directly within the NewDD directory if the Makefile already exists:
 
 ```bash
 cd NewDD
@@ -128,15 +163,6 @@ make all
 | `make all` | Build library + newdd.exe executable |
 | `make newdd` | Rebuild newdd.exe only |
 | `make clean` | Remove all objects, archives, and executables |
-
-### Compiler Configuration
-
-The default compiler is `mpicc`. To change the compiler, modify the `CC` variable in the Makefile:
-
-```makefile
-CC = mpicc        # MPI support (default)
-# CC = gcc        # Build without MPI
-```
 
 ---
 
@@ -227,6 +253,16 @@ All binary files use Fortran unformatted sequential I/O format:
 - Each record is preceded and followed by 4-byte size information
 - Read using the `F77read()` macro
 
+### Diagnostic Macros (ramses.h)
+
+| Macro | Output | Condition | Description |
+|-------|--------|-----------|-------------|
+| `DEBUGPRINT(fmt, ...)` | stderr | `DEBUG` is true | Debug messages with file/line info |
+| `LOGPRINT(fmt, ...)` | stdout | `LOG` is true | Log messages with file/line info |
+| `ERRORPRINT(fmt, ...)` | stderr | Always | Error messages with file/line info |
+| `ERRORPRINT0(fmt)` | stderr | Always | Error messages (no format args) |
+| `YES` / `NO` | - | - | Boolean constants (1/0) |
+
 ---
 
 ## Output File Formats
@@ -290,6 +326,10 @@ typedef struct RamsesType {
     dptype kmscale_v;       // km/s conversion
     dptype mpcscale_l;      // cMpc/h conversion
 
+    // Hydro variable indices
+    int nvar, nboundary, ncoarse, nener;
+    int imetal, ichem, idust, iion, nelt, inener;
+
     // Data arrays
     PmType *particle;       // DM + stars
     GasType *gas;           // Gas cells
@@ -311,11 +351,19 @@ typedef struct PmType {
     dptype mass;            // Mass [Msun/h]
     idtype id;              // Unique ID
     int levelp;             // AMR level
-    familytype family;      // Type: 1=DM, 2=star
+    familytype family, tag; // Type: 1=DM, 2=star; tag
+#ifdef OUTPUT_PARTICLE_POTENTIAL
+    dptype potent;          // Gravitational potential
+#endif
+#ifndef NBODY
     dptype tp;              // Birth time (stars)
     dptype zp;              // Metallicity (stars)
 #ifdef NCHEM
     dptype chem[NCHEM];     // Chemical abundances
+#endif
+    dptype mass0;           // Initial mass [Msun/h]
+    dptype birth_d;         // Dust birth parameter
+    int partp;              // Particle pointer/index
 #endif
 } PmType;
 
@@ -335,6 +383,9 @@ typedef struct GasType {
     float metallicity;      // Metallicity fraction
 #ifdef NCHEM
     float chem[NCHEM];      // Chemical composition
+#endif
+#ifdef NDUST
+    float dust[NDUST];      // Dust species mass fractions
 #endif
     float mass;             // Cell mass [Msun/h]
     dptype potent;          // Gravitational potential
@@ -461,6 +512,8 @@ For each AMR level:
 
 ### Makefile Flags
 
+These flags are automatically set by `./configure`. To change them, use the corresponding configure options (e.g., `--newdd-nmeg=30000`):
+
 ```makefile
 OPT = -O3 -DNENER=0 -DNPRE=8 -DNMEG=20000 -DWGROUPSIZE=5 \
       -DUSE_MPI -DQUADHILBERT -DREAD_SINK -DNCHEM=9 -DNDUST=4
@@ -483,14 +536,17 @@ OPT = -O3 -DNENER=0 -DNPRE=8 -DNMEG=20000 -DWGROUPSIZE=5 \
 
 ### Custom Builds
 
-Modify the `OPT` variable in the Makefile for specific simulation configurations:
+Use configure options for specific simulation configurations:
 
-```makefile
-# Example: Simulation without chemical species
-OPT = -O3 -DNENER=0 -DNPRE=8 -DNMEG=10000 -DUSE_MPI -DQUADHILBERT
+```bash
+# Simulation without chemical species
+./configure --newdd-nchem=0 --newdd-ndust=0
 
-# Example: Single processor without MPI
-OPT = -O3 -DNENER=0 -DNPRE=8 -DNMEG=20000 -DQUADHILBERT -DREAD_SINK
+# Smaller memory pool
+./configure --newdd-nmeg=10000
+
+# Custom WGROUPSIZE for I/O tuning
+./configure --newdd-wgroupsize=10
 ```
 
 ---
@@ -502,7 +558,7 @@ OPT = -O3 -DNENER=0 -DNPRE=8 -DNMEG=20000 -DQUADHILBERT -DREAD_SINK
 | File | Lines | Description |
 |------|-------|-------------|
 | `newdd.c` | ~280 | Main program. MPI initialization, workflow coordination |
-| `ramses.h` | ~310 | Core data structures and macro definitions |
+| `ramses.h` | ~330 | Core data structures and macro definitions |
 | `Memory.h` | ~60 | Memory manager interface |
 
 ### Data Reading Modules
@@ -626,16 +682,22 @@ int main() {
 import numpy as np
 
 # Define data type (must match ramses.h)
+# Adjust NCHEM, NDUST values to match your compilation flags
+NCHEM = 9
 dm_dtype = np.dtype([
     ('x', 'f8'), ('y', 'f8'), ('z', 'f8'),
     ('vx', 'f8'), ('vy', 'f8'), ('vz', 'f8'),
     ('mass', 'f8'),
     ('id', 'i8'),
     ('levelp', 'i4'),
-    ('family', 'i1'),
+    ('family', 'i1'), ('tag', 'i1'),
+    # Fields below are present when compiled without -DNBODY
     ('tp', 'f8'), ('zp', 'f8'),
     # If NCHEM=9
-    ('chem', 'f8', 9)
+    ('chem', 'f8', NCHEM),
+    ('mass0', 'f8'),
+    ('birth_d', 'f8'),
+    ('partp', 'i4'),
 ])
 
 # Read binary file

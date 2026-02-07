@@ -6,8 +6,8 @@
 #--------------------------------------------------
 # Compiler settings (configured by ../configure)
 #--------------------------------------------------
-CC = mpiicx
-OPT = -g -DNENER=0 -DNPRE=8 -DNMEG=20000 -DWGROUPSIZE=5  -DUSE_MPI -DQUADHILBERT -DREAD_SINK -DNCHEM=9 -DNDUST=4 -DDEBUG=1 -DLOG=1
+CC = @CC@
+OPT = @OPT@ -DNENER=@NENER@ -DNPRE=@NPRE@ -DNMEG=@NEWDD_NMEG@ -DWGROUPSIZE=@NEWDD_WGROUPSIZE@  -DUSE_MPI -DQUADHILBERT -DREAD_SINK -DNCHEM=@NEWDD_NCHEM@ -DNDUST=@NEWDD_NDUST@ -DDEBUG=1 -DLOG=1
 
 RANLIB = ranlib
 
@@ -45,7 +45,7 @@ $(LIBS): $(TIMEROBJ)
 	ar -rcv $@ $?
 	ranlib $@
 
-OSTLIB = -L. -lmyram  -L/home/kjhan/local/lib -lm
+OSTLIB = -L. -lmyram  -L@FFTW_PATH@/lib -lm
 
 %.c:
 	$(CC) $(CFLAGS) -c $*.c
