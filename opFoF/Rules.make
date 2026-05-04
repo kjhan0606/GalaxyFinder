@@ -15,9 +15,9 @@ RANLIB = ranlib
 ####      KIAS PG Compiler                          #####
 #########################################################
 AR = ar rcv
-FC = mpiifc
-CC = mpiicc
-F90C = mpiifort
+FC = mpiifx
+CC = mpiicx
+F90C = mpiifx
 #OPT = -DPGCC -mcmodel=medium -tp nehalem-64 -fast -mp -fastsse
 OPT = -DINTEL -g
 
@@ -32,7 +32,7 @@ COMFLAGS = -DINDEX -DVarPM   -DXYZDBL
 FDFLAGS =  -DINCLUDE_TREE_FORCE  
 
 CDFLAGS = -DWGROUPSIZE=8 -DNMEG=17000L -DINCLUDE_TREE_FORCE \
-        -D_LARGE_FILES -DSAVESLICE  -DPMSEEDFORCE -DQUADHILBERT -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 -DNDUST=4
+        -D_LARGE_FILES -DSAVESLICE  -DPMSEEDFORCE -DNENER=0 -DNPRE=8
 
 RAMLIBS = -L../ -lmyram
 

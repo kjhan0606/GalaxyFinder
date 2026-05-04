@@ -153,16 +153,15 @@ int main(int argc, char **argv){
 		SplitDump(&ram, ram.gas, ram.ngas,GAS, istep, icpu,sinmul, nsplit);
 
 		printf("P%d stage 5 done \n",myid);
-#ifdef READ_SINK
-
 		if(icpu==1){
-			sprintf(infile,"./output_%.5d/sink_%.5d.out00001", istep, istep);
-			rd_sink(&ram, infile);
-			qsort(ram.sink, ram.nsink, sizeof(SinkType), sinksortx);
-			SplitDump(&ram, ram.sink, ram.nsink, SINK, istep, icpu,0, nsplit);
-			Free(ram.sink);
+			sprintf(infile,"./output_%.5d/sink_%.5d.csv", istep, istep);
+			rd_sink_csv(&ram, infile);
+			if(ram.nsink > 0){
+				qsort(ram.sink, ram.nsink, sizeof(SinkType), sinksortx);
+				SplitDump(&ram, ram.sink, ram.nsink, SINK, istep, icpu,0, nsplit);
+				Free(ram.sink);
+			}
 		}
-#endif
 
 		printf("P%d stage 5-1 done \n",myid);
 #endif

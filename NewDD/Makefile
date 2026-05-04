@@ -7,7 +7,7 @@
 # Compiler settings (configured by ../configure)
 #--------------------------------------------------
 CC = mpiicx
-OPT = -g -DNENER=0 -DNPRE=8 -DNMEG=20000 -DWGROUPSIZE=5  -DUSE_MPI -DQUADHILBERT -DREAD_SINK -DNCHEM=9 -DNDUST=4 -DDEBUG=1 -DLOG=1
+OPT = -g -DNENER=0 -DNPRE=8 -DNMEG=20000 -DWGROUPSIZE=5  -DUSE_MPI -DDEBUG=1 -DLOG=1
 
 RANLIB = ranlib
 
@@ -16,7 +16,7 @@ CCLAGS = $(OPT)
 
 LIBS       = libmyram.a
 
-TIMEROBJ       = rd_amr.o  rd_info.o  rd_part.o header.o utils.o Memory2.o find_leaf_gas.o rd_hydro.o rd_sink.o
+TIMEROBJ       = rd_amr.o  rd_info.o  rd_part.o header.o utils.o Memory2.o find_leaf_gas.o rd_hydro.o rd_sink.o rd_sink_csv.o
 
 NEWDD	= newdd.exe
 NEWDDOBJ	= newdd.o

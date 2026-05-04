@@ -22,7 +22,7 @@ int rd_part(RamsesType *ram, char *infile){
 	F77read(&(ram->ndim), sizeof(int), 1, fp);
 	F77read(&(ram->npart), sizeof(int), 1, fp);
 	npartp = ram->npart;
-	F77read(&(ram->localseed), sizeof(dptype), IRandNumSize, fp);
+	F77read(&(ram->localseed), sizeof(int), IRandNumSize, fp);
 	/*
 	F77read(&(ram->nstar_tot), sizeof(long), 1, fp);
 	*/
@@ -61,16 +61,10 @@ int rd_part(RamsesType *ram, char *infile){
 #endif
 
 #ifndef NBODY
+	/* RAMSES output: birth_time (tp) and metallicity (zp) only when star.or.sink and metal.
+	 * This build dumps both unconditionally; mass0/chem/birth_d/partp are NOT written. */
 	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,tp);
 	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,zp);
-	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,mass0);
-#ifdef NCHEM
-	for(i=0;i<nchem;i++){
-		GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,chem[i]);
-	}
-#endif
-	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,birth_d);
-	GetPart(ibuff,sizeof(int), npartp, fp, ram,particle,partp);
 #endif
 	fclose(fp);
 	Free(ibuff);
@@ -91,7 +85,8 @@ int rd_part(RamsesType *ram, char *infile){
 			part[ipartp].vy = part[i].vy * ram->kmscale_v;
 			part[ipartp].vz = part[i].vz * ram->kmscale_v;
 #ifndef NBODY
-			part[ipartp].mass0 = part[i].mass0* ram->scale_m;
+			/* mass0 is not written by this RAMSES build; fall back to current mass. */
+			part[ipartp].mass0 = part[ipartp].mass;
 			if(part[ipartp].family == 2) nstar ++;
 #endif
 			ipartp ++;
