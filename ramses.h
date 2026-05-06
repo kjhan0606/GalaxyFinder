@@ -80,8 +80,8 @@ typedef struct PmType{
 	dptype chem[NCHEM]; /*number of chemical elements*/
 #endif
 	dptype mass0; /* in unit of Msun/h */
-	dptype birth_d;
-	int partp;
+	/* dptype birth_d; */    /* disabled: input file uses old PmType (120 B) */
+	/* int partp; */          /* disabled: input file uses old PmType (120 B) */
 #ifdef FBK
 	dptype fbk;
 #endif

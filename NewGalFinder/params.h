@@ -16,7 +16,7 @@
 //*******************
 // lowest stellar-density peak
 // in unit of h^2 Msun/ckpc^3
-#define PEAKTHRESHOLD 2000.L
+#define PEAKTHRESHOLD 50.L
 //*******************
 
 //--------------------------------
@@ -26,7 +26,7 @@
 //*******************
 // the minimum number of star/dm 
 // particles to identify a core 
-#define MINCORENMEM 30 
+#define MINCORENMEM 20
 //*******************
 
 //*******************
@@ -34,19 +34,19 @@
 // the neighbor network 
 // the bigger the better
 // it should be no larger than MAX_NUM_NEAR in tree.h
-#define NUMNEIGHBOR 32 
+#define NUMNEIGHBOR 15
 //*******************
 
 //*******************
 // the number of iso-den division of non-core 
 // particles 
-#define NSHELLDIVIDE 10 
+#define NSHELLDIVIDE 5
 //*******************
 
 //*******************
 // the separation limit of peaks 
 // to merge in cMpc/h 
-#define MERGINGPEAKLENGTH 4.e-3  
+#define MERGINGPEAKLENGTH 3.e-3
 //*******************
 
 //*******************
@@ -57,7 +57,7 @@
 //*******************
 // the minimun stellar mass of the FoF halo 
 // for galaxy finding with stellar density 
-#define MINSTELLARMASS 2.e6  
+#define MINSTELLARMASS 1.e5
 //*******************
 //--------------------------------
 
@@ -89,7 +89,7 @@
 //*******************
 // The cellsize for TSC of the stellar density 
 // in unit of cMpc/h
-#define TSC_CELL_SIZE 0.004
+#define TSC_CELL_SIZE 0.003
 //*******************
 
 //*******************
@@ -101,7 +101,7 @@
 // lower the stellar density 
 // and PEAKTHRESHOLD should be 
 // lowered accordingly.
-#define Gaussian_Smoothing_Length 0.008
+#define Gaussian_Smoothing_Length 0.006
 //*******************
 //
 //*******************
@@ -133,7 +133,7 @@
 //
 //
 //
-// the linking length to finalize the membership
+// the linking length to finalize the membership (obsolete)
 #define FOFLINK4MEMBERSHIP 0.005
 //*******************
 //
