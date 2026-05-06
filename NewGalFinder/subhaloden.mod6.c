@@ -2939,13 +2939,9 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 	{
 		int    nstar_gate  = findstarnum(bp,np);
 		float  mstar_gate  = findstarmass(bp,np);
-#ifdef DARK_GAL
 		float  mdm_gate    = findDMmass(bp,np);
 		int    do_grid     = ((nstar_gate > NUMNEIGHBOR) && (mstar_gate >= MINSTELLARMASS))
 		                     || (mdm_gate >= (float)MINDMMASS);
-#else
-		int    do_grid     = (nstar_gate > NUMNEIGHBOR) && (mstar_gate >= MINSTELLARMASS);
-#endif
 		if(!do_grid){
 			neighbor = (long long*)Malloc(sizeof(long long)*np*NumNeighbor,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
@@ -2959,17 +2955,13 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
 			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
 #ifdef ADV
-#ifdef DARK_GAL
+			/* Unified star+DM density. DM_DENSITY_WEIGHT == 0 short-circuits
+			 * the DM grid in lagFindCoreParam, making this byte-equivalent
+			 * to the old stellar-only call. */
 			void lagFindTotalCore(SimpleBasicParticleType *, int, int, float *,
 					Coretype **, int *, int, long long *);
 			lagFindTotalCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
 					neighbor);
-#else
-			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *,
-					Coretype **, int *, int, long long *, int);
-			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
-					neighbor, TYPE_STAR);
-#endif
 #else
 			neighbor = (long long*)Malloc(sizeof(long long)*np*(long)NumNeighbor,PPTR(neighbor));
 			void starfindsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
@@ -3055,12 +3047,13 @@ renumcore :
 		}
 		DEBUGPRINT("total number of cores changes to %d\n",numcore);fflush(stdout);
 
-#ifdef DARK_GAL
 		/* Post-hoc dark-galaxy classification on the unified-density cores.
 		 * lagFindTotalCore peaks at rho_star + DM_DENSITY_WEIGHT*rho_DM, so a
 		 * single core list contains both luminous and pure-DM peaks. A core
 		 * is flagged dark if its stellar content is below the FoF-gate scale
-		 * (too few stars or too little stellar mass to be a galaxy). */
+		 * (too few stars or too little stellar mass to be a galaxy). When
+		 * DM_DENSITY_WEIGHT==0 no pure-DM peak rises above PEAKTHRESHOLD,
+		 * so this loop simply marks nothing. */
 		{
 			int n_dark = 0;
 			for(i=0;i<numcore;i++){
@@ -3070,9 +3063,9 @@ renumcore :
 					n_dark++;
 				}
 			}
-			DEBUGPRINT("DARK_GAL: %d/%d cores classified as dark\n", n_dark, numcore);
+			DEBUGPRINT("dark-galaxy classification: %d/%d cores marked dark\n",
+					n_dark, numcore);
 		}
-#endif
 
 		minshellden = 1.e27;
 		maxshellden = -1.e27;

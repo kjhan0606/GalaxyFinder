@@ -149,7 +149,9 @@
 
 //*******************
 // Dark-galaxy (DM-only subhalo) finding parameters.
-// Enable by adding -DDARK_GAL to OPT in the Makefile.
+// Always built in; set DM_DENSITY_WEIGHT = 0 to disable (the DM TSC
+// + Gaussian-smoothing path is then short-circuited and the run is
+// byte-equivalent to the stellar-only finder).
 //*******************
 
 // the threshold for DM-density peaks

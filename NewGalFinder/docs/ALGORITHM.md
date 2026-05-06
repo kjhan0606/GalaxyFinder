@@ -551,9 +551,12 @@ for (i = 0; i < np; i++) {
 
 ---
 
-## 8. Dark-Galaxy Detection (Optional)
+## 8. Dark-Galaxy Detection
 
-Enabled by compiling with `-DDARK_GAL`. The goal is to identify *dark
+Built into the standard pipeline; controlled at runtime by
+`DM_DENSITY_WEIGHT` in `params.h` (set to `0` to disable — the DM grid,
+DM smoothing, and combine loop are then short-circuited and the run is
+byte-equivalent to the stellar-only finder). The goal is to identify *dark
 galaxies* — gravitationally bound DM-only subhalos that host no resolved
 stellar component — using exactly the same watershed pipeline that finds
 luminous galaxies, with no separate dual-pass code path.
@@ -610,7 +613,8 @@ Note:
 ### 8.3 FoF-Halo Gate
 
 `subhalo_den()` first decides whether to use the grid path or fall back to
-SPH-density peak finding. Under DARK_GAL the gate is OR-combined:
+SPH-density peak finding. The gate is OR-combined so DM-rich halos with
+little or no stellar mass still enter the grid path:
 
 ```c
 int do_grid =
@@ -637,7 +641,7 @@ After `FindCoreDensity` populates `core[i].numstar` and `core[i].starmass`
 the watershed ran on combined density), each core is flagged:
 
 ```c
-// subhaloden.mod6.c :: subhalo_den(), under #ifdef DARK_GAL
+// subhaloden.mod6.c :: subhalo_den(), post-hoc on the unified-density cores
 for (i = 0; i < numcore; i++) {
     if (core[i].numstar  < MINCORENMEM
      || core[i].starmass < MINSTELLARMASS) {
@@ -666,7 +670,7 @@ invokes it.
 | `params.h` | `DM_DENSITY_WEIGHT`, `DM_GAUSSIAN_SMOOTHING_LENGTH`, `DM_TSC_CELL_SIZE`, `MINDMMASS` (and legacy `DM_PEAKTHRESHOLD`, `DM_MERGINGPEAKLENGTH`, `DM_MINCORENMEM`, `STAR_DM_DEDUP_LENGTH`). |
 | `tree.h` | `enum { ..., TYPE_STAR_DM = 6 }`; `Coretype.is_dark`. |
 | `nnost.c` | `lagFindCoreParam` parameterizes thresholds and dispatches the unified path on `TYPE_STAR_DM`; new wrapper `lagFindTotalCore`; `lagFindDarkCore` retained for stand-alone use. |
-| `subhaloden.mod6.c` | OR-combined FoF gate; `lagFindStellarCore` → `lagFindTotalCore` under DARK_GAL; post-hoc `is_dark` classification; `MergingPeak` accepts a per-call FoF-link length. |
+| `subhaloden.mod6.c` | OR-combined FoF gate; `lagFindStellarCore` replaced by `lagFindTotalCore` (the `w_DM = 0` short-circuit recovers stellar-only behavior); post-hoc `is_dark` classification; `MergingPeak` accepts a per-call FoF-link length. |
 
 ### 8.8 Tuning Notes
 

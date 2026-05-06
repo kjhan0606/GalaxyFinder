@@ -46,8 +46,9 @@ PGalF processes FoF halo catalogs and identifies substructures (galaxies/subhalo
 - Handles periodic boundary conditions
 - Stack-based memory management for billion-particle simulations
 - Supports RAMSES simulation format (adaptable to GADGET)
-- Optional **dark-galaxy detection** (DM-only subhalo finding) via a unified
-  weighted star+DM density field (`-DDARK_GAL`)
+- Built-in **dark-galaxy detection** (DM-only subhalo finding) via a unified
+  weighted star+DM density field; controlled at runtime by `DM_DENSITY_WEIGHT`
+  (set to 0 to disable)
 
 ---
 
@@ -115,10 +116,9 @@ Where:
 
 Remaining unassigned particles are linked to cores using FoF with linking length `FOFLINK4MEMBERSHIP` (0.005 cMpc/h).
 
-### Optional: Dark-Galaxy Detection (`-DDARK_GAL`)
+### Dark-Galaxy Detection
 
-When compiled with `-DDARK_GAL`, the peak-finding density field is built from
-both stars and DM:
+The peak-finding density field is built from both stars and DM:
 
 ```
 ρ_total(x) = ρ_star(x) + DM_DENSITY_WEIGHT × ρ_DM(x)
@@ -351,7 +351,7 @@ All physical parameters are in `params.h`:
 | `MAXNUMCORE` | 1,000,000 | Maximum cores per halo |
 | `MAXNUMWATERSHEDDING` | 100,000,000 | Maximum water-shed iterations |
 
-### Dark-Galaxy Detection (`-DDARK_GAL` only)
+### Dark-Galaxy Detection
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
