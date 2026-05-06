@@ -146,3 +146,46 @@
 //
 // the maximum number of threads
 #define MAXTHREADS 64
+
+//*******************
+// Dark-galaxy (DM-only subhalo) finding parameters.
+// Enable by adding -DDARK_GAL to OPT in the Makefile.
+//*******************
+
+// the threshold for DM-density peaks
+// in unit of h^2 Msun/ckpc^3.
+// DM density per cell is typically much higher than stellar
+// in absolute units, so set this larger than PEAKTHRESHOLD.
+#define DM_PEAKTHRESHOLD 1.e3
+
+// Gaussian smoothing length for the DM density field, cMpc/h.
+// DM is dynamically hotter than stars, so smooth more aggressively.
+#define DM_GAUSSIAN_SMOOTHING_LENGTH 0.012
+
+// TSC cell size for the DM density field, cMpc/h.
+// Default to the same grid as stars; set larger if memory is tight.
+#define DM_TSC_CELL_SIZE TSC_CELL_SIZE
+
+// merging length for DM-only peaks among themselves, cMpc/h.
+#define DM_MERGINGPEAKLENGTH 5.e-3
+
+// minimum number of DM particles required to keep a dark core
+#define DM_MINCORENMEM 50
+
+// dedup distance: a DM peak within this radius (cMpc/h) of any
+// stellar peak is considered the DM core of an already-found
+// luminous galaxy and is dropped.
+#define STAR_DM_DEDUP_LENGTH 5.e-3
+
+// minimum DM mass within a FoF halo to attempt dark-galaxy finding.
+// Roughly 10x MINSTELLARMASS (since halos with so little DM are
+// unlikely to host DM-only subhalos worth resolving).
+#define MINDMMASS (10.*MINSTELLARMASS)
+
+// weight of DM density when building the unified star+DM density field.
+// Stars get weight 1; DM is downweighted because DM is much more numerous
+// and dynamically hotter, so without downweighting every halo center would
+// look like a peak. 0.1 keeps stellar peaks dominant while still letting
+// pure-DM subhalos rise above PEAKTHRESHOLD.
+#define DM_DENSITY_WEIGHT 0.1f
+//*******************

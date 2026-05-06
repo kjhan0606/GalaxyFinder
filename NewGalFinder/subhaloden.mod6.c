@@ -33,7 +33,7 @@ static	int maxnumcore = MAXNUMCORE;
 #define UNBOUND 0 
 #define MAX_TIDAL_R 2.e5
 extern int myid,nid;
-/* ????Àº ???????? ??À» ??Á¤?Ñ´?. */
+/* ????ï¿½ï¿½ ???????? ??ï¿½ï¿½ ??ï¿½ï¿½?Ñ´?. */
 extern double onesolarmass;
 extern double com2real,real2com,potentfact;
 extern double pntmass;
@@ -338,9 +338,9 @@ int sortcorenumstar(const void *a, const void *b){
 	else return 0;
 }
 
-int  MergingPeak(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore, int iflag){
+int  MergingPeak(SimpleBasicParticleType *bp,int np,Coretype *core,int numcore, int iflag, float fof_link){
 	int i,j,k;
-	float fof_link = MERGINGPEAKLENGTH;
+	if(fof_link <= 0.f) fof_link = (float)MERGINGPEAKLENGTH;
 	FoFTPtlStruct *ptl = (FoFTPtlStruct *) Malloc(sizeof(FoFTPtlStruct)*numcore,PPTR(ptl));
 	particle *linked = (particle *)Malloc(sizeof(particle)*numcore,PPTR(linked));
 	size_t nnode = MAX(65*10000,numcore);
@@ -1233,6 +1233,7 @@ recycling:
 			float denthr;
 			int mcontact;
 			int ncontact=0, now;
+			float _coreres = COREDENRESOLUTION;
 			do{
 				// initialization before a search for the core density 
  				for(j=0;j<ncontact;j++) {
@@ -1266,7 +1267,15 @@ recycling:
 				}
 				if(breakflag==0) upden = denthr;
 				else if(breakflag==1) downden = denthr;
-			}while(fabs((upden-downden)/denthr)>COREDENRESOLUTION);
+				/* Adaptive resolution: when denthr is within 1% of peak density
+				 * (peak tightly squeezed by neighbors), tighten the relative tolerance
+				 * 100x (1e-3 -> 1e-5) to better resolve the watershed boundary. */
+				{
+					float _peakden = wp[core[i].peak].den;
+					_coreres = (_peakden > 0 && denthr / _peakden > 0.99)
+						? COREDENRESOLUTION * 0.01 : COREDENRESOLUTION;
+				}
+			}while(fabs((upden-downden)/denthr) > _coreres);
 			core[i].coredensity = (denthr = upden);
 			/* Now scoop up core particles */
 			for(j=0;j<ncontact;j++) {
@@ -1470,6 +1479,42 @@ recycling:
 //		goto recycling; // go and restart again .
 	}
 
+	/* Re-cull cores whose refined ncontact (overwritten core[i].nummem above)
+	 * fell below MINCORENMEM. Without this, breakflag=1 cases (peak squeezed
+	 * by neighbor in bisected watershed) leave cores with nummem=0..few in
+	 * the array, wasting shell-loop work and breaking MINCORENMEM invariant. */
+	{
+		int *_remap = (int *)Malloc(sizeof(int)*numcore, PPTR(_remap));
+		int _newnum = 0;
+		for(i=0;i<numcore;i++) {
+			if(core[i].nummem >= MINCORENMEM) {
+				_remap[i] = _newnum;
+				if(_newnum != i) core[_newnum] = core[i];
+				_newnum++;
+			} else {
+				_remap[i] = -1;
+				UNSET_PEAK(core[i].peak);
+			}
+		}
+		if(_newnum < numcore) {
+			for(j=0;j<np;j++) {
+				if(wp[j].haloid >= 0) {
+					int _newid = _remap[wp[j].haloid];
+					if(_newid < 0) {
+						SET_MEMBER_ID(j, NOT_HALO_MEMBER);
+						UNSET_CORE(j);
+						UNSET_BOUND(j);
+					} else if(_newid != wp[j].haloid) {
+						SET_MEMBER_ID(j, _newid);
+					}
+				}
+			}
+			DEBUGPRINT("FindCoreDensity re-cull: %d -> %d cores (MINCORENMEM=%d)\n",
+					numcore, _newnum, MINCORENMEM);
+			numcore = _newnum;
+		}
+		Free(_remap);
+	}
 
 	return numcore;
 }
@@ -2855,6 +2900,15 @@ int findstarnum(SimpleBasicParticleType *bp, int np){
     return starmass;
 
 }
+float findDMmass(SimpleBasicParticleType *bp, int np){
+    float dmmass=0;
+    int i;
+    for(i=0;i<np;i++){
+        if(bp[i].type == TYPE_DM)
+            dmmass += bp[i].mass;
+    }
+    return dmmass;
+}
 
 
 
@@ -2883,17 +2937,16 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 		mklocalize(bp,np,&xinit,&yinit, &zinit,&xmax,&ymax,&zmax);
 	}
 	{
-		if(findstarnum(bp,np)<= NUMNEIGHBOR || findstarmass(bp,np)<MINSTELLARMASS){
-			/*
-			neighbor = (int*)Malloc(sizeof(int)*np*NumNeighbor,PPTR(neighbor));
-			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
-			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
-
-			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *, 
-					Coretype **, int *, int, int **, int);
-			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
-					&neighbor, TYPE_ALL);
-					*/
+		int    nstar_gate  = findstarnum(bp,np);
+		float  mstar_gate  = findstarmass(bp,np);
+#ifdef DARK_GAL
+		float  mdm_gate    = findDMmass(bp,np);
+		int    do_grid     = ((nstar_gate > NUMNEIGHBOR) && (mstar_gate >= MINSTELLARMASS))
+		                     || (mdm_gate >= (float)MINDMMASS);
+#else
+		int    do_grid     = (nstar_gate > NUMNEIGHBOR) && (mstar_gate >= MINSTELLARMASS);
+#endif
+		if(!do_grid){
 			neighbor = (long long*)Malloc(sizeof(long long)*np*NumNeighbor,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
 			void findsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
@@ -2906,10 +2959,17 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 			density = (float*)Malloc(sizeof(float)*np,PPTR(density));
 			core = (Coretype*)Malloc(sizeof(Coretype)*maxnumcore,PPTR(core));
 #ifdef ADV
-			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *, 
+#ifdef DARK_GAL
+			void lagFindTotalCore(SimpleBasicParticleType *, int, int, float *,
+					Coretype **, int *, int, long long *);
+			lagFindTotalCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
+					neighbor);
+#else
+			void lagFindStellarCore(SimpleBasicParticleType *, int, int, float *,
 					Coretype **, int *, int, long long *, int);
 			lagFindStellarCore(bp,np,NumNeighbor,density, &core, &numcore, maxnumcore,
 					neighbor, TYPE_STAR);
+#endif
 #else
 			neighbor = (long long*)Malloc(sizeof(long long)*np*(long)NumNeighbor,PPTR(neighbor));
 			void starfindsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
@@ -2923,6 +2983,7 @@ int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 		DEBUGPRINT("%d numcore detected\n",numcore);
 		for(i=0;i<numcore;i++){
 			DEBUGPRINT("C%d has ipeak= %d\n", i, core[i].peak);
+			core[i].is_dark = 0; /* default; dark cores get this set explicitly later */
 		}
 		wp = (WorkingParticle *)Malloc(sizeof(WorkingParticle)*np,PPTR(wp));
 	}
@@ -2994,9 +3055,28 @@ renumcore :
 		}
 		DEBUGPRINT("total number of cores changes to %d\n",numcore);fflush(stdout);
 
+#ifdef DARK_GAL
+		/* Post-hoc dark-galaxy classification on the unified-density cores.
+		 * lagFindTotalCore peaks at rho_star + DM_DENSITY_WEIGHT*rho_DM, so a
+		 * single core list contains both luminous and pure-DM peaks. A core
+		 * is flagged dark if its stellar content is below the FoF-gate scale
+		 * (too few stars or too little stellar mass to be a galaxy). */
+		{
+			int n_dark = 0;
+			for(i=0;i<numcore;i++){
+				if(core[i].numstar < MINCORENMEM
+						|| core[i].starmass < (float)MINSTELLARMASS){
+					core[i].is_dark = 1;
+					n_dark++;
+				}
+			}
+			DEBUGPRINT("DARK_GAL: %d/%d cores classified as dark\n", n_dark, numcore);
+		}
+#endif
+
 		minshellden = 1.e27;
 		maxshellden = -1.e27;
-		for(i=0;i<numcore;i++){ /* set the maximum value with the maximum core density */
+		for(i=0;i<numcore;i++){ /* include dark cores in shell binning */
 			maxshellden = MAX(maxshellden,core[i].coredensity);
 		}
 		for(i=0;i<np;i++){ /* set the minium value with the minimum particle density */

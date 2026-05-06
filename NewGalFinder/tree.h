@@ -44,8 +44,8 @@ typedef struct FoFPosition {
 
 
 
-enum {TYPE_TREE = 0,TYPE_PTL = 1, TYPE_STAR = 1, TYPE_DM=2, TYPE_GAS=3, 
-	TYPE_SINK=4, TYPE_AGN=4, TYPE_ALL=5};
+enum {TYPE_TREE = 0,TYPE_PTL = 1, TYPE_STAR = 1, TYPE_DM=2, TYPE_GAS=3,
+	TYPE_SINK=4, TYPE_AGN=4, TYPE_ALL=5, TYPE_STAR_DM=6};
 
 
 typedef struct Box{
@@ -210,6 +210,7 @@ typedef struct Coretype{
     float cvx,cvy,cvz;
     float Rtidal,density;
     unsigned char flag;
+    unsigned char is_dark; /* 1 if this core is a DM-only (dark) galaxy peak */
 }Coretype;
 
 
