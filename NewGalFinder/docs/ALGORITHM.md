@@ -11,6 +11,7 @@ This document provides in-depth technical details of the galaxy finding algorith
 5. [Tidal Radius Calculation](#5-tidal-radius-calculation)
 6. [Final Membership Assignment](#6-final-membership-assignment)
 7. [Periodic Boundary Handling](#7-periodic-boundary-handling)
+8. [Dark-Galaxy Detection (Optional)](#8-dark-galaxy-detection-optional)
 
 ---
 
@@ -547,6 +548,137 @@ for (i = 0; i < np; i++) {
     // Similar for y, z
 }
 ```
+
+---
+
+## 8. Dark-Galaxy Detection (Optional)
+
+Enabled by compiling with `-DDARK_GAL`. The goal is to identify *dark
+galaxies* — gravitationally bound DM-only subhalos that host no resolved
+stellar component — using exactly the same watershed pipeline that finds
+luminous galaxies, with no separate dual-pass code path.
+
+### 8.1 Motivation
+
+A pure DM-only second pass (build a DM density grid, find DM peaks, dedup
+against stellar peaks, append) was implemented and rejected because the
+shared watershed shell loop bins by *stellar* density: a dark core sitting at
+a DM peak has near-zero stellar density there, so the shell test
+`wp[i].den > dthreshold` fails and the dark core grows zero members. Forcing
+dark cores into the last shell created an asymmetric pipeline that was
+fragile to tune and that broke the equality assumption between core types.
+
+The unified weighted-density formulation below removes this asymmetry: a
+single density field, a single peak set, a single watershed, and a single
+shell loop. Dark vs. luminous classification happens *post-hoc* on the
+already-formed cores.
+
+### 8.2 Unified Density Field
+
+```
+ρ_total(x) = ρ_star(x) + w_DM × ρ_DM(x)        (DM_DENSITY_WEIGHT = w_DM)
+```
+
+Each component is built independently:
+
+```c
+// nnost.c :: lagFindCoreParam, ptype == TYPE_STAR_DM
+assign_density_TSC(bp, np, denGrid,    nx,ny,nz, ..., TYPE_STAR);
+gaussian_Smoothing(denGrid,    nx,ny,nz, cellsize, Gaussian_Smoothing_Length);
+
+if (DM_DENSITY_WEIGHT != 0) {
+    assign_density_TSC(bp, np, denGrid_dm, nx,ny,nz, ..., TYPE_DM);
+    gaussian_Smoothing(denGrid_dm, nx,ny,nz, cellsize, DM_GAUSSIAN_SMOOTHING_LENGTH);
+    for (ic = 0; ic < ncells; ic++)
+        denGrid[ic] += DM_DENSITY_WEIGHT * denGrid_dm[ic];
+}
+```
+
+Note:
+
+- Stars and DM are smoothed **at different scales**. DM is dynamically
+  hotter; smoothing it on the stellar scale produces noisy peaks at the
+  granularity of individual heavy DM particles.
+- `w_DM = 0.1` keeps stellar peaks dominant at galaxy centers while still
+  letting pure-DM concentrations rise above `PEAKTHRESHOLD`. Numerically:
+  - star-only peak (ρ_star = 100, ρ_DM = 0) → ρ_total = 100
+  - galactic core (ρ_star = 100, ρ_DM = 1000) → ρ_total = 200
+  - DM-only subhalo (ρ_star = 0, ρ_DM = 1000) → ρ_total = 100
+- When `w_DM = 0` the DM TSC, DM smoothing, and the combine loop are all
+  skipped — the path collapses to the stellar-only case.
+
+### 8.3 FoF-Halo Gate
+
+`subhalo_den()` first decides whether to use the grid path or fall back to
+SPH-density peak finding. Under DARK_GAL the gate is OR-combined:
+
+```c
+int do_grid =
+       ((nstar > NUMNEIGHBOR) && (mstar >= MINSTELLARMASS))   // luminous halo
+    || (mdm   >= MINDMMASS);                                  // DM-rich halo
+```
+
+`MINDMMASS` defaults to `10 × MINSTELLARMASS`; halos below both thresholds
+are unlikely to host substructure worth resolving and use the cheaper SPH
+path.
+
+### 8.4 Linked-List for Peak Resolution
+
+The peak finder picks the densest particle in each peak cell as the core
+center. Under `TYPE_STAR_DM` the linked-list grid includes both stars and
+DM, so a peak in a DM-dominated cell resolves to a DM particle and a peak in
+a stellar cell resolves to a star — which is exactly what the post-hoc
+classification then reads.
+
+### 8.5 Post-hoc Dark Classification
+
+After `FindCoreDensity` populates `core[i].numstar` and `core[i].starmass`
+(both filtered by `bp[j].type == TYPE_STAR`, so they are accurate even though
+the watershed ran on combined density), each core is flagged:
+
+```c
+// subhaloden.mod6.c :: subhalo_den(), under #ifdef DARK_GAL
+for (i = 0; i < numcore; i++) {
+    if (core[i].numstar  < MINCORENMEM
+     || core[i].starmass < MINSTELLARMASS) {
+        core[i].is_dark = 1;
+    }
+}
+```
+
+`is_dark` cores then participate in the shell loop, boundedness test, and
+final membership assignment on equal footing with luminous cores. Downstream
+catalogs can be split by the `is_dark` flag stored in `Coretype`.
+
+### 8.6 What Was Removed
+
+The earlier dual-pass implementation in `subhalo_den()` — a separate DM TSC
+pass calling `lagFindDarkCore`, dedup against stellar peaks via
+`STAR_DM_DEDUP_LENGTH`, and append-with-`is_dark=1` — has been removed. The
+`lagFindDarkCore` wrapper itself is retained in `nnost.c` for callers that
+want a stand-alone DM-only peak finder, but `subhalo_den()` no longer
+invokes it.
+
+### 8.7 Code Touchpoints
+
+| File | Change |
+|------|--------|
+| `params.h` | `DM_DENSITY_WEIGHT`, `DM_GAUSSIAN_SMOOTHING_LENGTH`, `DM_TSC_CELL_SIZE`, `MINDMMASS` (and legacy `DM_PEAKTHRESHOLD`, `DM_MERGINGPEAKLENGTH`, `DM_MINCORENMEM`, `STAR_DM_DEDUP_LENGTH`). |
+| `tree.h` | `enum { ..., TYPE_STAR_DM = 6 }`; `Coretype.is_dark`. |
+| `nnost.c` | `lagFindCoreParam` parameterizes thresholds and dispatches the unified path on `TYPE_STAR_DM`; new wrapper `lagFindTotalCore`; `lagFindDarkCore` retained for stand-alone use. |
+| `subhaloden.mod6.c` | OR-combined FoF gate; `lagFindStellarCore` → `lagFindTotalCore` under DARK_GAL; post-hoc `is_dark` classification; `MergingPeak` accepts a per-call FoF-link length. |
+
+### 8.8 Tuning Notes
+
+- `DM_DENSITY_WEIGHT`: lower if pure-DM peaks crowd out luminous galaxies in
+  cluster cores; raise if known DM-only subhalos are missed. The 0–1 range
+  is the design envelope; values > ~0.3 will start to dominate over stars.
+- `DM_GAUSSIAN_SMOOTHING_LENGTH`: tied to the DM mass resolution. Rule of
+  thumb: roughly the inter-particle separation for a 50–100 particle clump
+  at the lightest DM species in the simulation.
+- `MINDMMASS`: serves only the FoF-halo gate, not per-core selection. Cores
+  below this DM mass are still found; they are simply not allowed to
+  *trigger* the grid path on a stellar-empty halo.
 
 ---
 

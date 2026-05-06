@@ -46,6 +46,8 @@ PGalF processes FoF halo catalogs and identifies substructures (galaxies/subhalo
 - Handles periodic boundary conditions
 - Stack-based memory management for billion-particle simulations
 - Supports RAMSES simulation format (adaptable to GADGET)
+- Optional **dark-galaxy detection** (DM-only subhalo finding) via a unified
+  weighted star+DM density field (`-DDARK_GAL`)
 
 ---
 
@@ -112,6 +114,34 @@ Where:
 ### Step 7: Final Membership Assignment
 
 Remaining unassigned particles are linked to cores using FoF with linking length `FOFLINK4MEMBERSHIP` (0.005 cMpc/h).
+
+### Optional: Dark-Galaxy Detection (`-DDARK_GAL`)
+
+When compiled with `-DDARK_GAL`, the peak-finding density field is built from
+both stars and DM:
+
+```
+ρ_total(x) = ρ_star(x) + DM_DENSITY_WEIGHT × ρ_DM(x)
+```
+
+Each component is TSC-deposited and Gaussian-smoothed at its own scale
+(`Gaussian_Smoothing_Length` for stars, `DM_GAUSSIAN_SMOOTHING_LENGTH` for DM).
+Stellar peaks dominate at galaxy centers; the down-weighted DM component
+lifts pure-DM subhalos above `PEAKTHRESHOLD` so they are detected by the same
+watershed pipeline. When `DM_DENSITY_WEIGHT == 0` the DM grid is skipped
+entirely and the result is equivalent to the stellar-only path.
+
+After `FindCoreDensity` populates per-core stellar content, each core is
+classified post-hoc:
+
+```
+is_dark = (core.numstar < MINCORENMEM) || (core.starmass < MINSTELLARMASS)
+```
+
+The FoF-halo gate is loosened so that halos with sufficient DM mass
+(`≥ MINDMMASS`, default `10 × MINSTELLARMASS`) enter the grid path even if
+they contain no resolved stellar component. See
+[ALGORITHM.md §8](docs/ALGORITHM.md) for details.
 
 ---
 
@@ -320,6 +350,24 @@ All physical parameters are in `params.h`:
 |-----------|---------|-------------|
 | `MAXNUMCORE` | 1,000,000 | Maximum cores per halo |
 | `MAXNUMWATERSHEDDING` | 100,000,000 | Maximum water-shed iterations |
+
+### Dark-Galaxy Detection (`-DDARK_GAL` only)
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `DM_DENSITY_WEIGHT` | 0.1f | Weight of DM density in unified field; 0 disables DM grid |
+| `DM_GAUSSIAN_SMOOTHING_LENGTH` | 0.012 | Gaussian smoothing for DM component [cMpc/h] |
+| `DM_TSC_CELL_SIZE` | `TSC_CELL_SIZE` | DM TSC cell size [cMpc/h] |
+| `MINDMMASS` | `10 × MINSTELLARMASS` | DM mass threshold for entering grid path |
+| `DM_PEAKTHRESHOLD` | 1.e3 | DM-only peak threshold (legacy `lagFindDarkCore`) |
+| `DM_MERGINGPEAKLENGTH` | 5.e-3 | DM-only peak merge distance [cMpc/h] (legacy) |
+| `DM_MINCORENMEM` | 50 | Minimum DM particles per dark core (legacy) |
+| `STAR_DM_DEDUP_LENGTH` | 5.e-3 | Star/DM peak dedup distance [cMpc/h] (legacy) |
+
+The unified-density path uses only `DM_DENSITY_WEIGHT`,
+`DM_GAUSSIAN_SMOOTHING_LENGTH`, `DM_TSC_CELL_SIZE`, and `MINDMMASS`. The
+remaining `DM_*` parameters are retained for the standalone `lagFindDarkCore`
+wrapper and are not invoked by `subhalo_den()` under the unified path.
 
 ---
 

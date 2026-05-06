@@ -10,6 +10,7 @@ This guide provides detailed instructions for configuring PGalF parameters for d
 4. [Memory Optimization](#4-memory-optimization)
 5. [Parallel Execution Tuning](#5-parallel-execution-tuning)
 6. [Compile-Time Options](#6-compile-time-options)
+7. [Dark-Galaxy Detection (`-DDARK_GAL`)](#9-dark-galaxy-detection--ddark_gal)
 
 ---
 
@@ -305,6 +306,7 @@ Key configure options for NewGalFinder:
 | `-DLOG=1` | Enable logging |
 | `-DVarPM` | Variable particle mass |
 | `-DINDEX` | Include particle indices |
+| `-DDARK_GAL` | Enable dark-galaxy (DM-only subhalo) detection via the unified weighted star+DM density field |
 
 ### 6.3 Common Configurations
 
@@ -446,3 +448,71 @@ Check that:
 #define MAXNUMWATERSHEDDING 100000000L
 #define MAXTHREADS 64
 ```
+
+---
+
+## 9. Dark-Galaxy Detection (`-DDARK_GAL`)
+
+Detection of DM-only subhalos (dark galaxies) is opt-in via the `-DDARK_GAL`
+compile flag. When enabled, peak finding runs on the unified density field
+
+```
+ρ_total = ρ_star + DM_DENSITY_WEIGHT × ρ_DM
+```
+
+with each component smoothed at its own scale. Cores are classified as dark
+post-hoc when their stellar content falls below the FoF-gate scale. See
+[ALGORITHM.md §8](ALGORITHM.md#8-dark-galaxy-detection-optional) for the
+algorithmic details.
+
+### 9.1 Enabling the feature
+
+Add `-DDARK_GAL` to `OPT` in the Makefile (or pass it through `configure`),
+then `make clean && make`. The unified-density branch is compiled in only
+when this flag is defined; otherwise the build is byte-equivalent to the
+stellar-only behaviour.
+
+### 9.2 Active parameters (unified path)
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `DM_DENSITY_WEIGHT` | `0.1f` | Weight of the smoothed DM grid in `ρ_total`. Set to `0.f` to disable the DM contribution entirely (DM TSC + smoothing are short-circuited). |
+| `DM_GAUSSIAN_SMOOTHING_LENGTH` | `0.012` (cMpc/h) | Smoothing scale applied to the DM grid. Should track the inter-particle separation of a 50–100 DM particle clump at the lightest DM species. |
+| `DM_TSC_CELL_SIZE` | `TSC_CELL_SIZE` | TSC cell size for the DM grid. Increase to lower memory cost on DM-rich halos. |
+| `MINDMMASS` | `10 × MINSTELLARMASS` | DM mass at which a stellar-empty halo is allowed to enter the grid path. Acts as a FoF-level gate only — does not select per-core. |
+
+### 9.3 Legacy parameters (stand-alone DM-only path)
+
+These are still defined in `params.h` for callers of `lagFindDarkCore` (a
+stand-alone DM-only peak finder kept for back-compat), but they are **not**
+referenced by `subhalo_den()` under the unified path.
+
+| Parameter | Default | Note |
+|-----------|---------|------|
+| `DM_PEAKTHRESHOLD` | `1.e3` | DM-only grid threshold (legacy). |
+| `DM_MERGINGPEAKLENGTH` | `5.e-3` (cMpc/h) | DM-only peak merge distance (legacy). |
+| `DM_MINCORENMEM` | `50` | Minimum DM particles per dark core (legacy). |
+| `STAR_DM_DEDUP_LENGTH` | `5.e-3` (cMpc/h) | Star/DM peak dedup distance from the removed dual-pass approach. |
+
+### 9.4 Tuning recipes
+
+**Want exactly the stellar-only result, but keep the unified call path:**
+set `DM_DENSITY_WEIGHT 0.f`. The DM grid is allocated only when nonzero,
+so this is the cheapest configuration and is byte-equivalent to
+`lagFindStellarCore` for stellar peaks.
+
+**Cluster cores where DM swamps galaxies:** lower
+`DM_DENSITY_WEIGHT` to ~0.05 or raise `PEAKTHRESHOLD`. The
+`ρ_total = ρ_star + 0.1 ρ_DM` design intentionally puts a pure-DM
+ρ_DM = 1000 peak at the same combined density as a luminous core with
+ρ_star = 100, ρ_DM = 0; tighten this if your cluster has many DM
+concentrations between bright galaxies.
+
+**Known dark subhalos are missed:** raise `DM_DENSITY_WEIGHT` toward 0.2–0.3,
+or shrink `DM_GAUSSIAN_SMOOTHING_LENGTH` so individual subhalos are not
+washed out into a smooth halo background. Watch for spurious peaks.
+
+**High-resolution simulations:** scale `DM_GAUSSIAN_SMOOTHING_LENGTH` with
+the DM particle mass — roughly halve it when the DM particle mass drops by
+8×, the same factor you would use for `Gaussian_Smoothing_Length` against
+the stellar mass resolution.
