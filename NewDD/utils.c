@@ -243,8 +243,7 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 	sprintf(dir,"./FoF_Data/NewDD.%.5d", istep);
 	if(myid==0){
 		struct stat sb;
-		stat(dir,&sb);
-		if(!S_ISDIR(sb.st_mode)) mkfolder(dir);
+		if(stat(dir,&sb) != 0 || !S_ISDIR(sb.st_mode)) mkfolder(dir);
 	}
 
 	if(icpu==1 && type == DM){
