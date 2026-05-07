@@ -297,6 +297,7 @@ typedef struct Coretype{
 
 typedef struct Coresorttype{
 	int nmem;
+	float tmass;
 	Coretype *core;
 }Coresorttype;
 typedef struct Coresortdentype{
@@ -1924,11 +1925,16 @@ int SINGLEHALO(int nkp,Kptype *kp,int np,SimpleBasicParticleType *bp,int haloid,
 	return nmem;
 }
 int coresort(const void *a,const void *b){
+	/* Sort cores ascending by current cumulative member mass (tmass).
+	 * Previously sorted by member count (nmem); switched so the shell
+	 * loop processes the lightest cores first regardless of how
+	 * non-uniform per-particle stellar masses are. nmem and tmass
+	 * agree only when star-particle masses are uniform. */
 	Coresorttype *aa,*bb;
 	aa = (Coresorttype *)a;
 	bb = (Coresorttype *)b;
-	if(aa->nmem < bb->nmem) return -1;
-	else if(aa->nmem > bb->nmem) return +1;
+	if(aa->tmass < bb->tmass) return -1;
+	else if(aa->tmass > bb->tmass) return +1;
 	else return 0;
 }
 typedef struct Memtype{
@@ -3129,14 +3135,20 @@ renumcore :
 			score = (Coresorttype*)Malloc(sizeof(Coresorttype)*NSHELL2C(ishell),PPTR(score));
 
 			halonmem = (int *) Malloc(sizeof(int)*numcore,PPTR(halonmem));
-			for(j=0;j<numcore;j++) halonmem[j] = 0;
+			float *halomass = (float *) Malloc(sizeof(float)*numcore,PPTR(halomass));
+			for(j=0;j<numcore;j++) { halonmem[j] = 0; halomass[j] = 0.f; }
 			for(j=0;j<np;j++)
-				if(wp[j].haloid>=0) halonmem[wp[j].haloid]++;
+				if(wp[j].haloid>=0) {
+					halonmem[wp[j].haloid]++;
+					halomass[wp[j].haloid] += bp[j].mass;
+				}
 			for(j=0;j<NSHELL2C(ishell);j++) {
-				score[j].nmem =  halonmem[SHELL2C(ishell)[j]];
-				score[j].core = core+SHELL2C(ishell)[j];
+				score[j].nmem  = halonmem[SHELL2C(ishell)[j]];
+				score[j].tmass = halomass[SHELL2C(ishell)[j]];
+				score[j].core  = core+SHELL2C(ishell)[j];
 			}
 			Free(halonmem);
+			Free(halomass);
 			qsort(score,NSHELL2C(ishell),sizeof(Coresorttype),coresort);
 #ifdef DEBUG
 			for(j=0;j<NSHELL2C(ishell);j++) {
@@ -3227,14 +3239,20 @@ renumcore :
 			Coresorttype *score;
 			score = (Coresorttype*)Malloc(sizeof(Coresorttype)*numcore,PPTR(score));
 			halonmem = (int *) Malloc(sizeof(int)*numcore,PPTR(halonmem));
-			for(j=0;j<numcore;j++) halonmem[j] = 0;
+			float *halomass = (float *) Malloc(sizeof(float)*numcore,PPTR(halomass));
+			for(j=0;j<numcore;j++) { halonmem[j] = 0; halomass[j] = 0.f; }
 			for(j=0;j<np;j++)
-				if(wp[j].haloid>=0) halonmem[wp[j].haloid]++;
+				if(wp[j].haloid>=0) {
+					halonmem[wp[j].haloid]++;
+					halomass[wp[j].haloid] += bp[j].mass;
+				}
 			for(j=0;j<numcore;j++) {
-				score[j].nmem =  halonmem[j];
-				score[j].core = core+j;
+				score[j].nmem  = halonmem[j];
+				score[j].tmass = halomass[j];
+				score[j].core  = core+j;
 			}
 			Free(halonmem);
+			Free(halomass);
 
 			qsort(score,numcore,sizeof(Coresorttype),coresort);
 			AdGetTidalRCenterCore(core,numcore, score,numcore,bp,np);
