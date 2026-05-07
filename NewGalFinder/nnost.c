@@ -1145,11 +1145,17 @@ void lagFindCoreParam(
 			 * ptype, or all of them when ptype == TYPE_ALL. This handles
 			 * TYPE_STAR / TYPE_DM / TYPE_GAS / TYPE_SINK uniformly.
 			 * For ptype == TYPE_STAR_DM include both star and DM particles
-			 * so peaks of the combined density can resolve to either type. */
+			 * so peaks of the combined density can resolve to either type;
+			 * but when DM_DENSITY_WEIGHT == 0 the unified path collapses to
+			 * stellar-only and DM particles must be excluded from the linked
+			 * list as well — otherwise extra cells pass the np>0 peak filter. */
 			int nparticles = 0;
 			for(i=0;i<np;i++){
 				if(ptype == TYPE_STAR_DM){
-					if(bp[i].type != TYPE_STAR && bp[i].type != TYPE_DM) continue;
+					if((float)DM_DENSITY_WEIGHT == 0.f){
+						if(bp[i].type != TYPE_STAR) continue;
+					}
+					else if(bp[i].type != TYPE_STAR && bp[i].type != TYPE_DM) continue;
 				}
 				else if(ptype != TYPE_ALL && bp[i].type != ptype) continue;
 				long long ir = rint((bp[i].x-xmin)/cellsize);

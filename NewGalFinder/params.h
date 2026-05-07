@@ -148,6 +148,16 @@
 #define MAXTHREADS 64
 
 //*******************
+// Dormant-core skip optimization.
+// After a core gets nmem==0 in DORMANT_EMPTY_STREAK consecutive shell
+// iterations of the same FoF halo, it is marked dormant and skipped in
+// the remaining shells of that halo. Dormant flag is reset per halo.
+// Set to 0 to disable the skip (every core is examined in every shell).
+// Recommended: 3-5. Lower values are more aggressive.
+#define DORMANT_EMPTY_STREAK 3
+//*******************
+
+//*******************
 // Dark-galaxy (DM-only subhalo) finding parameters.
 // Always built in; set DM_DENSITY_WEIGHT = 0 to disable (the DM TSC
 // + Gaussian-smoothing path is then short-circuited and the run is

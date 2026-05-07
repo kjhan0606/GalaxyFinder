@@ -2013,10 +2013,22 @@ void AdGetTidalRCenterCore(Coretype *core,int numcore,
 			core[coreID].nummem = npCore;
 			if(npCore>0){
 				int jdcore;
-				for(jdcore=i+1;jdcore<ncore;jdcore++){
+				/* Bidirectional pair scan with explicit mass gate. The previous
+				 * "jdcore=i+1" form relied on coresort's nmem-ordering to act
+				 * as the host/satellite ordering, but nmem and tmass disagree
+				 * when star-particle masses are non-uniform — leaving the
+				 * largest-nmem (not necessarily largest-mass) core with
+				 * Rtidal=MAX_TIDAL_R and applying the get_tidal_ellipse formula
+				 * (which assumes mratio < 1) to backwards pairs. Now every
+				 * pair (i,j) is examined and the tidal bound is applied only
+				 * when self is the lighter member, decoupling the loop order
+				 * from the physics. */
+				for(jdcore=0;jdcore<ncore;jdcore++){
+					if(jdcore == i) continue;
 					int countCoreID = SCOREID2COREID(jdcore);
 					int bnpCore = core2member[countCoreID].num;
 					double bmass = core2member[countCoreID].tmass;
+					if(core2member[coreID].tmass >= bmass) continue;
 					double bcoreX = core[countCoreID].cx; double bcoreY = core[countCoreID].cy; double bcoreZ = core[countCoreID].cz;
 					double r2 = (bcoreX-coreX)*(bcoreX-coreX)+
 						(bcoreY-coreY)*(bcoreY-coreY)+
@@ -3080,6 +3092,11 @@ renumcore :
 		maxshellden = log10(maxshellden+1.);
 
 		nshell = 0;
+		/* Reset dormant-core state for this halo */
+		for(i=0;i<numcore;i++){
+			core[i].empty_streak = 0;
+			core[i].is_dormant = 0;
+		}
 		if(np>1000) {
 			nshelldivide = MAX(NSHELLDIVIDE,NSHELLDIVIDE*log10((double)np*1.5));
 			nshelldivide = MIN(15, nshelldivide);
@@ -3133,6 +3150,7 @@ renumcore :
 				int *tlist,ntarget;
 				int *slist,nsource,nmem;
 				icore = SCOREID2COREID(j);
+				if(DORMANT_EMPTY_STREAK > 0 && core[icore].is_dormant) continue;
 				tlist = (int*)Malloc(sizeof(int)*np,PPTR(tlist));
 				slist = (int*)Malloc(sizeof(int)*np,PPTR(slist));
 				ntarget = GetShellParticleFromRestParticleLIST(bp,np,ishell, tlist,score[j].core);
@@ -3168,6 +3186,16 @@ renumcore :
 				Free(slist); Free(tlist);
 				DEBUGPRINT("S%d/S%d: C%d ntarget=%d nsource=%d & finally get nmem = %d\n",
 						ishell,nshell,icore,ntarget,nsource,nmem);
+				if(DORMANT_EMPTY_STREAK > 0){
+					if(nmem == 0){
+						core[icore].empty_streak++;
+						if(core[icore].empty_streak >= DORMANT_EMPTY_STREAK){
+							core[icore].is_dormant = 1;
+						}
+					} else {
+						core[icore].empty_streak = 0;
+					}
+				}
 			}
 			UnboundShellP2Rest(ishell,bp);/* Turning on the rest flag for unbound shell particles */
 			Free(score);

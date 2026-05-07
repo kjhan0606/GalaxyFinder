@@ -211,6 +211,8 @@ typedef struct Coretype{
     float Rtidal,density;
     unsigned char flag;
     unsigned char is_dark; /* 1 if this core is a DM-only (dark) galaxy peak */
+    unsigned char is_dormant; /* 1 if dormant: skipped in remaining shells */
+    int empty_streak; /* consecutive ishells with nmem==0 (gated by DORMANT_EMPTY_STREAK) */
 }Coretype;
 
 
