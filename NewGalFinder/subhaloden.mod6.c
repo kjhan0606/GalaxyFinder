@@ -2340,6 +2340,7 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 		int iloop=0;
 		int jjob=0;
 		int nmaxlink = 0;
+		int next_seed = 0;
 		do {
 			ilink = 0;
 			if(iloop ==0){
@@ -2350,18 +2351,18 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 					nlink = 0; ilink = 1;
 			}
 			else {
-				for(j=0;j<num;j++){
-					if(ptl[j].included == NO){
-						linked[0].x = ptl[j].x;
-						linked[0].y = ptl[j].y;
-						linked[0].z = ptl[j].z;
-						linked[0].link02 = ptl[j].link02;
-						ptl[j].included = YES;
-						ptl[j].haloindx = haloindx;
-						nlink = 0; ilink = 1;
-						jjob = j;
-						break;
-					}
+				while(next_seed < num && ptl[next_seed].included != NO) next_seed++;
+				if(next_seed < num){
+					j = next_seed;
+					linked[0].x = ptl[j].x;
+					linked[0].y = ptl[j].y;
+					linked[0].z = ptl[j].z;
+					linked[0].link02 = ptl[j].link02;
+					ptl[j].included = YES;
+					ptl[j].haloindx = haloindx;
+					nlink = 0; ilink = 1;
+					jjob = j;
+					next_seed++;
 				}
 			}
 			iloop =1;
@@ -2423,20 +2424,21 @@ void ompEnabledMemberFoF(SimpleBasicParticleType *bp, int np, int numcore,
 
 
 		int jmax = 0;
-		int maxcount=0;
-		for(j = 0;j<haloindx;j++) {
-			int count = 0;
-			int k;
+		int maxcount = 0;
+		if(haloindx > 0){
+			int *counts = (int *)calloc((size_t)haloindx, sizeof(int));
 			for(i=0;i<num;i++){
-				if(ptl[i].haloindx == j) count ++;
+				int h = ptl[i].haloindx;
+				if(h >= 0 && h < haloindx) counts[h]++;
 			}
-			if(count > maxcount){
-				jmax = j;
-				maxcount = count;
+			for(j=0;j<haloindx;j++){
+				if(counts[j] > maxcount){
+					jmax = j;
+					maxcount = counts[j];
+					if(maxcount > num/2) break;
+				}
 			}
-			if(count > num/2) {
-				break;
-			}
+			free(counts);
 		}
 		for(j=0;j<num;j++){
 			if(ptl[j].haloindx != jmax) {
@@ -3132,6 +3134,41 @@ renumcore :
 			int *halonmem;
 			float tradius;
 			Coresorttype *score;
+			{
+				int np_s = NSHELL2P(ishell);
+				int nc_s = NSHELL2C(ishell);
+				if(np_s == 0) continue;
+				if(FAST_SHELL_RATIO > 0.f && nc_s > 0
+						&& (float)np_s < FAST_SHELL_RATIO * (float)nc_s
+						&& ishell < nshell-1) {
+					int icore_max = SHELL2C(ishell)[0];
+					float mmax = core[icore_max].starmass;
+					int kk;
+					for(kk=1; kk<nc_s; kk++){
+						int kc = SHELL2C(ishell)[kk];
+						if(core[kc].starmass > mmax){
+							mmax = core[kc].starmass;
+							icore_max = kc;
+						}
+					}
+					if(!(DORMANT_EMPTY_STREAK > 0 && core[icore_max].is_dormant)){
+						int nfast = 0;
+						int ii, bid;
+						for(ii=0; ii<np_s; ii++){
+							bid = SHELL2P(ishell)[ii];
+							if(IS_BOUND(bid) == NOT){
+								SET_BOUND(bid);
+								UNSET_REMAINING(bid);
+								SET_MEMBER_ID(bid, icore_max);
+								nfast++;
+							}
+						}
+						DEBUGPRINT("S%d/S%d FAST: np=%d cores=%d -> C%d (mass=%g) nmem=%d\n",
+								ishell, nshell, np_s, nc_s, icore_max, mmax, nfast);
+						continue;
+					}
+				}
+			}
 			score = (Coresorttype*)Malloc(sizeof(Coresorttype)*NSHELL2C(ishell),PPTR(score));
 
 			halonmem = (int *) Malloc(sizeof(int)*numcore,PPTR(halonmem));

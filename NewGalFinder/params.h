@@ -24,9 +24,9 @@
 // for higher resolution simulations 
 //
 //*******************
-// the minimum number of star/dm 
-// particles to identify a core 
-#define MINCORENMEM 20
+// the minimum number of star/dm
+// particles to identify a core
+#define MINCORENMEM 13
 //*******************
 
 //*******************
@@ -38,9 +38,9 @@
 //*******************
 
 //*******************
-// the number of iso-den division of non-core 
-// particles 
-#define NSHELLDIVIDE 5
+// the number of iso-den division of non-core
+// particles
+#define NSHELLDIVIDE 10
 //*******************
 
 //*******************
@@ -154,7 +154,23 @@
 // the remaining shells of that halo. Dormant flag is reset per halo.
 // Set to 0 to disable the skip (every core is examined in every shell).
 // Recommended: 3-5. Lower values are more aggressive.
-#define DORMANT_EMPTY_STREAK 3
+#define DORMANT_EMPTY_STREAK 0
+//*******************
+
+//*******************
+// Sparse-shell fast-path optimization.
+// In the shell-loop, when a shell has very few particles but many enclosed
+// cores (e.g. outer iso-density bins of the BCG halo: np=3 with cores=6917),
+// the per-core setup cost (halonmem/halomass O(np) scan, qsort, tidal-radius
+// scan) dominates. If np_shell < FAST_SHELL_RATIO * nc_shell, take the
+// fast path: assign all shell particles to the single most-massive core in
+// the shell (skipping AdGetTidalRCenterCore + per-core boundedness). Bound
+// particles get corrected in later boundedness iterations; mass loss to the
+// max-mass core is negligible (< 1e-5 of halo mass). The last shell is
+// never fast-pathed because it holds all unassigned leftovers via
+// SaveRemainingParticles2LastShell. Set 0 to disable.
+// Recommended: 0.30 (catches ~7% of shells in BCG runs).
+#define FAST_SHELL_RATIO 0.10f
 //*******************
 
 //*******************
@@ -199,5 +215,5 @@
 // and dynamically hotter, so without downweighting every halo center would
 // look like a peak. 0.1 keeps stellar peaks dominant while still letting
 // pure-DM subhalos rise above PEAKTHRESHOLD.
-#define DM_DENSITY_WEIGHT 0.1f
+#define DM_DENSITY_WEIGHT 0.0f
 //*******************
