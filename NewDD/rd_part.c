@@ -22,12 +22,13 @@ int rd_part(RamsesType *ram, char *infile){
 	F77read(&(ram->ndim), sizeof(int), 1, fp);
 	F77read(&(ram->npart), sizeof(int), 1, fp);
 	npartp = ram->npart;
-	F77read(&(ram->localseed), sizeof(dptype), IRandNumSize, fp);
+	/* Current RAMSES particle headers store the random seed as int32. */
+	F77read(&(ram->localseed), sizeof(int), IRandNumSize, fp);
 	/*
 	F77read(&(ram->nstar_tot), sizeof(long), 1, fp);
 	*/
 	
- 	F77read(&(ram->nstar_tot), sizeof(int), 1, fp);
+	F77read(&(ram->nstar_tot), sizeof(ram->nstar_tot), 1, fp);
 	
 	F77read(&(ram->mstar_tot), sizeof(dptype), 1, fp);
 	F77read(&(ram->mstar_lost), sizeof(dptype), 1, fp);
@@ -54,7 +55,22 @@ int rd_part(RamsesType *ram, char *infile){
 
 	familytype *bytbuff = (familytype*)Malloc(sizeof(familytype)*npartp, PPTR(bytbuff));
 	GetPart(bytbuff,sizeof(familytype), npartp, fp, ram,particle,family);
-	GetPart(bytbuff,sizeof(familytype), npartp, fp, ram,particle,tag);
+	/* Older RAMSES dumps omit tag and place the potential record next. */
+	{
+		long record_pos = ftell(fp);
+		int record_bytes = -1;
+		if(record_pos < 0 || fread(&record_bytes,sizeof(record_bytes),1,fp) != 1 ||
+				fseek(fp,record_pos,SEEK_SET) != 0){
+			ERRORPRINT("Cannot inspect the record after particle family in %s\n",infile);
+			exit(99);
+		}
+		if((size_t)record_bytes == sizeof(familytype)*(size_t)npartp){
+			GetPart(bytbuff,sizeof(familytype), npartp, fp, ram,particle,tag);
+		}
+		else {
+			for(i=0;i<(size_t)npartp;i++) ram->particle[i].tag = 0;
+		}
+	}
 
 #ifdef OUTPUT_PARTICLE_POTENTIAL
 	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,potent);

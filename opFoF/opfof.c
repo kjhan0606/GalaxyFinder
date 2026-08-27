@@ -13,6 +13,7 @@
 #undef DEFINE_SIM_PARA
 
 #include "fof.h"
+#include "distributed.h"
 #include "Time.h"
 #define MIN(a,b) a > b? b: a
 #define MAX(a,b) a > b? a: b
@@ -415,8 +416,11 @@ int main(int argc,char *argv[]){
 		sprintf(infolder,"./FoF_Data/NewDD.%.5d/",nstep);
 		sprintf(outfolder,"./FoF_Data/FoF.%.5d/",nstep);
 		sprintf(garfolder,"./FoF_Garbage/Garb.%.5d/",nstep);
-		mkfolder(outfolder);
-		mkfolder(garfolder);
+		if(myid==0){
+			mkfolder(outfolder);
+			mkfolder(garfolder);
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		sprintf(infile,"%sSN.%.5d.%.5d.info",infolder,nstep,myid);
 		if(myid==0){
@@ -535,6 +539,7 @@ int main(int argc,char *argv[]){
 		fclose(hfp);
 		fclose(pfp);
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	np = 0;
 	npwrite = 0;
@@ -544,8 +549,15 @@ int main(int argc,char *argv[]){
 #else
 	mid = nid;
 #endif
-	initfile = nfile/mid*myid;
-	finalfile = nfile/mid*(myid+1);
+	/*
+	 * Each input slab has exactly one owning rank.  Local FoF components that
+	 * do not touch a rank face are final.  Components that touch either face
+	 * exchange only face-band particles with adjacent ranks.  Component labels
+	 * then propagate to convergence, so a halo may span any number of domains
+	 * without gathering all boundary particles on rank 0.
+	 */
+	initfile = nfile*myid/mid;
+	finalfile = nfile*(myid+1)/mid;
 	printf("P%d has file ranges %d %d\n", myid, initfile, finalfile);
 	for(nowfile=initfile;nowfile<finalfile;nowfile++){
 		sprintf(infile,"SN.%.5d.%.5d",nstep,nowfile);
@@ -564,153 +576,54 @@ int main(int argc,char *argv[]){
 		npadd = read_ramses_data(&ptl,np,infilegas+nowfile*NLEN,type, xoffset[nowfile]); np += npadd;
 		printf("P%d has np= %ld : %s \n", myid, np, infile);
 		
-		if(nowfile == finalfile-1){
-			int src,dest;
-			src = (myid+1+mid)%mid;
-			dest = (myid-1+mid)%mid;
-			MPI_Sendrecv(&npwrite,sizeof(size_t),MPI_BYTE,dest,0,
-					&npread,sizeof(size_t),MPI_BYTE,src,0,MPI_COMM_WORLD,&status);
-			{
-				ptl = (FoFTPtlStruct*)realloc(ptl,
-						sizeof(FoFTPtlStruct)*(np+npread));
-				ReadBottomFaceContact(ptl+np,npread,linked,src,nstep,nz);
-				np += npread;
-			}
-		}
-//		MPI_Barrier(MPI_COMM_WORLD); if(myid==0) printf("passed -1\n");
+	}
+	if(np == 0){
+		fprintf(stderr,"P%d owns no input particles\n",myid);
+		MPI_Abort(MPI_COMM_WORLD,91);
+	}
 
-		zmin = 2.E23;
-		zmax = -2.E23;
-		for(i=0;i<np;i++){
-			zmin = MIN(zmin,ptl[i].z);
-			zmax = MAX(zmax,ptl[i].z);
-		}
-
-		if(nowfile==initfile) zminlocal = zmin;
-
-		ptl = (FoFTPtlStruct *)realloc(ptl,sizeof(FoFTPtlStruct)*np);
-		printf("P%d: Now we have zmin=%g zmax=%g with np = %d\n",myid,zmin,zmax,np);
-		if(np/NODE_HAVE_PARTICLE*10> ntreemax){
-			ntreemax = np/NODE_HAVE_PARTICLE*10;
-			TREE = (FoFTStruct *)realloc(TREE,sizeof(FoFTStruct)*ntreemax);
-		}
-		for(i=0;i<np;i++){
-//  			ptl[i].type = TYPE_PTL;
-			ptl[i].sibling = &ptl[i+1];
-			ptl[i].haloindx = -1;
-		}
-		ptl[np-1].sibling = NULL;
-		if(0){
-			dptype xmin,ymin,zmin,xmax,ymax,zmax;
-			xmin = ymin = zmin = 1e25L;
-			xmax = ymax = zmax =-1e25L;
-			for(i=0;i<np;i++){
-				xmin = MIN(xmin,ptl[i].x);
-				ymin = MIN(ymin,ptl[i].y);
-				zmin = MIN(zmin,ptl[i].z);
-				xmax = MAX(xmax,ptl[i].x);
-				ymax = MAX(ymax,ptl[i].y);
-				zmax = MAX(zmax,ptl[i].z);
-			}
-			dptype lwidth = 0;
-			lwidth = MAX(lwidth,(xmax-xmin));
-			lwidth = MAX(lwidth,(ymax-ymin));
-			lwidth = MAX(lwidth,(zmax-zmin));
-			lwidth = lwidth*1.02;
-			box.x = (xmin+xmax)*0.5L - lwidth*0.5;
-			box.y = (ymin+ymax)*0.5L - lwidth*0.5;
-			box.z = (zmin+zmax)*0.5L - lwidth*0.5;
-			box.width = lwidth;
-
-			printf("P%d x/y/zmin= %g %g %g / %g %g %g max= %g %g %g  width= %g\n",myid,
-				xmin,ymin,zmin,box.x,box.y,box.z,xmax,ymax,zmax,box.width);
-		}
-		/*
-		if(myid!=0){
-			MPI_Status status;
-			MPI_Recv(&i,1,MPI_INT,myid-1,0,MPI_COMM_WORLD,&status);
-			printf("P%d is just before Make Tree\n",myid);
-		}
-		*/
-		/*
-		if(myid!=nid-1){
-			MPI_Send(&i,1,MPI_INT,myid+1,0,MPI_COMM_WORLD);
-		}
-		MPI_Barrier(MPI_COMM_WORLD); if(myid==0) printf("passed 0\n");
-		*/
-		/* Local FoF and tag with a new halo number nhalo */
-
-		if(0){
-			int kkk = 1;
-			while(kkk) {
-				kkk = 1;
-			}
-		}
-
-
-		linked = (particle*)malloc(sizeof(particle)*np);
-		if(pflag==0){
-			FoF_Make_Tree(TREE,ptl,np,box);
-			printf("P%d passed Tree building\n", myid);
-			nhalo = 0;
-			for(i=0;i<np;i++){
-				if(ptl[i].included == NO){
-					p.x = ptl[i].x;
-					p.y = ptl[i].y;
-					p.z = ptl[i].z;
-					p.link02 = ptl[i].link02;
-					num=new_fof_link(&p,fof_link,TREE,ptl,linked,nhalo);
-					nhalo ++;
-				}
-			}
-		}
-		else {
-			FoF_Make_Tree(TREE,ptl,np,box);
-			printf("P%d passed Tree building\n", myid);
-			nhalo = 0;
-			for(i=0;i<np;i++){
-				if(ptl[i].included == NO){
-					p.x = ptl[i].x;
-					p.y = ptl[i].y;
-					p.z = ptl[i].z;
-					p.link02 = ptl[i].link02;
-					num=pnew_fof_link(&p,fof_link,TREE,ptl,linked,nhalo,lx,ly,lz);
-					nhalo ++;
-				}
-			}
-		}
-		free(linked);
-
-
-//		MPI_Barrier(MPI_COMM_WORLD); if(myid==0) printf("passed 2\n");
-		printf("P%d has %ld halos from %ld particles\n",myid,nhalo,np);
-		{
-			HaloBound *halobound;
-			int flag;
-			halobound = (HaloBound *)malloc(sizeof(HaloBound)*nhalo);
-			CheckHaloBound(nhalo,halobound,ptl,np,fof_link,
-				zmin,zmax, zminlocal);
-			printf("P%d has checked halo boundary\n",myid);fflush(stdout);
-			if(nowfile != finalfile-1) {
-				WriteIsolatedHalo(nhalo,halobound,ptl,linked,halofile,
-						memparticlefile);
-			}
-			else if(nowfile == finalfile-1){
-				WriteFinalHalo(nhalo,halobound,ptl,linked,halofile,
-						memparticlefile);
-				MPI_Finalize();
-				return 0;
-			}
-			printf("P%d has saved isolated halos\n",myid);fflush(stdout);
-			MPI_Barrier(MPI_COMM_WORLD);
-			if(nowfile == initfile) flag = 0;
-			else flag = 1;
-			npwrite += WriteBottomFaceContact(nhalo,halobound,ptl,linked,
-					flag,nstep);
-			printf("P%d has saved Bottom Faced Halo %ld\n",myid,npwrite);fflush(stdout);
-			np = StackUpContactParticleLeftWard(nhalo,halobound,ptl,np);
-			free(halobound);
+	ptl = (FoFTPtlStruct *)realloc(ptl,sizeof(FoFTPtlStruct)*np);
+	printf("P%d: loaded %ld particles for its complete rank domain\n",myid,np);
+	if(np/NODE_HAVE_PARTICLE*10 > ntreemax){
+		ntreemax = np/NODE_HAVE_PARTICLE*10;
+		TREE = (FoFTStruct *)realloc(TREE,sizeof(FoFTStruct)*ntreemax);
+	}
+	for(i=0;i<np;i++){
+		ptl[i].sibling = (i+1 < np) ? &ptl[i+1] : NULL;
+		ptl[i].haloindx = (size_t)-1;
+	}
+	linked = (particle*)malloc(sizeof(particle)*np);
+	FoF_Make_Tree(TREE,ptl,np,box);
+	nhalo = 0;
+	for(i=0;i<np;i++){
+		if(ptl[i].included == NO){
+			p.x = ptl[i].x;
+			p.y = ptl[i].y;
+			p.z = ptl[i].z;
+			p.link02 = ptl[i].link02;
+			if(pflag==0) num=new_fof_link(&p,fof_link,TREE,ptl,linked,nhalo);
+			else num=pnew_fof_link(&p,fof_link,TREE,ptl,linked,nhalo,lx,ly,lz);
+			nhalo ++;
 		}
 	}
+	free(linked);
+	printf("P%d has %ld local components from %ld particles\n",myid,nhalo,np);
+
+	{
+		double local_max_link = 0.0;
+		double boundary_link = 0.0;
+		double domain_low = lx*(double)initfile/(double)nfile;
+		double domain_high = lx*(double)finalfile/(double)nfile;
+		for(i=0;i<np;i++) local_max_link = MAX(local_max_link,ptl[i].link02);
+		MPI_Allreduce(&local_max_link,&boundary_link,1,MPI_DOUBLE,MPI_MAX,
+				MPI_COMM_WORLD);
+		if(myid==0) printf("Boundary linking width = %.9g Mpc/h\n",boundary_link);
+		DistributedMergeAndWrite(ptl,np,nhalo,&TREE,&ntreemax,box,
+				boundary_link,domain_low,domain_high,fof_link,pflag,lx,ly,lz,
+				halofile,memparticlefile);
+	}
+	free(ptl);
+	free(TREE);
 	MPI_Finalize();
+	return 0;
 }

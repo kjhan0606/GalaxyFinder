@@ -20,6 +20,26 @@ RAMSES Output → NewDD → opFoF → NewGalFinder → Galaxy Catalogs
 
 ## Quick Start
 
+For a dark-matter-only RAMSES snapshot written with `LONGINT` particle IDs
+and particle potentials, build NewDD and opFoF with one matching ABI:
+
+```bash
+MPI_CC=mpicc ./build_dmo_pipeline.sh
+```
+
+Do not mix a NewDD slab catalogue and an opFoF executable built with
+different particle-layout flags. opFoF first links particles within each MPI
+slab domain, exchanges only the face bands with adjacent ranks, and propagates
+component labels until they converge. Resolved halo pieces then move through
+an adjacent-rank ring to their unique owner; no `MPI_Alltoall[v]` or rank-0
+particle gather is used. This permits a halo to span multiple MPI domains
+without duplicate ownership or fragmentation.
+
+The distributed path was regression-tested on matched one- and two-fluid DMO
+catalogues with 8, 16, 32, and 64 MPI ranks. For each fluid representation,
+all rank counts produced identical particle membership, zero duplicate member
+IDs, and the same halo and member totals.
+
 ### 0. Configure Build System
 ```bash
 # Default configuration (Intel OneAPI mpiicx/mpiifx compilers, optimized build)

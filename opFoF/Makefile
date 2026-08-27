@@ -8,7 +8,7 @@ PROGS =  opfof.exe
 
 #--- Objects to build
 
-OBJS		= opfof.o Time.o Treewalk.fof.ordered.o  read.o  header.o ramses2read.o
+OBJS		= opfof.o distributed.o Time.o Treewalk.fof.ordered.o read.o header.o ramses2read.o
 
 OS = LINUX_GCC
 

@@ -54,36 +54,52 @@ size_t read_ramses_data(FoFTPtlStruct **Bp, size_t np, char *file1, char *type, 
 	HydroCellType *hcell;
 	GasType *gas;
 	struct stat st;
-	size_t size,mp;
+	size_t size = 0,mp;
 
 	int ierr = stat(file1, &st);
-	size = st.st_size;
+	if(ierr == 0) size = st.st_size;
 	size_t dsize;
-	void *aa;
+	void *aa = NULL;
 
 	if(strcmp(type,"STAR")==0){
 		dsize = sizeof(StarType);
-		aa = (void*) star = (StarType*)malloc(sizeof(char)*size);
+		star = NULL;
 	}
 	else if(strcmp(type,"SINK")==0){
 		dsize = sizeof(SinkType);
-		aa = (void*)sink = (SinkType*)malloc(sizeof(char)*size);
+		sink = NULL;
 	}
 	else if(strcmp(type,"GAS")==0){
 		dsize = sizeof(GasType);
-		aa = (void*)gas = (GasType*)malloc(sizeof(char)*size);
+		gas = NULL;
 	}
 	else if(strcmp(type,"DM")==0){
 		dsize = sizeof(DmType);
-		aa = (void*)dm = (DmType*)malloc(sizeof(char)*size);
+		dm = NULL;
 	}
 	else {
 		fprintf(stderr,"Oooooooooops. Wrong size in file and type\n");
+		MPI_Abort(MPI_COMM_WORLD, 98);
+		return 0;
+	}
+	if(ierr == 0){
+		aa = malloc(size > 0 ? size : 1);
+		if(aa == NULL){
+			fprintf(stderr,"Error allocating %ld bytes for %s\n",size,file1);
+			MPI_Abort(MPI_COMM_WORLD, 97);
+			return 0;
+		}
+		if(strcmp(type,"STAR")==0) star = (StarType*)aa;
+		else if(strcmp(type,"SINK")==0) sink = (SinkType*)aa;
+		else if(strcmp(type,"GAS")==0) gas = (GasType*)aa;
+		else dm = (DmType*)aa;
 	}
 
 	if(ierr == 0 && size%dsize !=0){
-		printf("Error in file size,,,, %s\n", file1);
-//		exit(99);
+		fprintf(stderr,"File size is not a multiple of the %s record ABI: %s\n",
+				type,file1);
+		MPI_Abort(MPI_COMM_WORLD, 95);
+		return 0;
 	}
 
 	int nid,myid;
@@ -102,11 +118,16 @@ size_t read_ramses_data(FoFTPtlStruct **Bp, size_t np, char *file1, char *type, 
 	if(RANKINGROUP(myid,WGroupSize) !=0) MPI_Recv(&i,1,MPI_INT,src,itag,MPI_COMM_WORLD,&status);
 	if(ierr ==0){
 		FILE *fp = NULL;
-		fp = fopen(file1,"r");
+		fp = fopen(file1,"rb");
 		if(fp == NULL){
-//			printf("error in opening file %s\n", file1);exit(99);
+			fprintf(stderr,"Error opening %s\n",file1);
+			MPI_Abort(MPI_COMM_WORLD, 94);
+			return 0;
 		}
-		fread(aa, sizeof(char), size, fp);
+		if(fread(aa, sizeof(char), size, fp) != size){
+			fprintf(stderr,"Short read from %s\n",file1);
+			MPI_Abort(MPI_COMM_WORLD, 96);
+		}
 		mp = size/dsize;
 		fclose(fp);
 	}

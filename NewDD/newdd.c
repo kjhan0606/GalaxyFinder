@@ -172,7 +172,11 @@ int main(int argc, char **argv){
 			DmType *dm = (DmType*)Malloc(sizeof(DmType)*ram.npart, PPTR(dm));
 			size_t ndm = 0;
 			for(i=0;i<ram.npart;i++){
-				if((ram.particle)[i].family ==1) {
+#ifdef NBODY
+				if((ram.particle)[i].family == 0 || (ram.particle)[i].family == 1) {
+#else
+				if((ram.particle)[i].family == 1) {
+#endif
 					dm[ndm] = ((DmType*)(ram.particle))[i];
 					ndm ++;
 				}

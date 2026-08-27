@@ -59,6 +59,11 @@ The Friends-of-Friends (FoF) algorithm is a standard method in computational cos
 - **Multi-Component Support**: Handles dark matter, stellar, gas, and sink (black hole) particles
 - **Periodic Boundary Conditions**: Correctly identifies halos that wrap around simulation box edges
 - **Domain Decomposition**: Z-slab based partitioning with boundary particle exchange
+- **Multi-domain Halo Ownership**: Adjacent-rank face exchange and iterative
+  component-label propagation preserve haloes spanning more than one rank
+  domain. Final member payloads move through an adjacent-rank ring to one
+  owner; the implementation does not gather boundary particles on rank 0 and
+  does not use `MPI_Alltoall[v]`.
 - **Large-Scale Support**: Handles billion-particle simulations with optimized memory management
 
 ### Particle Types Supported

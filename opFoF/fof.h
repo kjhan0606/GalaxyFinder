@@ -1,3 +1,6 @@
+#ifndef OPFOF_FOF_H
+#define OPFOF_FOF_H
+
 #define MinNumMem 20
 //#define MINCELLSIZE 1.e-2
 #define MINCELLSIZE 2.e-3
@@ -15,6 +18,10 @@
 #else
 #	define POSTYPE float
 #endif
+
+/* Boolean values used by the FoF tree and particle membership flags. */
+enum boolean { NO = 0, YES = 1 };
+
 /*
 enum boolean {YES=01, NO=02};
 #define YES '0'
@@ -146,4 +153,4 @@ size_t StackUpContactParticleLeftWard(size_t ,HaloBound *, FoFTPtlStruct *,
 void ReadBottomFaceContact(FoFTPtlStruct *,size_t,particle *,int ,int,int);
 size_t WriteBottomFaceContact(size_t , HaloBound *, FoFTPtlStruct *, particle *, int,int);
 
-
+#endif

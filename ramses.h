@@ -3,7 +3,7 @@
 /* You have to read these lines carefully before running it */
 #define NDIM 3
 #define NLEVELS 13
-#ifdef DOUBLE_PRECISION
+#if defined(DOUBLE_PRECISION) || defined(LONGINT)
 typedef long long idtype;
 #else
 typedef int idtype;
@@ -187,10 +187,11 @@ typedef struct RamsesType{
 	int ncpu, icpu, ndim, nthr;
 	int nrestart,nrestart_quad;
 	int localseed[IRandNumSize];
-	 int  nstar_tot;
-	/*
-	long  nstar_tot;
-	*/
+#ifdef LONGINT
+	long long nstar_tot;
+#else
+	int nstar_tot;
+#endif
 	dptype mstar_tot,mstar_lost;
 	int levelmin, nlevelmax,nstep_coarse;
 	idtype ngridmax;

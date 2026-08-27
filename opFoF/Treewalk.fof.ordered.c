@@ -853,10 +853,11 @@ size_t pnew_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *TREE,
 					}
 			}
 		}
-		point = linked[now];
-		/* for periodic boundary conditions in x,y, and z*/
-		now ++;
-	} while( now <= ncount);
+		/* Process every newly linked particle exactly once.  The previous
+		 * <= condition read linked[ncount], one element past the valid range. */
+		if(now >= ncount) break;
+		point = linked[now++];
+	} while(1);
 //	free(linked);
 	return (ncount);
 }
@@ -933,10 +934,9 @@ size_t new_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *tree,
 					}
 			}
 		}
-		point = linked[now];
-		/* for periodic boundary conditions in x,y, and z*/
-		now ++;
-	} while( now <= ncount);
+		if(now >= ncount) break;
+		point = linked[now++];
+	} while(1);
 //	free(linked);
 	return (ncount);
 }
