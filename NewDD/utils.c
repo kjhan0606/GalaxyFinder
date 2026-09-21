@@ -273,7 +273,9 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 		for(i=0;i<np;i++){
 			int ibin = (dump[i].x-x0)/step;
 			if(ibin <0 || ibin >= nsplit) {
-				ERRORPRINT("Error in ibin %d : %g %g %g\n",ibin,dump[i].x,x0,step);
+				ERRORPRINT("Fatal DM bin index %d : x=%g x0=%g step=%g nsplit=%d\n",
+					ibin,dump[i].x,x0,step,nsplit);
+				exit(99);
 			}
 			ipos[ibin] = min(ipos[ibin], i);
 			jpos[ibin] = max(jpos[ibin], i);

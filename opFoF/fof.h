@@ -15,11 +15,7 @@
 #else
 #	define POSTYPE float
 #endif
-/*
 enum boolean {YES=01, NO=02};
-#define YES '0'
-#define NO '1'
-*/
 typedef struct Box{
 	POSTYPE x,y,z;
 	POSTYPE width;
@@ -145,5 +141,4 @@ size_t StackUpContactParticleLeftWard(size_t ,HaloBound *, FoFTPtlStruct *,
 		size_t );
 void ReadBottomFaceContact(FoFTPtlStruct *,size_t,particle *,int ,int,int);
 size_t WriteBottomFaceContact(size_t , HaloBound *, FoFTPtlStruct *, particle *, int,int);
-
 

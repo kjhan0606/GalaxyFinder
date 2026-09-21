@@ -285,7 +285,7 @@ typedef struct RamsesType{
 	int _nn,chip;\
 	_nn=fread(&chip, sizeof(int), 1,fp);\
 	if(chip!=size*nmem) {\
-		DEBUGPRINT("Error reading "#a" "#size" "#nmem"  %d :  %d @ %p\n", chip, size*nmem, fp);\
+		DEBUGPRINT("Error reading "#a" "#size" "#nmem"  %d :  %zu @ %p\n", chip, size*nmem, fp);\
 		exit(99);\
 	}\
 	fread(a, size, nmem,fp);\

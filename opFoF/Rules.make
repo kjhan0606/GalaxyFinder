@@ -16,7 +16,7 @@ RANLIB = ranlib
 #########################################################
 AR = ar rcv
 FC = mpiifc
-CC = mpiicc
+CC = mpiicx
 F90C = mpiifort
 #OPT = -DPGCC -mcmodel=medium -tp nehalem-64 -fast -mp -fastsse
 OPT = -DINTEL -g

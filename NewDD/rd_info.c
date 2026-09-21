@@ -119,6 +119,15 @@ void rd_info(RamsesType *header, char *infile){
 	fscanf(fp, "%s %s\n", in1, in); header->nstep_coarse = atoi(in);
 	fscanf(fp,"\n");
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->boxlen = atof(in);
+	/* In the DM-only path rd_amr is intentionally skipped.  Preserve the
+	 * RAMSES code-unit box length for NewDD slab partitioning. */
+	header->boxlen_ini = header->boxlen;
+	/* RAMSES code units normalize boxlen to one; use physical cMpc/h for
+	 * GalaxyFinder when explicitly supplied by the production wrapper. */
+	{
+		const char *bl = getenv("NEWDD_BOXLEN_CMPCH");
+		if(bl && atof(bl)>0.0) header->boxlen_ini = atof(bl);
+	}
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->time = atof(in);
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->aexp = atof(in);
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->H0 = atof(in);
