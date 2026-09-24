@@ -26,7 +26,7 @@
 //*******************
 // the minimum number of star/dm
 // particles to identify a core
-#define MINCORENMEM 13
+#define MINCORENMEM 100
 //*******************
 
 //*******************
@@ -105,6 +105,17 @@
 //*******************
 //
 //*******************
+// Nucleus radius (cMpc/h) for the self-bound rest frame of a satellite
+// buried in a heavier core. Only stars that already belong to that
+// satellite and lie within this radius of the watershed core center
+// are used. The central galaxy keeps the all-candidate stellar COM.
+// Fewer than NUCLEUS_MIN_STARS falls back to the watershed core
+// velocity, not to the mixed candidate COM.
+#define NUCLEUS_RADIUS 0.012
+#define NUCLEUS_MIN_STARS 5
+//*******************
+//
+//*******************
 // mininum density
 #define DENFLOOR 1.
 //*******************
@@ -146,6 +157,27 @@
 //
 // the maximum number of threads
 #define MAXTHREADS 64
+
+//*******************
+// H-maxima / persistence-based pruning of watershed peaks.
+//
+// For each core c produced by FindCoreDensity:
+//   persistence(c) = peak_density(c) - saddle_density(c)
+// where saddle_density(c) is the density at which c's watershed basin
+// first touches a peer peak (i.e., core[c].coredensity from the bisection).
+// If persistence(c)/peak_density(c) < PERSISTENCE_TAU, c is folded into
+// the higher-density peer it first touched.
+//
+// Suppresses over-segmentation in crowded fields (BCG / cluster centres)
+// where small density fluctuations spawn spurious sub-cores. The density
+// field is already gaussian_Smoothing'd at Gaussian_Smoothing_Length, so
+// this is a second, topology-aware merge that doesn't blur real galaxies.
+//
+// Set 0 (or negative) to disable. Recommended: 0.20 - 0.40 for cluster
+// runs; lower values merge less aggressively. Use 0 for byte-equivalence
+// with the pre-pruning code path.
+#define PERSISTENCE_TAU 0.30f
+//*******************
 
 //*******************
 // Dormant-core skip optimization.

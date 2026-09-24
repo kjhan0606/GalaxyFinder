@@ -44,6 +44,9 @@ typedef struct FoFPosition {
 
 
 
+/* Tree-node kind and particle species share this enum for historical reasons.
+ * TYPE_TREE/TYPE_PTL label octree nodes. TYPE_STAR and the rest label particles.
+ * TYPE_PTL and TYPE_STAR are both 1. Do not test a tree node with a species. */
 enum {TYPE_TREE = 0,TYPE_PTL = 1, TYPE_STAR = 1, TYPE_DM=2, TYPE_GAS=3,
 	TYPE_SINK=4, TYPE_AGN=4, TYPE_ALL=5, TYPE_STAR_DM=6};
 
@@ -135,7 +138,7 @@ typedef struct FoFTPtlStruct{
 		SinkType sink;
 		GasType gas;
 	}p;
-	size_t haloindx;
+	size_t group_id;
 	int indx;
 } FoFTPtlStruct;
 
@@ -188,9 +191,9 @@ typedef struct pforce {
 }while(0)
 
 
-void treeforce(particle*,float, TStruct *,TPtlStruct *,pforce *);
-void Make_Tree(TStruct *,size_t, TPtlStruct *,size_t ,float, int );
-float treeplumpotential(particle*,float, TStruct *,TPtlStruct *);
+void tree_acceleration(particle*,float, TStruct *,TPtlStruct *,pforce *);
+void build_force_tree(TStruct *,size_t, TPtlStruct *,size_t ,float, int );
+float tree_potential(particle*,float, TStruct *,TPtlStruct *);
 TStruct *divide_node(TStruct *,TStruct *, float , int ); 
 BeginEndTree divide_node_Near(TStruct *,TStruct *, TPtlStruct *, Box ,TStruct *); 
 
@@ -201,27 +204,35 @@ typedef struct HaloBound{
 	FoFTPtlStruct *sibling;
 } HaloBound;
 
-typedef struct Coretype{
-    int peak;
-    int nummem, numstar;
-    float starmass;
-    float coredensity;
-    float cx,cy,cz;
-    float cvx,cvy,cvz;
-    float Rtidal,density;
-    unsigned char flag;
-    unsigned char is_dark; /* 1 if this core is a DM-only (dark) galaxy peak */
-    unsigned char is_dormant; /* 1 if dormant: skipped in remaining shells */
-    int empty_streak; /* consecutive ishells with nmem==0 (gated by DORMANT_EMPTY_STREAK) */
-}Coretype;
+typedef struct Vec3 {
+    float x, y, z;
+} Vec3;
+
+/* In-memory galaxy core. Not written to the catalogue. */
+typedef struct Coretype {
+    int peak_particle;
+    int n_particles;
+    int n_stars;
+    float star_mass;
+    float peak_density;
+    float saddle_density;
+    Vec3 position;
+    Vec3 velocity;
+    float tidal_radius;
+    unsigned char marks;
+    unsigned char is_dark;
+    unsigned char is_dormant;
+    int empty_streak;
+    int merge_into;
+} Coretype;
 
 
 
-FoFTStruct *FoF_divide_node(FoFTStruct *,FoFTStruct *, int);
-void FoF_Make_Tree(FoFTStruct *, size_t, FoFTPtlStruct *,size_t ,int );
-int new_fof_link(particle*,POSTYPE, FoFTStruct *, FoFTPtlStruct *,particle *);
-int destroy_new_fof_link(particle*,POSTYPE, FoFTStruct *, FoFTPtlStruct *,particle *);
-void destroy_omp_fof_link(particle *,POSTYPE ,FoFTStruct *, FoFTPtlStruct *);
+FoFTStruct *split_fof_node(FoFTStruct *,FoFTStruct *, int);
+void build_fof_tree(FoFTStruct *, size_t, FoFTPtlStruct *,size_t ,int );
+int collect_fof_group_from(particle*,POSTYPE, FoFTStruct *, FoFTPtlStruct *,particle *);
+int collect_fof_group(particle*,POSTYPE, FoFTStruct *, FoFTPtlStruct *,particle *);
+void visit_fof_group(particle *,POSTYPE ,FoFTStruct *, FoFTPtlStruct *);
 size_t pnew_fof_link(particle*,POSTYPE, FoFTStruct *, FoFTPtlStruct *,particle *,
 		size_t nhalo, POSTYPE,POSTYPE,POSTYPE);
 TStruct *calThreadFreeNodeStart(size_t , size_t , size_t ,size_t , TStruct *, TStruct *);

@@ -367,7 +367,7 @@ All physical parameters are in `params.h`:
 The unified-density path uses only `DM_DENSITY_WEIGHT`,
 `DM_GAUSSIAN_SMOOTHING_LENGTH`, `DM_TSC_CELL_SIZE`, and `MINDMMASS`. The
 remaining `DM_*` parameters are retained for the standalone `lagFindDarkCore`
-wrapper and are not invoked by `subhalo_den()` under the unified path.
+wrapper and are not invoked by `find_galaxies()` under the unified path.
 
 ---
 
@@ -381,7 +381,7 @@ Rank 0 (Master)                    Ranks 1-N (Workers)
      |-- Read halo from file             |
      |-- Wait for READY signal  <--------|-- Send READY
      |-- Send particle data    --------->|-- Receive particles
-     |                                   |-- subhalo_den()
+     |                                   |-- find_galaxies()
      |-- Wait for WRITING      <---------|-- Send WRITING + results
      |-- Write output                    |
      |-- Loop...                         |-- Loop...
@@ -440,16 +440,22 @@ Per worker rank:
 
 ### Core Source Files
 
-| File | Lines | Description |
-|------|-------|-------------|
-| `gfind.c` | 899 | Main program, MPI master-slave loop, I/O |
-| `subhaloden.mod6.c` | ~2600 | Core algorithms: density, peaks, binding |
-| `ost.c` | ~1000 | Barnes-Hut tree for FoF linking |
-| `nnost.c` | ~1300 | k-d tree for nearest neighbor queries |
-| `tsc_omp2.c` | 507 | TSC density interpolation (OpenMP) |
-| `gsmooth.c` | 116 | FFT-based Gaussian smoothing |
-| `mkRtidal.c` | 129 | NFW tidal radius lookup |
-| `force_spline.mod3.c` | 189 | Gravitational force via spline |
+| File | Description |
+|------|-------------|
+| `gfind.c` | MPI master-slave loop and I/O. Calls `find_galaxies`. |
+| `src/find_galaxies.c` | One FoF halo: peaks, shells, linking, unbinding. |
+| `src/peaks.c` | Watershed basins and persistence pruning. |
+| `src/shells.c` | Iso-density shells. |
+| `src/binding.c` | Tidal radius and energy tests. |
+| `src/membership_fof.c` | Per-galaxy FoF. Star pass is the `LINK_STARS_SEPARATELY` switch. |
+| `src/particle_state.h` | The one particle-flag byte and its functions. |
+| `ost.c` | `build_fof_tree` / `collect_fof_group` and `build_force_tree` / `tree_potential`. |
+| `nnost.c` | Density field and `find_density_peaks`. |
+| `legacy/subhaloden.mod6.c` | Previous single file. Not built. |
+| `tsc_omp2.c` | TSC density interpolation (OpenMP). |
+| `gsmooth.c` | FFT Gaussian smoothing. |
+| `mkRtidal.c` | NFW tidal-radius lookup. |
+| `force_spline.mod3.c` | Spline gravitational force. |
 
 ### Header Files
 

@@ -5,7 +5,9 @@
 
 #--- Objects to build
 OBJS		= gfind.o Memory2.o force_spline.mod3.o ost.o \
-			subhaloden.mod6.o nrutil.o b2l.o spline.mod2.o \
+			src/finder_state.o src/geometry.o src/peaks.o src/basin_members.o src/shells.o \
+			src/binding.o src/membership_fof.o src/catalogue.o src/find_galaxies.o \
+			nrutil.o b2l.o spline.mod2.o \
 			nnost.o  utils.o mkRtidal.o tsc_omp2.o gsmooth.o \
 			Treewalk.near.o
 
@@ -29,7 +31,7 @@ DFLAGS = -DNMEG=90000L
 OPT = -O3  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=3 -DADV
 
 FFLAGS = $(FDFLAGS) $(OPT)  -mcmodel=medium
-CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES)  -DDEBUG=1 -DLOG=1
+CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES) -I. -Isrc -DDEBUG=1 -DLOG=1
 
 LIBS = -L$(FFTW)/lib -lfftw3f_omp -lfftw3f -lm
 
@@ -38,7 +40,7 @@ LIBS = -L$(FFTW)/lib -lfftw3f_omp -lfftw3f -lm
 
 #rules to build binary from source
 .c.o :
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 .f.o :
 	$(FC) $(FFLAGS) $(INCLUDES) -c $<

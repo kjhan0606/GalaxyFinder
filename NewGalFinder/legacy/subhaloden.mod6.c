@@ -1,3 +1,4 @@
+/* Not built. The live pipeline is src/find_galaxies.c and the stage files next to it. */
 /* It adopts the tidal radius of the elliptical orbits. May 2008 */
 /* It implements more improved version of peak identification
  * including the merging of underpopulated peaks. May, 23, 2008 */
@@ -555,6 +556,58 @@ int GetMemCandidateList(int np,int haloid, int *plist,int ishell){
 				for(k=0;k<NSHELL2P(i);k++)
 					plist[nmem++] = SHELL2P(i)[k];
 
+	}
+	return nmem;
+}
+/* Pool-hoisted variants of GetShellParticleFromRestParticleLIST and
+ * GetMemCandidateList. The shell-loop builds remaining_pool[] (snapshot of
+ * particles with IS_REMAINING at shell entry) and a halo->particles CSR
+ * (offset[]/list[]) once per shell, then every j-iter consumes those.
+ *
+ * Correctness equivalence vs. the originals:
+ *   - Within one shell, wp[].haloid only transitions NOT_HALO_MEMBER -> some
+ *     core_k (via SET_MEMBER_ID in the j-loop body). IS_BOUND on a particle
+ *     gates re-entry into target lists, so a particle bound by an earlier j
+ *     cannot reappear in any later j's target. Therefore the CSR captured
+ *     pre-shell is identical to the per-j CSR queried by the original code.
+ *   - For the target builder we still re-check IS_BOUND on shell particles
+ *     and IS_REMAINING on pool entries, so particles claimed by lower-j cores
+ *     are correctly excluded from later j's tlist. */
+int GetTargetFromPool(SimpleBasicParticleType *bp, int ishell, int *plist,
+		Coretype *icore, int *remaining_pool, int nremaining){
+	int i,bid,nmem=0;
+	float cx = icore->cx, cy = icore->cy, cz = icore->cz;
+	float tidalr2 = icore->Rtidal * icore->Rtidal;
+	float tmpx,tmpy,tmpz,dist2;
+	for(i=0;i<NSHELL2P(ishell);i++){
+		bid = SHELL2P(ishell)[i];
+		if(IS_BOUND(bid) != NOT) continue;
+		tmpx = bp[bid].x - cx; tmpy = bp[bid].y - cy; tmpz = bp[bid].z - cz;
+		dist2 = tmpx*tmpx+tmpy*tmpy+tmpz*tmpz;
+		if(dist2 < tidalr2) plist[nmem++] = bid;
+	}
+	for(i=0;i<nremaining;i++){
+		bid = remaining_pool[i];
+		if(IS_REMAINING(bid) == NOT) continue;
+		tmpx = bp[bid].x - cx; tmpy = bp[bid].y - cy; tmpz = bp[bid].z - cz;
+		dist2 = tmpx*tmpx+tmpy*tmpy+tmpz*tmpz;
+		if(dist2 < tidalr2) plist[nmem++] = bid;
+	}
+	return nmem;
+}
+int GetMemCandidateFromCSR(int haloid, int *plist, int ishell,
+		int *halo_csr_list, int *halo_csr_offset){
+	int i,j,k,nmem,nlcore;
+	int *src = halo_csr_list + halo_csr_offset[haloid];
+	int n = halo_csr_offset[haloid+1] - halo_csr_offset[haloid];
+	for(i=0;i<n;i++) plist[i] = src[i];
+	nmem = n;
+	for(i=ishell+1;i<nshell;i++){
+		nlcore = NSHELL2C(i);
+		for(j=0;j<nlcore;j++)
+			if(SHELL2C(i)[j] == haloid)
+				for(k=0;k<NSHELL2P(i);k++)
+					plist[nmem++] = SHELL2P(i)[k];
 	}
 	return nmem;
 }
@@ -1198,6 +1251,18 @@ recycling:
 	Tcontactlist = (int *)Malloc(sizeof(int)*numlinkingwatershedding*nthreads,
 			PPTR(Tcontactlist));
 
+	/* peak_to_core[p] = core index whose peak particle is p, else -1.
+	 * Built once on the master thread before the parallel watershed loop;
+	 * read-only inside the loop so it is race-free. Used by each thread to
+	 * record which peer peak it first touched (-> core[i].merge_into) for
+	 * the later H-maxima / persistence-based prune. */
+	int *peak_to_core = (int *)Malloc(sizeof(int)*(size_t)np, PPTR(peak_to_core));
+	for(j=0;j<np;j++) peak_to_core[j] = -1;
+	for(i=0;i<numcore;i++){
+		peak_to_core[core[i].peak] = i;
+		core[i].merge_into = -1;
+	}
+
 #ifdef _OPENMP
 #pragma omp parallel for private(j,i)
 #endif
@@ -1258,6 +1323,13 @@ recycling:
 								contactlist[ncontact++] = new;
 							}
 							else if(IS_VISITEDT(new,it) == NOT && IS_PEAK(new) != NOT){
+								/* Record the peer peak we first touched at
+								 * this (sub-saddle) density. As bisection
+								 * tightens denthr toward the true saddle,
+								 * later iterations overwrite this with the
+								 * peer that survives the highest threshold,
+								 * which is the immediate saddle neighbour. */
+								core[i].merge_into = peak_to_core[new];
 								breakflag = 1;
 								break;
 							}
@@ -1300,6 +1372,11 @@ recycling:
 								contactlist[ncontact++] = new;
 							}
 							else if(IS_VISITEDT(new,it) == NOT && IS_PEAK(new) != NOT){
+								/* Backup capture: if bisection converged at
+								 * the first try (no prior breakflag), we still
+								 * see a peer here. */
+								if(core[i].merge_into < 0)
+									core[i].merge_into = peak_to_core[new];
 								breakflag = 1;
 								break;
 							}
@@ -1450,6 +1527,7 @@ recycling:
 		}
 	}
 	Free(Tcontactlist);
+	Free(peak_to_core);
 	DEBUGPRINT("Now Found the core densities for %d cores\n",numcore);
 	for(i=0;i<numcore;i++){
 		DEBUGPRINT("C%d has nstar= %d npall= %d xyz= %g %g %g\n", 
@@ -1509,6 +1587,13 @@ recycling:
 						SET_MEMBER_ID(j, _newid);
 					}
 				}
+			}
+			/* Re-map merge_into through the same _remap so PrunePersistence
+			 * sees valid post-cull peer indices. A peer that got culled
+			 * (mapped to -1) loses its merge_into pointer for the survivor. */
+			for(j=0;j<_newnum;j++) {
+				int mi = core[j].merge_into;
+				core[j].merge_into = (mi >= 0) ? _remap[mi] : -1;
 			}
 			DEBUGPRINT("FindCoreDensity re-cull: %d -> %d cores (MINCORENMEM=%d)\n",
 					numcore, _newnum, MINCORENMEM);
@@ -1787,32 +1872,16 @@ int CheckSelfTE(Kptype *kp,int np,unsigned char *bndflag, Coretype *icore){
 	mass = (float*)Malloc(sizeof(float)*np,PPTR(mass));
 	kenergy = (float*)Malloc(sizeof(float)*np,PPTR(kenergy));
 	penergy = (float*)Malloc(sizeof(float)*np,PPTR(penergy));
-	/*
-	if(icore !=NULL){
-		for(i=0;i<np;i++){
-			r[i].x = kp[i].x;
-			r[i].y = kp[i].y;
-			r[i].z = kp[i].z;
-			vr[i].x = kp[i].vx;
-			vr[i].y = kp[i].vy;
-			vr[i].z = kp[i].vz;
-			mass[i] = kp[i].mass;
-		}
-		cx = icore->cx; cy = icore->cy; cz = icore->cz;
-		cvx = icore->cvx; cvy = icore->cvy; cvz = icore->cvz;
+	for(i=0;i<np;i++){
+		r[i].x = kp[i].x;
+		r[i].y = kp[i].y;
+		r[i].z = kp[i].z;
+		vr[i].x = kp[i].vx;
+		vr[i].y = kp[i].vy;
+		vr[i].z = kp[i].vz;
+		mass[i] = kp[i].mass;
 	}
-	else 
-	*/
 	{
-		for(i=0;i<np;i++){
-			r[i].x = kp[i].x;
-			r[i].y = kp[i].y;
-			r[i].z = kp[i].z;
-			vr[i].x = kp[i].vx;
-			vr[i].y = kp[i].vy;
-			vr[i].z = kp[i].vz;
-			mass[i] = kp[i].mass;
-		}
 		dptype tmass = 0;
 		cx = cy = cz = cvx = cvy = cvz = 0.L;
 		for(i=0;i<np;i++){
@@ -2930,7 +2999,425 @@ float findDMmass(SimpleBasicParticleType *bp, int np){
     return dmmass;
 }
 
+/* ---- DEBUG: dump cores at a named pipeline stage in production-compatible
+ * binary format (HaloInfo / SubInfo / particle payload), so a single
+ * Python reader can load both the production GALFIND output and this
+ * dump.  Per-core membership is taken from wp[i].haloid; particles
+ * not assigned to any core are written as the "background" SubInfo.
+ *
+ * The function is called at several points in subhalo_den (watershed,
+ * post-shell, post-bounditer, ...).  Each call passes a short tag string
+ * naming the stage; only stages listed in NEWGAL_DUMP_STAGES actually
+ * write anything.
+ *
+ * Activation (env vars, no recompile):
+ *   NEWGAL_DUMP_CORES_DIR        output directory (must exist).  Unset => no-op.
+ *   NEWGAL_DUMP_STAGES           comma-separated list of stages to dump,
+ *                                e.g. "watershed" or "watershed,post_shell".
+ *                                Unset or empty => no-op.
+ *   NEWGAL_DUMP_CORES_MIN_NP     minimum np to trigger (default 1000000).
+ *   NEWGAL_DUMP_CORES_EXIT_AFTER if "1", MPI_Abort after a dump completes
+ *                                (debug-only fast exit).
+ *
+ * Per-stage, per-rank files (appended across multiple subhalo_den calls):
+ *   {DIR}/GALCATALOG.LIST.cores.{tag}.{rank}  HaloInfo + numcore*SubInfo
+ *   {DIR}/GALFIND.DATA.cores.{tag}.{rank}     HaloInfo + numcore*(SubInfo + ptl)
+ *   {DIR}/background_ptl.cores.{tag}.{rank}   SubInfo + ptl (per call)
+ *
+ * Particle coordinates come from rbp (unshifted) to match production.
+ * Particle payload order within each SubInfo: DM, GAS, SINK, STAR. */
+static int _dump_stage_enabled(const char *tag){
+    const char *list = getenv("NEWGAL_DUMP_STAGES");
+    if(!list || !*list) return 0;
+    size_t tag_len = strlen(tag);
+    const char *p = list;
+    while(*p){
+        const char *e = strchr(p, ',');
+        size_t n = e ? (size_t)(e - p) : strlen(p);
+        if(n == tag_len && strncmp(p, tag, n) == 0) return 1;
+        if(!e) break;
+        p = e + 1;
+    }
+    return 0;
+}
+static void DumpCoresAsSubhalos(FoFTPtlStruct *rbp, lint np,
+                                int numcore, Coretype *core,
+                                const char *tag){
+    const char *outdir = getenv("NEWGAL_DUMP_CORES_DIR");
+    if(outdir == NULL || *outdir == '\0') return;
+    if(!_dump_stage_enabled(tag)) return;
 
+    long min_np = 1000000L;
+    const char *env_minnp = getenv("NEWGAL_DUMP_CORES_MIN_NP");
+    if(env_minnp && *env_minnp){
+        long v = atol(env_minnp);
+        if(v > 0) min_np = v;
+    }
+    if((long)np < min_np) return;
+
+    char fwrp[512], fwlist[512], fwbp[512], fwflag[512];
+    snprintf(fwrp,   sizeof(fwrp),   "%s/GALFIND.DATA.cores.%s.%d",    outdir, tag, myid);
+    snprintf(fwlist, sizeof(fwlist), "%s/GALCATALOG.LIST.cores.%s.%d", outdir, tag, myid);
+    snprintf(fwbp,   sizeof(fwbp),   "%s/background_ptl.cores.%s.%d",  outdir, tag, myid);
+    snprintf(fwflag, sizeof(fwflag), "%s/iscore_flag.cores.%s.%d",     outdir, tag, myid);
+
+    FILE *wrp   = fopen(fwrp,   "ab");
+    FILE *wlist = fopen(fwlist, "ab");
+    FILE *wbp   = fopen(fwbp,   "ab");
+    FILE *wflag = fopen(fwflag, "ab");
+    if(!wrp || !wlist || !wbp || !wflag){
+        fprintf(stderr,"DumpCoresAsSubhalos: fopen failed in %s\n", outdir);
+        if(wrp)   fclose(wrp);
+        if(wlist) fclose(wlist);
+        if(wbp)   fclose(wbp);
+        if(wflag) fclose(wflag);
+        return;
+    }
+
+    /* HaloInfo: aggregate over all particles (matches GetHaloInfo). */
+    HaloInfo hinfo;
+    hinfo.nsub = numcore;
+    hinfo.ndm = hinfo.ngas = hinfo.nsink = hinfo.nstar = 0;
+    hinfo.totm = hinfo.mdm = hinfo.mgas = hinfo.msink = hinfo.mstar = 0;
+    hinfo.x = hinfo.y = hinfo.z = 0;
+    hinfo.vx = hinfo.vy = hinfo.vz = 0;
+    {
+        lint i;
+        for(i=0;i<np;i++){
+            dptype mass=0, vx=0, vy=0, vz=0;
+            if(rbp[i].type == TYPE_DM){
+                hinfo.ndm++;
+                mass = rbp[i].p.dm.mass; hinfo.mdm += mass;
+                vx = rbp[i].p.dm.vx; vy = rbp[i].p.dm.vy; vz = rbp[i].p.dm.vz;
+            } else if(rbp[i].type == TYPE_SINK){
+                hinfo.nsink++;
+                mass = rbp[i].p.sink.mass; hinfo.msink += mass;
+                vx = rbp[i].p.sink.vx; vy = rbp[i].p.sink.vy; vz = rbp[i].p.sink.vz;
+            } else if(rbp[i].type == TYPE_STAR){
+                hinfo.nstar++;
+                mass = rbp[i].p.star.mass; hinfo.mstar += mass;
+                vx = rbp[i].p.star.vx; vy = rbp[i].p.star.vy; vz = rbp[i].p.star.vz;
+            } else if(rbp[i].type == TYPE_GAS){
+                hinfo.ngas++;
+                mass = rbp[i].p.gas.mass; hinfo.mgas += mass;
+                vx = rbp[i].p.gas.vx; vy = rbp[i].p.gas.vy; vz = rbp[i].p.gas.vz;
+            }
+            hinfo.totm += mass;
+            hinfo.x  += mass*rbp[i].x;
+            hinfo.y  += mass*rbp[i].y;
+            hinfo.z  += mass*rbp[i].z;
+            hinfo.vx += mass*vx;
+            hinfo.vy += mass*vy;
+            hinfo.vz += mass*vz;
+        }
+    }
+    hinfo.npall = (int)np;
+    if(hinfo.totm > 0){
+        hinfo.x/=hinfo.totm; hinfo.y/=hinfo.totm; hinfo.z/=hinfo.totm;
+        hinfo.vx/=hinfo.totm; hinfo.vy/=hinfo.totm; hinfo.vz/=hinfo.totm;
+    }
+    fwrite(&hinfo, sizeof(HaloInfo), 1, wrp);
+    fwrite(&hinfo, sizeof(HaloInfo), 1, wlist);
+
+    size_t maxbytes = sizeof(FoFTPtlStruct) * (size_t)np;
+    void *subdata = malloc(maxbytes);
+    unsigned char *flagbuf = (unsigned char *)malloc((size_t)np);
+    if(!subdata || !flagbuf){
+        fprintf(stderr,"DumpCoresAsSubhalos: malloc failed\n");
+        if(subdata) free(subdata);
+        if(flagbuf) free(flagbuf);
+        fclose(wrp); fclose(wlist); fclose(wbp); fclose(wflag);
+        return;
+    }
+
+    /* Per-core SubInfo + particle payload. */
+    {
+        int k; lint i;
+        for(k=0;k<numcore;k++){
+            SubInfo s;
+            size_t ndm=0, ngas=0, nsink=0, nstar=0;
+            for(i=0;i<np;i++){
+                if(wp[i].haloid != k) continue;
+                if(rbp[i].type == TYPE_DM)        ndm++;
+                else if(rbp[i].type == TYPE_GAS)  ngas++;
+                else if(rbp[i].type == TYPE_SINK) nsink++;
+                else if(rbp[i].type == TYPE_STAR) nstar++;
+            }
+            s.npdm = (int)ndm; s.npgas = (int)ngas;
+            s.npsink = (int)nsink; s.npstar = (int)nstar;
+            s.npall = (int)(ndm + ngas + nsink + nstar);
+            s.totm = s.mdm = s.mgas = s.msink = s.mstar = 0;
+            s.x = s.y = s.z = s.vx = s.vy = s.vz = 0;
+
+            char *p_dm   = (char*)subdata;
+            char *p_gas  = p_dm   + ndm  * sizeof(DmType);
+            char *p_sink = p_gas  + ngas * sizeof(GasType);
+            char *p_star = p_sink + nsink* sizeof(SinkType);
+            unsigned char *f_dm   = flagbuf;
+            unsigned char *f_gas  = f_dm   + ndm;
+            unsigned char *f_sink = f_gas  + ngas;
+            unsigned char *f_star = f_sink + nsink;
+
+            for(i=0;i<np;i++){
+                if(wp[i].haloid != k) continue;
+                dptype mass=0;
+                unsigned char b = (IS_CORE(i) != NOT) ? 1 : 0;
+                if(rbp[i].type == TYPE_DM){
+                    memcpy(p_dm, &rbp[i].p.dm, sizeof(DmType));
+                    p_dm += sizeof(DmType);
+                    *f_dm++ = b;
+                    mass = rbp[i].p.dm.mass; s.mdm += mass;
+                } else if(rbp[i].type == TYPE_GAS){
+                    memcpy(p_gas, &rbp[i].p.gas, sizeof(GasType));
+                    p_gas += sizeof(GasType);
+                    *f_gas++ = b;
+                    mass = rbp[i].p.gas.mass; s.mgas += mass;
+                } else if(rbp[i].type == TYPE_SINK){
+                    memcpy(p_sink, &rbp[i].p.sink, sizeof(SinkType));
+                    p_sink += sizeof(SinkType);
+                    *f_sink++ = b;
+                    mass = rbp[i].p.sink.mass; s.msink += mass;
+                } else if(rbp[i].type == TYPE_STAR){
+                    memcpy(p_star, &rbp[i].p.star, sizeof(StarType));
+                    p_star += sizeof(StarType);
+                    *f_star++ = b;
+                    mass = rbp[i].p.star.mass; s.mstar += mass;
+                }
+                s.totm += mass;
+                s.x  += mass*rbp[i].x;
+                s.y  += mass*rbp[i].y;
+                s.z  += mass*rbp[i].z;
+                s.vx += mass*rbp[i].vx;
+                s.vy += mass*rbp[i].vy;
+                s.vz += mass*rbp[i].vz;
+            }
+            if(s.totm > 0){
+                s.x/=s.totm; s.y/=s.totm; s.z/=s.totm;
+                s.vx/=s.totm; s.vy/=s.totm; s.vz/=s.totm;
+            }
+            size_t bytes = ndm  * sizeof(DmType)   + ngas  * sizeof(GasType)
+                         + nsink* sizeof(SinkType) + nstar * sizeof(StarType);
+            fwrite(&s, sizeof(SubInfo), 1, wrp);
+            fwrite(&s, sizeof(SubInfo), 1, wlist);
+            fwrite(subdata, 1, bytes, wrp);
+            fwrite(flagbuf, 1, s.npall, wflag);
+        }
+    }
+
+    /* Background: wp[i].haloid not in [0, numcore). */
+    {
+        SubInfo s;
+        size_t ndm=0, ngas=0, nsink=0, nstar=0;
+        lint i;
+        for(i=0;i<np;i++){
+            int h = wp[i].haloid;
+            if(h >= 0 && h < numcore) continue;
+            if(rbp[i].type == TYPE_DM)        ndm++;
+            else if(rbp[i].type == TYPE_GAS)  ngas++;
+            else if(rbp[i].type == TYPE_SINK) nsink++;
+            else if(rbp[i].type == TYPE_STAR) nstar++;
+        }
+        s.npdm = (int)ndm; s.npgas = (int)ngas;
+        s.npsink = (int)nsink; s.npstar = (int)nstar;
+        s.npall = (int)(ndm + ngas + nsink + nstar);
+        s.totm = s.mdm = s.mgas = s.msink = s.mstar = 0;
+        s.x = s.y = s.z = s.vx = s.vy = s.vz = 0;
+
+        char *p_dm   = (char*)subdata;
+        char *p_gas  = p_dm   + ndm  * sizeof(DmType);
+        char *p_sink = p_gas  + ngas * sizeof(GasType);
+        char *p_star = p_sink + nsink* sizeof(SinkType);
+        unsigned char *f_dm   = flagbuf;
+        unsigned char *f_gas  = f_dm   + ndm;
+        unsigned char *f_sink = f_gas  + ngas;
+        unsigned char *f_star = f_sink + nsink;
+
+        for(i=0;i<np;i++){
+            int h = wp[i].haloid;
+            if(h >= 0 && h < numcore) continue;
+            dptype mass=0;
+            unsigned char b = (IS_CORE(i) != NOT) ? 1 : 0;
+            if(rbp[i].type == TYPE_DM){
+                memcpy(p_dm, &rbp[i].p.dm, sizeof(DmType));
+                p_dm += sizeof(DmType);
+                *f_dm++ = b;
+                mass = rbp[i].p.dm.mass; s.mdm += mass;
+            } else if(rbp[i].type == TYPE_GAS){
+                memcpy(p_gas, &rbp[i].p.gas, sizeof(GasType));
+                p_gas += sizeof(GasType);
+                *f_gas++ = b;
+                mass = rbp[i].p.gas.mass; s.mgas += mass;
+            } else if(rbp[i].type == TYPE_SINK){
+                memcpy(p_sink, &rbp[i].p.sink, sizeof(SinkType));
+                p_sink += sizeof(SinkType);
+                *f_sink++ = b;
+                mass = rbp[i].p.sink.mass; s.msink += mass;
+            } else if(rbp[i].type == TYPE_STAR){
+                memcpy(p_star, &rbp[i].p.star, sizeof(StarType));
+                p_star += sizeof(StarType);
+                *f_star++ = b;
+                mass = rbp[i].p.star.mass; s.mstar += mass;
+            }
+            s.totm += mass;
+            s.x  += mass*rbp[i].x;
+            s.y  += mass*rbp[i].y;
+            s.z  += mass*rbp[i].z;
+            s.vx += mass*rbp[i].vx;
+            s.vy += mass*rbp[i].vy;
+            s.vz += mass*rbp[i].vz;
+        }
+        if(s.totm > 0){
+            s.x/=s.totm; s.y/=s.totm; s.z/=s.totm;
+            s.vx/=s.totm; s.vy/=s.totm; s.vz/=s.totm;
+        }
+        size_t bytes = ndm  * sizeof(DmType)   + ngas  * sizeof(GasType)
+                     + nsink* sizeof(SinkType) + nstar * sizeof(StarType);
+        fwrite(&s, sizeof(SubInfo), 1, wbp);
+        fwrite(subdata, 1, bytes, wbp);
+        fwrite(flagbuf, 1, s.npall, wflag);
+    }
+
+    free(subdata);
+    free(flagbuf);
+    fflush(wrp); fflush(wlist); fflush(wbp); fflush(wflag);
+    fclose(wrp); fclose(wlist); fclose(wbp); fclose(wflag);
+
+    fprintf(stderr,
+            "[DumpCoresAsSubhalos rank=%d stage=%s] np=%ld numcore=%d -> %s\n",
+            myid, tag, (long)np, numcore, outdir);
+    fflush(stderr);
+
+    const char *exit_after = getenv("NEWGAL_DUMP_CORES_EXIT_AFTER");
+    if(exit_after && *exit_after && atoi(exit_after) != 0){
+        fprintf(stderr,
+                "[DumpCoresAsSubhalos rank=%d stage=%s] NEWGAL_DUMP_CORES_EXIT_AFTER "
+                "set, calling MPI_Abort to stop the run.\n", myid, tag);
+        fflush(stderr);
+        MPI_Abort(MPI_COMM_WORLD, 0);
+    }
+}
+
+/* ----- H-maxima / persistence-based prune -------------------------------- */
+/* Reads global wp[]; set by the call site immediately before qsort. */
+static Coretype *_pp_core_ptr;
+static int _pp_cmp_ascpeak(const void *a, const void *b) {
+    int ia = *(const int *)a, ib = *(const int *)b;
+    float da = wp[_pp_core_ptr[ia].peak].den;
+    float db = wp[_pp_core_ptr[ib].peak].den;
+    if(da < db) return -1;
+    if(da > db) return  1;
+    return 0;
+}
+static int _pp_find(int *p, int x) {
+    while(p[x] != x) { p[x] = p[p[x]]; x = p[x]; }
+    return x;
+}
+
+/* Merge low-persistence cores into the higher-density peer they first touch
+ * during watershed bisection. Operates on the global wp[] (haloid + flags)
+ * and on the local core[] / bp[] arrays of subhalo_den. Returns new numcore.
+ *
+ *   persistence(c) = peak_density(c) - core[c].coredensity
+ *   merge c into peer if persistence/peak_density < tau
+ *
+ * Greedy bottom-up via union-find: sort cores by ascending peak density,
+ * walk lowest first, fold each weak peak into the (path-compressed) root
+ * of its merge_into peer. Surviving roots inherit the union of basin
+ * particles; nummem/numstar/starmass are rebuilt from wp[].haloid. */
+static int PrunePersistenceCores(int np, Coretype *core, int numcore,
+                                  SimpleBasicParticleType *bp, float tau)
+{
+    int i, j;
+    if(tau <= 0.f || numcore <= 1) return numcore;
+
+    int *parent = (int *)Malloc(sizeof(int)*(size_t)numcore, PPTR(parent));
+    int *order  = (int *)Malloc(sizeof(int)*(size_t)numcore, PPTR(order));
+    for(i=0;i<numcore;i++){ parent[i] = i; order[i] = i; }
+
+    _pp_core_ptr = core;
+    qsort(order, (size_t)numcore, sizeof(int), _pp_cmp_ascpeak);
+
+    int n_merge_events = 0;
+    for(j=0;j<numcore;j++){
+        int c = order[j];
+        int peer = core[c].merge_into;
+        if(peer < 0 || peer >= numcore) continue;
+        int rc = _pp_find(parent, c);
+        int rp = _pp_find(parent, peer);
+        if(rc == rp) continue;
+        /* the lower-peak root is the merge candidate (child). */
+        float dc = wp[core[rc].peak].den;
+        float dp = wp[core[rp].peak].den;
+        int child, parnt;
+        if(dc <  dp) { child = rc; parnt = rp; }
+        else         { child = rp; parnt = rc; }
+        float peak_d   = wp[core[child].peak].den;
+        float saddle_d = core[child].coredensity;
+        if(peak_d <= 0.f) continue;
+        float prom = (peak_d - saddle_d) / peak_d;
+        if(prom < tau){
+            parent[child] = parnt;
+            n_merge_events++;
+        }
+    }
+
+    /* Compact: surviving roots get new indices 0..new_n-1, in original order. */
+    int *new_id = (int *)Malloc(sizeof(int)*(size_t)numcore, PPTR(new_id));
+    for(i=0;i<numcore;i++) new_id[i] = -1;
+    int new_n = 0;
+    for(i=0;i<numcore;i++){
+        if(_pp_find(parent, i) == i) new_id[i] = new_n++;
+    }
+    for(i=0;i<numcore;i++){
+        if(new_id[i] < 0) new_id[i] = new_id[_pp_find(parent, i)];
+    }
+
+    /* Clear WP_PEAK on absorbed peaks. */
+    for(i=0;i<numcore;i++){
+        if(_pp_find(parent, i) != i) UNSET_PEAK(core[i].peak);
+    }
+
+    /* Remap particle membership. */
+    for(i=0;i<np;i++){
+        int h = wp[i].haloid;
+        if(h >= 0 && h < numcore){
+            wp[i].haloid = new_id[h];
+        }
+    }
+
+    if(new_n < numcore){
+        Coretype *tmp = (Coretype *)Malloc(sizeof(Coretype)*(size_t)new_n, PPTR(tmp));
+        for(i=0;i<numcore;i++){
+            if(_pp_find(parent, i) == i) tmp[new_id[i]] = core[i];
+        }
+        for(i=0;i<new_n;i++){
+            core[i] = tmp[i];
+            core[i].nummem   = 0;
+            core[i].numstar  = 0;
+            core[i].starmass = 0.f;
+            core[i].merge_into = -1; /* stale post-merge; not used downstream */
+        }
+        Free(tmp);
+
+        /* Rebuild per-core particle stats from wp[].haloid. */
+        for(i=0;i<np;i++){
+            int h = wp[i].haloid;
+            if(h >= 0 && h < new_n && IS_CORE(i)){
+                core[h].nummem++;
+                if(bp[i].type == TYPE_STAR){
+                    core[h].numstar++;
+                    core[h].starmass += bp[i].mass;
+                }
+            }
+        }
+    }
+
+    DEBUGPRINT("PrunePersistenceCores: %d -> %d cores (tau=%.3f, %d merge events)\n",
+               numcore, new_n, (double)tau, n_merge_events);
+
+    Free(new_id); Free(order); Free(parent);
+    return new_n;
+}
 
 int subhalo_den(FoFTPtlStruct *rbp, lint np,lint *p2halo){
 	int i,j,k,bid;
@@ -3053,6 +3540,23 @@ renumcore :
 
 		numcore = FindCoreDensity(bp,np,neighbor,NumNeighbor,core,numcore);
 		Free(density);
+
+		/* H-maxima / persistence-based prune of weak watershed peaks.
+		 * Suppresses BCG / cluster-centre over-segmentation by folding cores
+		 * whose (peak-saddle)/peak < PERSISTENCE_TAU into the higher peer they
+		 * first touched in FindCoreDensity's bisection. PERSISTENCE_TAU<=0
+		 * keeps the pre-prune behaviour. Runs BEFORE the "watershed" stage
+		 * dump so downstream stages see the pruned core list. */
+		if((float)PERSISTENCE_TAU > 0.f && numcore > 1){
+			numcore = PrunePersistenceCores(np, core, numcore, bp,
+					(float)PERSISTENCE_TAU);
+		}
+
+		/* DEBUG: stage "watershed" dump — cores immediately after
+		 * FindCoreDensity's MINCORENMEM re-cull and the persistence prune,
+		 * before any shell-loop / boundedness / membership-FoF
+		 * post-processing.  Gated by NEWGAL_DUMP_STAGES env var. */
+		DumpCoresAsSubhalos(rbp, np, numcore, core, "watershed");
 		if(numcore ==1) {
 			goto renumcore;
 		}
@@ -3171,21 +3675,50 @@ renumcore :
 			}
 			score = (Coresorttype*)Malloc(sizeof(Coresorttype)*NSHELL2C(ishell),PPTR(score));
 
-			halonmem = (int *) Malloc(sizeof(int)*numcore,PPTR(halonmem));
-			float *halomass = (float *) Malloc(sizeof(float)*numcore,PPTR(halomass));
-			for(j=0;j<numcore;j++) { halonmem[j] = 0; halomass[j] = 0.f; }
-			for(j=0;j<np;j++)
-				if(wp[j].haloid>=0) {
-					halonmem[wp[j].haloid]++;
-					halomass[wp[j].haloid] += bp[j].mass;
+			/* Pool-hoist: one O(np) pass that builds
+			 *   halonmem/halomass   - per-core nmem/mass for coresort priority
+			 *   remaining_pool[]    - snapshot of WP_REMAINING particles
+			 * Replaces 1 + ncore_in_shell O(np) scans with 2 O(np) scans.
+			 * The CSR (halo_csr_offset/halo_csr_list) is built in a second pass
+			 * and consumed by GetMemCandidateFromCSR in every j-iter. */
+			halonmem = (int *) Calloc(numcore,sizeof(int),PPTR(halonmem));
+			float *halomass = (float *) Calloc(numcore,sizeof(float),PPTR(halomass));
+			int *remaining_pool = (int *) Malloc(sizeof(int)*np,PPTR(remaining_pool));
+			int nremaining = 0;
+			for(j=0;j<np;j++){
+				int h = wp[j].haloid;
+				if(h >= 0){
+					halonmem[h]++;
+					halomass[h] += bp[j].mass;
 				}
+				if(IS_REMAINING(j) != NOT) remaining_pool[nremaining++] = j;
+			}
 			for(j=0;j<NSHELL2C(ishell);j++) {
 				score[j].nmem  = halonmem[SHELL2C(ishell)[j]];
 				score[j].tmass = halomass[SHELL2C(ishell)[j]];
 				score[j].core  = core+SHELL2C(ishell)[j];
 			}
-			Free(halonmem);
 			Free(halomass);
+
+			/* Build halo->particles CSR from halonmem counts. */
+			int *halo_csr_offset = (int *) Malloc(sizeof(int)*(numcore+1),PPTR(halo_csr_offset));
+			halo_csr_offset[0] = 0;
+			for(j=0;j<numcore;j++) halo_csr_offset[j+1] = halo_csr_offset[j] + halonmem[j];
+			int total_csr = halo_csr_offset[numcore];
+			int *halo_csr_list = NULL;
+			if(total_csr > 0){
+				halo_csr_list = (int *) Malloc(sizeof(int)*total_csr,PPTR(halo_csr_list));
+				int *halo_csr_pos = (int *) Calloc(numcore,sizeof(int),PPTR(halo_csr_pos));
+				for(j=0;j<np;j++){
+					int h = wp[j].haloid;
+					if(h >= 0){
+						halo_csr_list[halo_csr_offset[h] + halo_csr_pos[h]++] = j;
+					}
+				}
+				Free(halo_csr_pos);
+			}
+			Free(halonmem);
+
 			qsort(score,NSHELL2C(ishell),sizeof(Coresorttype),coresort);
 #ifdef DEBUG
 			for(j=0;j<NSHELL2C(ishell);j++) {
@@ -3202,12 +3735,14 @@ renumcore :
 				if(DORMANT_EMPTY_STREAK > 0 && core[icore].is_dormant) continue;
 				tlist = (int*)Malloc(sizeof(int)*np,PPTR(tlist));
 				slist = (int*)Malloc(sizeof(int)*np,PPTR(slist));
-				ntarget = GetShellParticleFromRestParticleLIST(bp,np,ishell, tlist,score[j].core);
+				ntarget = GetTargetFromPool(bp,ishell,tlist,score[j].core,
+						remaining_pool,nremaining);
 				if(ntarget ==0) {
 					Free(slist);Free(tlist);
 					continue;
 				}
-				nsource = GetMemCandidateList(np,icore, slist,ishell);
+				nsource = GetMemCandidateFromCSR(icore,slist,ishell,
+						halo_csr_list,halo_csr_offset);
 				skp = (Kptype*)Malloc(sizeof(Kptype)*nsource,PPTR(skp));
 				tkp = (Kptype*)Malloc(sizeof(Kptype)*ntarget,PPTR(tkp));
 				if(nsource < 10000) {
@@ -3246,6 +3781,9 @@ renumcore :
 					}
 				}
 			}
+			if(halo_csr_list) Free(halo_csr_list);
+			Free(halo_csr_offset);
+			Free(remaining_pool);
 			UnboundShellP2Rest(ishell,bp);/* Turning on the rest flag for unbound shell particles */
 			Free(score);
 		}
@@ -3256,12 +3794,25 @@ renumcore :
   			Free(SHELL2P(i));
   		}
 
+		/* DEBUG: stage "post_shell" dump — particle assignments after the
+		 * shell-loop completes, before MemberFoF / BOUNDITER post-processing.
+		 * Same numcore as "watershed"; wp[i].haloid now contains the
+		 * full watershed+shell-loop membership.  Cores that ended up with
+		 * zero particles in this snapshot are killed by the final renumber. */
+		DumpCoresAsSubhalos(rbp, np, numcore, core, "post_shell");
+
+		/* WARNING — DO NOT RE-ENABLE the TYPE_STAR per-step FoF.
+		 * The star-only FoF re-links stars purely by distance
+		 * (FOFLINK4MEMBERSHIP=0.005 cMpc/h) and runs both before
+		 * and after BOUNDITER, contaminating the watershed +
+		 * CheckSelfTE-unbinding membership we are studying.
+		 * The TYPE_ALL pass below is intentionally kept. */
 		if(np <NOMPFoF){
-			if(MINSTELLARMASS>=0) MemberStarFoF(bp,np,numcore,core);
+			/* if(MINSTELLARMASS>=0) MemberStarFoF(bp,np,numcore,core); */
 			MemberFoF(bp,np,numcore,core);
 		}
 		else {
-			if(MINSTELLARMASS>=0) ompEnabledMemberFoF(bp,np,numcore,core, TYPE_STAR);
+			/* if(MINSTELLARMASS>=0) ompEnabledMemberFoF(bp,np,numcore,core, TYPE_STAR); */
 			ompEnabledMemberFoF(bp,np,numcore,core, TYPE_ALL);
 		}
 
@@ -3328,12 +3879,14 @@ renumcore :
 		}
 
 
+		/* WARNING — DO NOT RE-ENABLE the TYPE_STAR per-step FoF.
+		 * Same reason as the pre-BOUNDITER pass above. */
 		if(np <NOMPFoF){
-			if(MINSTELLARMASS>=0) MemberStarFoF(bp,np,numcore,core);
+			/* if(MINSTELLARMASS>=0) MemberStarFoF(bp,np,numcore,core); */
 			MemberFoF(bp,np,numcore,core);
 		}
 		else {
-			if(MINSTELLARMASS>=0) ompEnabledMemberFoF(bp,np,numcore,core, TYPE_STAR);
+			/* if(MINSTELLARMASS>=0) ompEnabledMemberFoF(bp,np,numcore,core, TYPE_STAR); */
 			ompEnabledMemberFoF(bp,np,numcore,core, TYPE_ALL);
 		}
 

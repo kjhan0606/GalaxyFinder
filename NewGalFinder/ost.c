@@ -1,3 +1,9 @@
+/* Two trees live here.
+ * build_fof_tree / collect_fof_group link particles (FoF).
+ * build_force_tree / tree_potential evaluate gravity.
+ * OpenMP only splits tree construction. The walk itself is serial per particle,
+ * with the caller farming particles across threads.
+ */
 #include<stdio.h>
 #include<stdlib.h>
 #include<stddef.h>
@@ -199,7 +205,7 @@ enum boolean treeopen(particle *p,TStruct *tree, float theta2){
  * *tree is the tree structure.
  */
 
-void treeforce(particle *p,float theta2,TStruct *tree, TPtlStruct *ptl,
+void tree_acceleration(particle *p,float theta2,TStruct *tree, TPtlStruct *ptl,
 		pforce *force){
 	void *ptr,*optr;
 	ptr = (void *)tree;
@@ -223,7 +229,7 @@ void treeforce(particle *p,float theta2,TStruct *tree, TPtlStruct *ptl,
 	}
 	return;
 }
-float treeplumpotential(particle *p,float theta2,TStruct *tree,
+float tree_potential(particle *p,float theta2,TStruct *tree,
 		TPtlStruct *ptl){
 	void *ptr;
 	float potent=0.;
@@ -293,7 +299,7 @@ void pthreadFoFGroup(void *args){
                         dist2 = sqrt(dist2);
                         if(dist2 <= 0.5*(point.link02+tmp->link02)){
                             tmp->included =NEW;
-                            tmp->haloindx =haloid;
+                            tmp->group_id =haloid;
                         }
                     }
                     ptr = (void*)(tmp->sibling);
@@ -303,7 +309,7 @@ void pthreadFoFGroup(void *args){
     }
 }
 
-int new_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *tree,
+int collect_fof_group_from(particle *p,POSTYPE fof_link,FoFTStruct *tree,
         FoFTPtlStruct *ptl,particle *linked){
     int ncount, now;
     void *ptr,*optr,*nptr;
@@ -396,7 +402,7 @@ void ScoopUpParticles2New(void *optr){
     return ;
 }
 
-void destroy_omp_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *tree, FoFTPtlStruct *ptl){
+void visit_fof_group(particle *p,POSTYPE fof_link,FoFTStruct *tree, FoFTPtlStruct *ptl){
     void *ptr,*optr,*nptr;
 	POSTYPE fof_link2;
     particle point;
@@ -457,7 +463,7 @@ void destroy_omp_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *tree, FoFTPtl
     }
 }
 
-int destroy_new_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *tree,
+int collect_fof_group(particle *p,POSTYPE fof_link,FoFTStruct *tree,
         FoFTPtlStruct *ptl,particle *linked){
     int ncount, now;
     void *ptr,*optr,*nptr;
@@ -639,7 +645,7 @@ TStruct *divide_node(TStruct *motherNode, TStruct *nextFreeNode, float thetasq,i
     return nextFreeNode;
 }
 
-void Make_Tree(
+void build_force_tree(
 		TStruct *TREE_START, 
 		size_t nnode, 
 		TPtlStruct *ptl, 
@@ -699,7 +705,7 @@ void Make_Tree(
 }
 
 
-FoFTStruct *FoF_divide_node(
+FoFTStruct *split_fof_node(
 		FoFTStruct *motherNode, 
 		FoFTStruct *nextFreeNode, 
 		int recursiveflag
@@ -789,7 +795,7 @@ FoFTStruct *FoF_divide_node(
         FoFTStruct *NextJobNode = firstDaughter;
         for(i=0;i<8;i++){
             if(divideThisNode(motherNode, tmpnode[i].Nparticle) ){
-                nextFreeNode = FoF_divide_node(NextJobNode,nextFreeNode, recursiveflag);
+                nextFreeNode = split_fof_node(NextJobNode,nextFreeNode, recursiveflag);
                 NextJobNode ++;
             }
         }
@@ -797,7 +803,7 @@ FoFTStruct *FoF_divide_node(
     return nextFreeNode;
 }
 
-void FoF_Make_Tree(FoFTStruct *TREE_START, size_t nnode, FoFTPtlStruct *ptl, size_t np, int recursiveflag){
+void build_fof_tree(FoFTStruct *TREE_START, size_t nnode, FoFTPtlStruct *ptl, size_t np, int recursiveflag){
     size_t i;
     FoFTStruct *nextFreeNode = TREE_START+1;
     TREE_START->sibling = NULL;
@@ -818,18 +824,18 @@ void FoF_Make_Tree(FoFTStruct *TREE_START, size_t nnode, FoFTPtlStruct *ptl, siz
 
     TREE_START->daughter = &(ptl[0]);
     TREE_START->Nparticle = np;
-    if(recursiveflag == RECURSIVE) nextFreeNode = FoF_divide_node(TREE_START, nextFreeNode, recursiveflag);
+    if(recursiveflag == RECURSIVE) nextFreeNode = split_fof_node(TREE_START, nextFreeNode, recursiveflag);
     else if(recursiveflag == SERIALIZED){
         FoFTStruct *work;
         for(work=TREE_START;nextFreeNode-work >0; work++){
-            nextFreeNode = FoF_divide_node(work, nextFreeNode, SERIALIZED);
+            nextFreeNode = split_fof_node(work, nextFreeNode, SERIALIZED);
         }
     }
     else if(recursiveflag == PTHREAD)
     {
         FoFTStruct *work = TREE_START;
         do{
-            nextFreeNode = FoF_divide_node(work, nextFreeNode, PTHREAD);
+            nextFreeNode = split_fof_node(work, nextFreeNode, PTHREAD);
             work ++;
         }
         while( work < nextFreeNode && (nextFreeNode-work) < 64);
@@ -854,7 +860,7 @@ void FoF_Make_Tree(FoFTStruct *TREE_START, size_t nnode, FoFTPtlStruct *ptl, siz
 					mys,myf, work, nextFreeNode);
             for(j=mys;j<myf;j++)
             {
-                threadnextFreeNode = FoF_divide_node(work+j,threadnextFreeNode,RECURSIVE);
+                threadnextFreeNode = split_fof_node(work+j,threadnextFreeNode,RECURSIVE);
             }
         }
     }
@@ -937,7 +943,7 @@ size_t pnew_fof_link(FoFPosition *p, FoFTStruct *tree, float fof_link, FoFPositi
                             linked[ncount].y = ((FoFTPtlStruct*)ptr)->y;
                             linked[ncount].z = ((FoFTPtlStruct*)ptr)->z;
 
-                            ((FoFTPtlStruct*)ptr)->haloindx = nhalo;
+                            ((FoFTPtlStruct*)ptr)->group_id = nhalo;
                             ((FoFTPtlStruct*)ptr)->included = YES;
                             ncount ++;
 

@@ -18,6 +18,7 @@
 #include "ramses.h"
 #include "tree.h"
 #include "params.h"
+#include "src/stage_timer.h"
 
 
 #define nodesize dist
@@ -749,7 +750,7 @@ void findStellarCore(
         float *densph,
 		Coretype **Core,
 		int *NumCore,  // return value for number of core
-		int maxnumcore,
+		int max_cores,
 		long long **Nearindex){
 	Coretype *core = *Core;
 	int numcore;
@@ -894,15 +895,18 @@ void findStellarCore(
 			}
 			if(iflag ==0){
 				long long ibp = p[istar].indx;
-				core[numcore].peak = ibp;
-				core[numcore].cx = bp[ibp].x;
-				core[numcore].cy = bp[ibp].y;
-				core[numcore].cz = bp[ibp].z;
-				core[numcore].density = densph[i];
+				core[numcore].peak_particle = ibp;
+				core[numcore].position.x = bp[ibp].x;
+				core[numcore].position.y = bp[ibp].y;
+				core[numcore].position.z = bp[ibp].z;
+				core[numcore].velocity.x = bp[ibp].vx;
+				core[numcore].velocity.y = bp[ibp].vy;
+				core[numcore].velocity.z = bp[ibp].vz;
+				core[numcore].peak_density = densph[i];
 				numcore ++;
-				if(numcore > maxnumcore-10){
-					maxnumcore += MAXNUMCORE;
-					*Core = Realloc(*Core, sizeof(Coretype)*maxnumcore);
+				if(numcore > max_cores-10){
+					max_cores += MAXNUMCORE;
+					*Core = Realloc(*Core, sizeof(Coretype)*max_cores);
 					core = *Core;
 				}
 			}
@@ -910,19 +914,19 @@ void findStellarCore(
 		if(bp[i].type == TYPE_STAR) istar ++;
 	}
 	Free(ptl); Free(p);
-	DEBUGPRINT("The number of cores : %d and before MergingPeak\n", numcore);
+	DEBUGPRINT("The number of cores : %d and before merge_nearby_peaks\n", numcore);
 	for(i=0;i<numcore;i++){
-		DEBUGPRINT("p%lld: %g %g %g\n", i,core[i].cx, core[i].cy,core[i].cz);
+		DEBUGPRINT("p%lld: %g %g %g\n", i,core[i].position.x, core[i].position.y,core[i].position.z);
 	}
 
 
 
 
-	int MergingPeak(SimpleBasicParticleType *, int, Coretype *, int, int, float);
-	if(numcore >10) numcore = MergingPeak(bp,np, core, numcore,0, (float)MERGINGPEAKLENGTH);
+	int merge_nearby_peaks(SimpleBasicParticleType *, int, Coretype *, int, int, float);
+	if(numcore >10) numcore = merge_nearby_peaks(bp,np, core, numcore,0, (float)MERGINGPEAKLENGTH);
 	core = *Core = Realloc(*Core, sizeof(Coretype)*numcore);
 
-	DEBUGPRINT("The number of cores : %d and after MergingPeak\n", numcore);
+	DEBUGPRINT("The number of cores : %d and after merge_nearby_peaks\n", numcore);
 
 	nearindex = *Nearindex = Realloc(*Nearindex, sizeof(long long)*np*Numnear);
     p = (particle *) Malloc(sizeof(particle)*np,PPTR(p));
@@ -988,21 +992,21 @@ void findStellarCore(
 	return;
 }
 
-/* lagFindCoreParam: parameterized core (peak) finder.
+/* find_peaks_with_thresholds: parameterized core (peak) finder.
  * peakthr_in   : grid-density threshold for peaks; <=0 -> use PEAKTHRESHOLD
  * gauss_l_in   : Gaussian smoothing length, cMpc/h; <=0 -> Gaussian_Smoothing_Length
  * cell_sz_in   : TSC cell size, cMpc/h;             <=0 -> TSC_CELL_SIZE
- * merging_l_in : MergingPeak FoF link length, cMpc/h; <=0 -> MERGINGPEAKLENGTH
- * The original lagFindStellarCore() is kept as a thin wrapper using defaults.
+ * merging_l_in : merge_nearby_peaks FoF link length, cMpc/h; <=0 -> MERGINGPEAKLENGTH
+ * The original find_stellar_peaks() is kept as a thin wrapper using defaults.
  */
-void lagFindCoreParam(
+void find_peaks_with_thresholds(
 		SimpleBasicParticleType *bp,
 		int np,
 		int Numnear,
         float *densph,
 		Coretype **Core,
 		int *NumCore,  // return value for number of core
-		int maxnumcore,
+		int max_cores,
 		long long *nearindex, // index array for neighbor network
 		int ptype,
 		float peakthr_in,
@@ -1014,6 +1018,31 @@ void lagFindCoreParam(
 	float _gauss_l = (gauss_l_in > 0) ? gauss_l_in : (float)Gaussian_Smoothing_Length;
 	float _cell_sz = (cell_sz_in > 0) ? cell_sz_in : (float)TSC_CELL_SIZE;
 	float _merging_l = (merging_l_in > 0) ? merging_l_in : (float)MERGINGPEAKLENGTH;
+	float _dm_gauss_l = (float)DM_GAUSSIAN_SMOOTHING_LENGTH;
+	{
+		const char *e_gl = getenv("NEWGAL_GAUSSIAN_SMOOTHING_LENGTH");
+		if(e_gl && atof(e_gl) > 0){
+			_gauss_l = (float)atof(e_gl);
+			LOGPRINT("Gaussian_Smoothing_Length overridden by env: %g cMpc/h (default %g)\n",
+					_gauss_l, (float)Gaussian_Smoothing_Length);
+		}
+		const char *e_dm = getenv("NEWGAL_DM_GAUSSIAN_SMOOTHING_LENGTH");
+		if(e_dm && atof(e_dm) > 0){
+			_dm_gauss_l = (float)atof(e_dm);
+			LOGPRINT("DM_GAUSSIAN_SMOOTHING_LENGTH overridden by env: %g cMpc/h (default %g)\n",
+					_dm_gauss_l, (float)DM_GAUSSIAN_SMOOTHING_LENGTH);
+		}
+		const char *e_pt = getenv("NEWGAL_PEAKTHRESHOLD");
+		if(e_pt && atof(e_pt) > 0){
+			_peakthr = (float)atof(e_pt);
+			LOGPRINT("PEAKTHRESHOLD overridden by env: %g (default %g)\n",
+					_peakthr, (float)PEAKTHRESHOLD);
+		}
+		LOGPRINT("smoothing config: gauss_l=%g (%.1f ckpc/h, %.2f cells) "
+				"dm_gauss_l=%g cell=%g peak_thr=%g\n",
+				_gauss_l, _gauss_l*1000.f, _gauss_l/_cell_sz,
+				_dm_gauss_l, _cell_sz, _peakthr);
+	}
 	Coretype *core = *Core;
 	int numcore;
 //    float *h;
@@ -1073,6 +1102,8 @@ void lagFindCoreParam(
 		mx = 2*(nx/2+1);
 		ncells = mx*ny*nz;
 		denGrid = (float*)Malloc(sizeof(float)*ncells,PPTR(denGrid));
+		StageTimer stage_density;
+		stage_begin(&stage_density);
 		{
 			void assign_density_TSC(SimpleBasicParticleType *, int, float *, int, int, int,
 				double, double, double, double, int);
@@ -1086,11 +1117,11 @@ void lagFindCoreParam(
 				 * When DM_DENSITY_WEIGHT==0 the DM grid contributes nothing, so
 				 * skip its TSC and smoothing entirely. */
 				assign_density_TSC(bp, np, denGrid, nx,ny,nz,xmin,ymin,zmin,cellsize, TYPE_STAR);
-				gaussian_Smoothing(denGrid, nx,ny,nz, cellsize, (float)Gaussian_Smoothing_Length);
+				gaussian_Smoothing(denGrid, nx,ny,nz, cellsize, _gauss_l);
 				if((float)DM_DENSITY_WEIGHT != 0.f){
 					float *denGrid_dm = (float*)Malloc(sizeof(float)*ncells,PPTR(denGrid_dm));
 					assign_density_TSC(bp, np, denGrid_dm, nx,ny,nz,xmin,ymin,zmin,cellsize, TYPE_DM);
-					gaussian_Smoothing(denGrid_dm, nx,ny,nz, cellsize, (float)DM_GAUSSIAN_SMOOTHING_LENGTH);
+					gaussian_Smoothing(denGrid_dm, nx,ny,nz, cellsize, _dm_gauss_l);
 					long long ic;
 					for(ic=0;ic<ncells;ic++) denGrid[ic] += (float)DM_DENSITY_WEIGHT * denGrid_dm[ic];
 					Free(denGrid_dm);
@@ -1115,6 +1146,7 @@ void lagFindCoreParam(
 					double, float *, int, int, int);
 			findDen(bp,np, densph, xmin,ymin,zmin, cellsize, denGrid, nx,ny,nz);
 		}
+		stage_end(&stage_density, "density_field");
 		if(0){
 			float *checkden = (float*)Malloc(sizeof(float)*ncells,PPTR(checkden));
 			for(i=0;i<ncells;i++) checkden[i] = 0;
@@ -1171,6 +1203,8 @@ void lagFindCoreParam(
 			DEBUGPRINT("After building LinkedList with ptype=%d nparticles= %d\n",
 					ptype, nparticles);
 		}
+		StageTimer stage_peaks;
+		stage_begin(&stage_peaks);
 		numcore = 0;
 		int nthreads;
 #ifdef _OPENMP
@@ -1269,11 +1303,14 @@ void lagFindCoreParam(
                                 tmp = tmp->bp;
                             }
 							if(ibp > 0){
-	                            core[koff+numcore].peak = jbp;
-								core[koff+numcore].cx = bp[jbp].x;
-								core[koff+numcore].cy = bp[jbp].y;
-								core[koff+numcore].cz = bp[jbp].z;
-								core[koff+numcore].density = maxden;
+	                            core[koff+numcore].peak_particle = jbp;
+								core[koff+numcore].position.x = bp[jbp].x;
+								core[koff+numcore].position.y = bp[jbp].y;
+								core[koff+numcore].position.z = bp[jbp].z;
+								core[koff+numcore].velocity.x = bp[jbp].vx;
+								core[koff+numcore].velocity.y = bp[jbp].vy;
+								core[koff+numcore].velocity.z = bp[jbp].vz;
+								core[koff+numcore].peak_density = maxden;
 								core[koff+numcore].is_dark = 0;
 								/*
 								LOGPRINT("p%d has c%d with koff= %d xyz= %g %g %g rho= %g\n",
@@ -1289,25 +1326,31 @@ void lagFindCoreParam(
         }
 		numcore = 0;
 		for(i=0;i<nthreads;i++) numcore += num_cores[i];
-		DEBUGPRINT("The number of cores (ptype=%d): %d before MergingPeak\n",
+		DEBUGPRINT("The number of cores (ptype=%d): %d before merge_nearby_peaks\n",
 				ptype, numcore);
+		stage_end(&stage_peaks, "stellar_peaks");
 		Free(linkedListGrid);
 		Free(denGrid);
 
 	}
 
 
-//	DEBUGPRINT("C70 has peak id= %d  den= %g before merging\n", core[70].peak, core[70].density);
+//	DEBUGPRINT("C70 has peak id= %d  den= %g before merging\n", core[70].peak_particle, core[70].peak_density);
 
-	int MergingPeak(SimpleBasicParticleType *, int, Coretype *, int, int, float);
-	if(numcore >10) numcore = MergingPeak(bp,np, core, numcore,0, _merging_l);
+	int merge_nearby_peaks(SimpleBasicParticleType *, int, Coretype *, int, int, float);
+	StageTimer stage_merge;
+	stage_begin(&stage_merge);
+	if(numcore >10) numcore = merge_nearby_peaks(bp,np, core, numcore,0, _merging_l);
 	core = *Core = Realloc(*Core, sizeof(Coretype)*numcore);
 
-//	DEBUGPRINT("C70 has peak id= %d  den= %g after merging\n", core[70].peak, core[70].density);
+//	DEBUGPRINT("C70 has peak id= %d  den= %g after merging\n", core[70].peak_particle, core[70].peak_density);
 
 
 
-	DEBUGPRINT("The number of cores : %d and after MergingPeak\n", numcore);
+	DEBUGPRINT("The number of cores : %d and after merge_nearby_peaks\n", numcore);
+	stage_end(&stage_merge, "merge_nearby_peaks");
+	StageTimer stage_neighbors;
+	stage_begin(&stage_neighbors);
 
     p = (particle *) Malloc(sizeof(particle)*np,PPTR(p));
 #ifdef _OPENMP
@@ -1554,6 +1597,7 @@ void lagFindCoreParam(
 	Free(p);
 
 	DEBUGPRINT("making nearbor list is completed\n");
+	stage_end(&stage_neighbors, "neighbor_list");
 
 
 	*NumCore = numcore;
@@ -1563,35 +1607,35 @@ void lagFindCoreParam(
 
 /* Backward-compatible wrapper: stellar core finding with the default
  * (PEAKTHRESHOLD / Gaussian_Smoothing_Length / TSC_CELL_SIZE) parameters. */
-void lagFindStellarCore(
+void find_stellar_peaks(
 		SimpleBasicParticleType *bp,
 		int np,
 		int Numnear,
         float *densph,
 		Coretype **Core,
 		int *NumCore,
-		int maxnumcore,
+		int max_cores,
 		long long *nearindex,
 		int ptype
 		){
-	lagFindCoreParam(bp, np, Numnear, densph, Core, NumCore, maxnumcore,
+	find_peaks_with_thresholds(bp, np, Numnear, densph, Core, NumCore, max_cores,
 			nearindex, ptype, -1.f, -1.f, -1.f, -1.f);
 }
 
 /* Dark-galaxy core finder: finds peaks in the DM-only density field using
  * DM_PEAKTHRESHOLD / DM_GAUSSIAN_SMOOTHING_LENGTH / DM_TSC_CELL_SIZE.
- * Identical pipeline as lagFindStellarCore, just type-DM and DM-tuned thresholds. */
-void lagFindDarkCore(
+ * Identical pipeline as find_stellar_peaks, just type-DM and DM-tuned thresholds. */
+void find_dark_peaks(
 		SimpleBasicParticleType *bp,
 		int np,
 		int Numnear,
         float *densph,
 		Coretype **Core,
 		int *NumCore,
-		int maxnumcore,
+		int max_cores,
 		long long *nearindex
 		){
-	lagFindCoreParam(bp, np, Numnear, densph, Core, NumCore, maxnumcore,
+	find_peaks_with_thresholds(bp, np, Numnear, densph, Core, NumCore, max_cores,
 			nearindex, TYPE_DM,
 			(float)DM_PEAKTHRESHOLD,
 			(float)DM_GAUSSIAN_SMOOTHING_LENGTH,
@@ -1603,17 +1647,17 @@ void lagFindDarkCore(
  * with each component smoothed at its own scale. Uses the stellar PEAKTHRESHOLD
  * and MERGINGPEAKLENGTH since stellar peaks set the dominant scale; the DM
  * smoothing/weight constants live in params.h. */
-void lagFindTotalCore(
+void find_density_peaks(
 		SimpleBasicParticleType *bp,
 		int np,
 		int Numnear,
         float *densph,
 		Coretype **Core,
 		int *NumCore,
-		int maxnumcore,
+		int max_cores,
 		long long *nearindex
 		){
-	lagFindCoreParam(bp, np, Numnear, densph, Core, NumCore, maxnumcore,
+	find_peaks_with_thresholds(bp, np, Numnear, densph, Core, NumCore, max_cores,
 			nearindex, TYPE_STAR_DM, -1.f, -1.f, -1.f, -1.f);
 }
 
