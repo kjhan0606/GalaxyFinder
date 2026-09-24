@@ -124,9 +124,9 @@ void link_members_openmp(SimpleBasicParticleType *particles, int n_particles, in
 			}
 			continue;
 		}
-		size_t nnode = (n_members >= 200000)
-			? (size_t)MAX(65*10000, n_members/2)
-			: (size_t)MAX(64, n_members*8);
+		/* The octree writes one internal node per split and does not
+		 * stop at nnode. 8*n_members overflowed (C297, 145 particles). */
+		size_t nnode = (size_t)MAX(65*10000, n_members/2);
 		FoFTStruct *TREE;
 		particle *linked;
 		DEBUGPRINT("Making FoF Tree in the parallel mode for C%d with n_particles= %d & nnode= %zu currentMemStack= %lld\n", 

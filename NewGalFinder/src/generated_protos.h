@@ -61,3 +61,4 @@ int _pp_find(int *p, int x);
 int prune_shallow_peaks(int n_particles, Coretype *cores, int n_cores, SimpleBasicParticleType *particles, float tau);
 int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids);
 int assign_members_from_watershed(SimpleBasicParticleType *particles, int n_particles, long long *neighbor, int n_neighbors, Coretype *cores, int n_cores);
+int assign_dmo_halos(SimpleBasicParticleType *particles, int n_particles, Coretype *cores);

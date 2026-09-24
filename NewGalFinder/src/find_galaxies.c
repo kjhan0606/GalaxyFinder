@@ -69,16 +69,22 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 		halo.particles = (ParticleState *)Malloc(sizeof(ParticleState)*n_particles,PPTR(halo.particles));
 	}
 	if(n_cores == 0) {
-		/*
-#ifdef NOBACKGROUND
-		for(i=0;i<n_particles;i++){
-			galaxy_ids[i] = 0;
+		int nstar_now = count_stars(particles, n_particles);
+		if(nstar_now == 0 && total_dm_mass(particles, n_particles) > 0.f){
+			DEBUGPRINT("DMO halo: no stellar peaks, seeding on dark matter\n");
+			for(i=0;i<n_particles;i++) set_galaxy_id(i, NOT_HALO_MEMBER);
+			n_cores = assign_dmo_halos(particles, (int)n_particles, cores);
+			Free(density);
+			if(n_cores <= 0){
+				for(i=0;i<n_particles;i++) galaxy_ids[i] = 0;
+				Free(halo.particles);
+				Free(neighbor);
+				Free(cores);
+				Free(particles);
+				return 1;
+			}
+			goto gogo;
 		}
-#endif
-		Free(halo.particles);Free(density);Free(neighbor);
-		Free(particles);
-		return 0;
-		*/
 		for(i=0;i<n_particles;i++) galaxy_ids[i] = 0;
 		return 1;
 	}
@@ -180,6 +186,7 @@ renumcore :
 
 		n_cores = assign_members_from_watershed(particles, (int)n_particles, neighbor, n_neighbors, cores, n_cores);
 		write_stage_snapshot(raw, n_particles, n_cores, cores, "post_shell");
+	}
 gogo:
 		for(i=0;i<n_particles;i++){
 			galaxy_ids[i] = halo.particles[i].galaxy_id;
@@ -221,7 +228,6 @@ gogo:
 
 
 		Free(halo.particles); Free(neighbor);
-	}
 	/*
 	*/
 

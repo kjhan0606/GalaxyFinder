@@ -974,10 +974,16 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 	const int min_dm = DM_MINCORENMEM;
 	const int min_nucleus = 20;
 	float qxmin = xmin, qymin = ymin, qzmin = zmin;
+	int planted = 0;
 
-	hx = cores[host].position.x;
-	hy = cores[host].position.y;
-	hz = cores[host].position.z;
+	if(n_cores > 0 && host >= 0 && host < n_cores){
+		hx = cores[host].position.x;
+		hy = cores[host].position.y;
+		hz = cores[host].position.z;
+	}
+	else {
+		hx = hy = hz = 0;
+	}
 	{
 		int seen = 0;
 		float x0=0,y0=0,z0=0,x1=0,y1=0,z1=0;
@@ -1110,6 +1116,69 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 	}
 	Free(den);
 	DEBUGPRINT("dark maxima %d\n", n_peak);
+	if(n_cores <= 0){
+		int ibest = 0, pnear = -1, nlab = 0;
+		double bestd = 1.e300, tmass = 0;
+		double cx = 0, cy = 0, cz = 0, cvx = 0, cvy = 0, cvz = 0;
+		float r2;
+		if(n_peak <= 0){
+			Free(peaks);
+			return 0;
+		}
+		for(i=1;i<n_peak;i++){
+			if(peaks[i].den > peaks[ibest].den) ibest = i;
+		}
+		r2 = smooth * smooth;
+		for(i=0;i<n_particles;i++){
+			double dx, dy, dz, d2;
+			if(particles[i].type != TYPE_DM) continue;
+			dx = particles[i].x - peaks[ibest].x;
+			dy = particles[i].y - peaks[ibest].y;
+			dz = particles[i].z - peaks[ibest].z;
+			d2 = dx*dx + dy*dy + dz*dz;
+			if(d2 < bestd){ bestd = d2; pnear = i; }
+			if(d2 > r2) continue;
+			set_galaxy_id(i, 0);
+			mark_bound(i);
+			clear_remaining(i);
+			tmass += particles[i].mass;
+			cx += particles[i].x * particles[i].mass;
+			cy += particles[i].y * particles[i].mass;
+			cz += particles[i].z * particles[i].mass;
+			cvx += particles[i].vx * particles[i].mass;
+			cvy += particles[i].vy * particles[i].mass;
+			cvz += particles[i].vz * particles[i].mass;
+			nlab++;
+		}
+		memset(cores, 0, sizeof(Coretype));
+		cores[0].is_dark = 1;
+		cores[0].peak_particle = pnear;
+		cores[0].position.x = peaks[ibest].x;
+		cores[0].position.y = peaks[ibest].y;
+		cores[0].position.z = peaks[ibest].z;
+		cores[0].peak_density = peaks[ibest].den;
+		cores[0].n_particles = nlab;
+		if(tmass > 0){
+			cores[0].velocity.x = (float)(cvx / tmass);
+			cores[0].velocity.y = (float)(cvy / tmass);
+			cores[0].velocity.z = (float)(cvz / tmass);
+		}
+		else if(pnear >= 0){
+			cores[0].velocity.x = particles[pnear].vx;
+			cores[0].velocity.y = particles[pnear].vy;
+			cores[0].velocity.z = particles[pnear].vz;
+		}
+		n_cores = 1;
+		host = 0;
+		planted = 1;
+		hx = peaks[ibest].x;
+		hy = peaks[ibest].y;
+		hz = peaks[ibest].z;
+		DEBUGPRINT("DMO host peak den=%g labeled=%d c %g %g %g\n",
+				peaks[ibest].den, nlab,
+				hx+halo.origin.x, hy+halo.origin.y, hz+halo.origin.z);
+		(void)cx; (void)cy; (void)cz;
+	}
 
 	n_dm = 0;
 	dmshell = (RadiusMass *)Malloc(sizeof(RadiusMass)*(size_t)n_particles, PPTR(dmshell));
@@ -1129,6 +1198,43 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 	for(i=0;i<n_dm;i++) dmprefix[i+1] = dmprefix[i] + dmshell[i].mass;
 
 	n_keep = 0;
+	{
+		/* Jacobi mass must be centred on the host. A DMO call arrives with
+		 * a profile centred elsewhere, so rebuild it after the host is known. */
+		RadiusMass *local_shell = NULL;
+		double *local_prefix = NULL;
+		const RadiusMass *use_shell = hshell;
+		const double *use_prefix = hprefix;
+		int use_n = nhost;
+		if(planted){
+			int q;
+			local_shell = (RadiusMass *)Malloc(sizeof(RadiusMass)*(size_t)n_particles, PPTR(local_shell));
+			local_prefix = (double *)Malloc(sizeof(double)*(size_t)(n_particles+1), PPTR(local_prefix));
+			for(q=0;q<n_particles;q++){
+				double dx = particles[q].x - hx;
+				double dy = particles[q].y - hy;
+				double dz = particles[q].z - hz;
+				local_shell[q].radius = (float)sqrt(dx*dx + dy*dy + dz*dz);
+				local_shell[q].mass = particles[q].mass;
+			}
+			qsort(local_shell, (size_t)n_particles, sizeof(RadiusMass), radius_mass_cmp);
+			local_prefix[0] = 0;
+			for(q=0;q<n_particles;q++) local_prefix[q+1] = local_prefix[q] + local_shell[q].mass;
+			use_shell = local_shell;
+			use_prefix = local_prefix;
+			use_n = n_particles;
+		}
+		(void)use_shell; (void)use_prefix; (void)use_n;
+		/* The satellite loop below still calls enclosed_mass on the caller's
+		 * profile. For a stellar host that profile is already centred. For
+		 * DMO the caller's profile is rebuilt into use_*. Point the names
+		 * the loop already uses at that buffer by writing through a copy
+		 * only when we allocated one. */
+		if(local_shell){
+			hshell = local_shell;
+			hprefix = local_prefix;
+			nhost = use_n;
+		}
 	for(i=0;i<n_peak;i++){
 		int k, nball, nsrc, nbound, ndm_bound, n_nucleus;
 		int stellar_hit;
@@ -1351,6 +1457,11 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 			n_keep++;
 		}
 	}
+		if(local_shell){
+			Free(local_prefix);
+			Free(local_shell);
+		}
+	}
 	DEBUGPRINT("dark galaxies kept %d\n", n_keep);
 	Free(dmprefix);
 	Free(dmshell);
@@ -1499,5 +1610,100 @@ int assign_members_from_watershed(SimpleBasicParticleType *particles, int n_part
 	 * The host pass has already finished, so it does not adopt them. */
 	link_galaxy_members(particles, n_particles, n_cores, cores);
 	refresh_core_counts(particles, n_particles, cores, n_cores);
+	return n_cores;
+}
+
+/* A friends-of-friends halo with no stars. The brightest dark-matter
+ * density peak is the host. The other peaks are satellites, with the
+ * same excess-mass and Jacobi test used for star-poor cores. */
+int assign_dmo_halos(SimpleBasicParticleType *particles, int n_particles,
+		Coretype *cores) {
+	int i, host, nx, ny, nz, ncell, n_cores;
+	int *head, *next, *csr, *csr_off, *filled, *work;
+	float xmin, ymin, zmin, xmax, ymax, zmax, cell, span;
+	RadiusMass dummy;
+	double pref[2];
+	StageTimer stage_dark, stage_host;
+	xmin = xmax = particles[0].x;
+	ymin = ymax = particles[0].y;
+	zmin = zmax = particles[0].z;
+	for(i=1;i<n_particles;i++){
+		if(particles[i].x < xmin) xmin = particles[i].x;
+		if(particles[i].y < ymin) ymin = particles[i].y;
+		if(particles[i].z < zmin) zmin = particles[i].z;
+		if(particles[i].x > xmax) xmax = particles[i].x;
+		if(particles[i].y > ymax) ymax = particles[i].y;
+		if(particles[i].z > zmax) zmax = particles[i].z;
+	}
+	span = xmax - xmin;
+	if(ymax - ymin > span) span = ymax - ymin;
+	if(zmax - zmin > span) span = zmax - zmin;
+	cell = 0.01f;
+	if(span > 0.f && span / cell > 250.f) cell = span / 250.f;
+	nx = (int)((xmax - xmin) / cell) + 1;
+	ny = (int)((ymax - ymin) / cell) + 1;
+	nz = (int)((zmax - zmin) / cell) + 1;
+	if(nx < 1) nx = 1;
+	if(ny < 1) ny = 1;
+	if(nz < 1) nz = 1;
+	ncell = nx * ny * nz;
+	head = (int *)Malloc(sizeof(int)*(size_t)ncell, PPTR(head));
+	next = (int *)Malloc(sizeof(int)*(size_t)n_particles, PPTR(next));
+	for(i=0;i<ncell;i++) head[i] = -1;
+	for(i=0;i<n_particles;i++){
+		int ix = (int)((particles[i].x - xmin) / cell);
+		int iy = (int)((particles[i].y - ymin) / cell);
+		int iz = (int)((particles[i].z - zmin) / cell);
+		int c;
+		if(ix < 0) ix = 0;
+		if(iy < 0) iy = 0;
+		if(iz < 0) iz = 0;
+		if(ix >= nx) ix = nx - 1;
+		if(iy >= ny) iy = ny - 1;
+		if(iz >= nz) iz = nz - 1;
+		c = (iz * ny + iy) * nx + ix;
+		next[i] = head[c];
+		head[c] = i;
+	}
+	work = (int *)Malloc(sizeof(int)*(size_t)n_particles*2, PPTR(work));
+	dummy.radius = 0.f;
+	dummy.mass = 0.f;
+	pref[0] = pref[1] = 0;
+	stage_begin(&stage_dark);
+	n_cores = add_dark_galaxies(particles, n_particles, cores, 0, 0,
+			head, next, nx, ny, nz, xmin, ymin, zmin, cell,
+			&dummy, pref, 1, work);
+	stage_end(&stage_dark, "dmo_peaks");
+	if(n_cores <= 0){
+		Free(work); Free(next); Free(head);
+		return 0;
+	}
+	host = 0;
+	csr_off = (int *)Malloc(sizeof(int)*(size_t)(n_cores+1), PPTR(csr_off));
+	filled = (int *)Malloc(sizeof(int)*(size_t)n_cores, PPTR(filled));
+	for(i=0;i<n_cores;i++) filled[i] = 0;
+	for(i=0;i<n_particles;i++){
+		int h = halo.particles[i].galaxy_id;
+		if(h >= 0 && h < n_cores) filled[h]++;
+	}
+	csr_off[0] = 0;
+	for(i=0;i<n_cores;i++) csr_off[i+1] = csr_off[i] + filled[i];
+	csr = (int *)Malloc(sizeof(int)*(size_t)(csr_off[n_cores] > 0 ? csr_off[n_cores] : 1), PPTR(csr));
+	for(i=0;i<n_cores;i++) filled[i] = 0;
+	for(i=0;i<n_particles;i++){
+		int h = halo.particles[i].galaxy_id;
+		if(h >= 0 && h < n_cores) csr[csr_off[h] + filled[h]++] = i;
+	}
+	stage_begin(&stage_host);
+	decide_host(particles, n_particles, cores, host,
+			head, next, nx, ny, nz, xmin, ymin, zmin, cell,
+			csr, csr_off, work);
+	stage_end(&stage_host, "dmo_host");
+	Free(filled); Free(csr); Free(csr_off);
+	Free(work); Free(next); Free(head);
+	refresh_core_counts(particles, n_particles, cores, n_cores);
+	link_galaxy_members(particles, n_particles, n_cores, cores);
+	refresh_core_counts(particles, n_particles, cores, n_cores);
+	DEBUGPRINT("DMO catalogue cores %d\n", n_cores);
 	return n_cores;
 }
