@@ -58,7 +58,10 @@ typedef struct Box{
 typedef struct HaloQ{
     size_t np,npstar,npgas,npdm,npsink;
     POSTYPE x,y,z;
-    float mass, mstar,mgas,mdm,msink;
+    /* Must match opFoF/fof.h: these fields are written as double.  Reading
+     * them as float shifts every subsequent HaloQ record and can turn a
+     * normal particle count into an exabyte-sized allocation request. */
+    double mass, mstar,mgas,mdm,msink;
     float vx,vy,vz;
 }HaloQ;
 

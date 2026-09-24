@@ -28,7 +28,10 @@ INCLUDES = -I$(FFTW)/include
 
 DFLAGS = -DNMEG=90000L
 
-OPT = -O3  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=3 -DADV
+# The particle records consumed from opFoF use the same RAMSES layout as
+# NewDD/opFoF.  Keep NCHEM/NDUST identical so sizeof(DmType/StarType/GasType)
+# and the member-file offsets remain compatible across the pipeline.
+OPT = -O3  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 -DNDUST=4 -DADV
 
 FFLAGS = $(FDFLAGS) $(OPT)  -mcmodel=medium
 CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES) -I. -Isrc -DDEBUG=1 -DLOG=1
