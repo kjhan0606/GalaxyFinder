@@ -111,7 +111,18 @@ void rd_info(RamsesType *header, char *infile){
 	header->smallr = 1.e-10L;
 	header->cosmo = YES;
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->ncpu = atoi(in);
-//	fscanf(fp, "%s %s %s\n", in1, in2, in); header->nthr = atoi(in);
+	/* Darwin info files have nthr. DM-only dumps may not. */
+	{
+		long pos = ftell(fp);
+		char probe[190];
+		if(fscanf(fp, "%s", probe)==1 && strcmp(probe, "nthr")==0) {
+			fscanf(fp, "%s %s\n", in2, in);
+			header->nthr = atoi(in);
+		} else {
+			fseek(fp, pos, SEEK_SET);
+			header->nthr = 1;
+		}
+	}
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->ndim = atoi(in);
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->levelmin = atoi(in);
 	fscanf(fp, "%s %s %s\n", in1, in2, in); header->nlevelmax = atoi(in);

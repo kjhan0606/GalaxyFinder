@@ -54,9 +54,23 @@ int rd_part(RamsesType *ram, char *infile){
 	*/
 	
 	{
-		long nstar_file = 0;
-		F77read(&nstar_file, sizeof(long), 1, fp);
-		ram->nstar_tot = (int)nstar_file;
+		/* Darwin writes a 4-byte nstar_tot. Later dumps use an 8-byte count. */
+		int rec_bytes = 0, rec_end = 0;
+		fread(&rec_bytes, sizeof(int), 1, fp);
+		if(rec_bytes == (int)sizeof(int)) {
+			int nstar32 = 0;
+			fread(&nstar32, sizeof(int), 1, fp);
+			ram->nstar_tot = nstar32;
+		} else if(rec_bytes == (int)sizeof(long)) {
+			long nstar_file = 0;
+			fread(&nstar_file, sizeof(long), 1, fp);
+			ram->nstar_tot = (int)nstar_file;
+		} else {
+			fprintf(stderr, "Unexpected nstar_tot record length %d\n", rec_bytes);
+			exit(99);
+		}
+		fread(&rec_end, sizeof(int), 1, fp);
+		if(rec_end != rec_bytes) { fprintf(stderr, "Bad nstar_tot record\n"); exit(99); }
 	}
 	
 	F77read(&(ram->mstar_tot), sizeof(dptype), 1, fp);
@@ -158,23 +172,15 @@ int rd_part(RamsesType *ram, char *infile){
 #endif
 
 #ifndef NBODY
+	/* Darwin part_file_descriptor: birth_time, metallicity, chem_*, mass0. */
 	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,tp);
 	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,zp);
-	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,mass0);
 #ifdef NCHEM
 	for(i=0;i<nchem;i++){
 		GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,chem[i]);
 	}
 #endif
-	/* Legacy birth-time field remains on disk but is not retained in PmType. */
-	if(npartp>0) F77read(xbuff,sizeof(dptype),npartp,fp);
-	/*
-	 * The current PmType intentionally omits the legacy RAMSES `partp`
-	 * member (see ramses.h: the on-disk field is still present in old
-	 * snapshots).  Consume the record to keep the Fortran-unformatted file
-	 * position aligned, but do not write into a non-existent struct member.
-	 */
-	if(npartp>0) F77read(ibuff,sizeof(int),npartp,fp);
+	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,mass0);
 #endif
 	fclose(fp);
 	Free(ibuff);

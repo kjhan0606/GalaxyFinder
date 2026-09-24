@@ -63,6 +63,7 @@ void i_force_spline(){
 		slope[i][1] = (diff[i+1][1]-diff[i][1])/xstep;
 		slope[i][2] = (diff[i+1][2]-diff[i][2])/xstep;
 	}
+	for(i=0;i<3;i++) slope[NSPLINE-1][i] = slope[NSPLINE-2][i];
 	return;
 }
 /* corrected force for pm force */

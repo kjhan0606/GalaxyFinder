@@ -168,6 +168,11 @@ int main(int argc, char **argv){
 
 		if(icpu==1){
 			sprintf(infile,"./output_%.5d/sink_%.5d.out00001", istep, istep);
+			{
+				FILE *tryfp = fopen(infile,"r");
+				if(tryfp) fclose(tryfp);
+				else sprintf(infile,"./output_%.5d/sink_%.5d.out", istep, istep);
+			}
 			rd_sink(&ram, infile);
 			qsort(ram.sink, ram.nsink, sizeof(SinkType), sinksortx);
 			SplitDump(&ram, ram.sink, ram.nsink, SINK, istep, icpu,0, nsplit);

@@ -7,9 +7,9 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 	if(halo.max_cores < MAXNUMCORE) halo.max_cores = MAXNUMCORE;
 	float xinit,yinit,zinit;
 	float xmax,ymax,zmax;
-	long long *neighbor;
+	long long *neighbor = NULL;
 	int n_neighbors,n_cores;
-	float *density;
+	float *density = NULL;
 	Coretype *cores;
 	SimpleBasicParticleType *particles;
 
@@ -31,7 +31,13 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 		float  mdm_gate    = total_dm_mass(particles,n_particles);
 		int    do_grid     = ((nstar_gate > NUMNEIGHBOR) && (mstar_gate >= MINSTELLARMASS))
 		                     || (mdm_gate >= (float)MINDMMASS);
-		if(!do_grid){
+		/* With DM_DENSITY_WEIGHT == 0 a starless halo cannot make a peak
+		 * on the stellar grid. Skip that FFT and use the DMO finder. */
+		if((float)DM_DENSITY_WEIGHT == 0.f && nstar_gate == 0 && mdm_gate > 0.f){
+			cores = (Coretype*)Malloc(sizeof(Coretype)*halo.max_cores,PPTR(cores));
+			n_cores = 0;
+		}
+		else if(!do_grid){
 			neighbor = (long long*)Malloc(sizeof(long long)*n_particles*n_neighbors,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*n_particles,PPTR(density));
 			void findsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
@@ -72,6 +78,8 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 		int nstar_now = count_stars(particles, n_particles);
 		if(nstar_now == 0 && total_dm_mass(particles, n_particles) > 0.f){
 			DEBUGPRINT("DMO halo: no stellar peaks, seeding on dark matter\n");
+			if(cores == NULL)
+				cores = (Coretype *)Malloc(sizeof(Coretype), PPTR(cores));
 			for(i=0;i<n_particles;i++) set_galaxy_id(i, NOT_HALO_MEMBER);
 			n_cores = assign_dmo_halos(particles, (int)n_particles, cores);
 			Free(density);

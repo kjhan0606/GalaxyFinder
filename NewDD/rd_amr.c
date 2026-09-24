@@ -155,11 +155,29 @@ int rd_amr(RamsesType *ram, char *infile, int simple_boundary){
 	mesh->headl = (int*)Malloc(sizeof(int)*ram->ncpu*nlevelmax2,PPTR(mesh->headl));
 	mesh->taill = (int*)Malloc(sizeof(int)*ram->ncpu*nlevelmax2,PPTR(mesh->taill));
 	mesh->numbl = (int*)Malloc(sizeof(int)*ram->ncpu*nlevelmax2,PPTR(mesh->numbl));
-	mesh->numbtot = (int*)Malloc(sizeof(int)*10*nlevelmax2,PPTR(mesh->numbtot));
+	/* Darwin writes 10 doubles per level. Other RAMSES dumps write 10 ints.
+	 * The values are not used after the read. */
+	mesh->numbtot = (int*)Malloc(sizeof(dptype)*10*nlevelmax2,PPTR(mesh->numbtot));
 	F77read((mesh->headl), sizeof(int), ram->ncpu*nlevelmax2, fp);
 	F77read((mesh->taill), sizeof(int), ram->ncpu*nlevelmax2, fp);
 	F77read((mesh->numbl), sizeof(int), ram->ncpu*nlevelmax2, fp);
-	F77read((mesh->numbtot), sizeof(int), 10*nlevelmax2, fp);
+	{
+		int rec_bytes=0, rec_end=0;
+		size_t expect_d = sizeof(dptype)*10*(size_t)nlevelmax2;
+		size_t expect_i = sizeof(int)*10*(size_t)nlevelmax2;
+		fread(&rec_bytes, sizeof(int), 1, fp);
+		if(rec_bytes != (int)expect_d && rec_bytes != (int)expect_i) {
+			ERRORPRINT("Unexpected numbtot record %d (double %zu, int %zu)\n",
+				rec_bytes, expect_d, expect_i);
+			exit(99);
+		}
+		fread(mesh->numbtot, 1, rec_bytes, fp);
+		fread(&rec_end, sizeof(int), 1, fp);
+		if(rec_end != rec_bytes) {
+			ERRORPRINT("Bad numbtot record end %d\n", rec_end);
+			exit(99);
+		}
+	}
 
 
 

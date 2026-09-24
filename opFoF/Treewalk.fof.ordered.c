@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<unistd.h>
 #include<math.h>
 #include "../ramses.h"
 #include "pmheader.h"
@@ -553,9 +554,16 @@ void ReadBottomFaceContact(FoFTPtlStruct *p,size_t npread, particle *alinked,int
 //#endif
 
 	sprintf(infile,"./FoF_Garbage/Garb.%.5d/BottomFaceContactHalo.%.5d.%.5d.dat",nstep,src,nstep);
-	if((fp=fopen(infile,"r")) == NULL){
+	/* The neighbour writes this file at the end of its previous slab.
+	 * A faster rank can reach the last slab first. */
+	fp = NULL;
+	for(j=0;j<7200 && fp==NULL;j++){
+		fp = fopen(infile,"r");
+		if(fp==NULL) sleep(1);
+	}
+	if(fp == NULL){
 		fprintf(stderr,"error opening %s\n",infile);
-		exit(0);
+		exit(1);
 	}
 //#ifdef OLD
 	for(j=0;j<mid;j++){
