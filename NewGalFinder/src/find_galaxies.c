@@ -10,7 +10,7 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 	long long *neighbor = NULL;
 	int n_neighbors,n_cores;
 	float *density = NULL;
-	Coretype *cores;
+	Coretype *cores = NULL;
 	SimpleBasicParticleType *particles;
 
 	particles = (SimpleBasicParticleType*)Malloc(sizeof(SimpleBasicParticleType)*n_particles,PPTR(particles));
