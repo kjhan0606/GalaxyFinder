@@ -2,9 +2,8 @@
 #include "finder_internal.h"
 
 int compare_float_ascending(const void *a,const void *b){
-	float *aa,*bb;
-	aa = (float*)a;
-	bb = (float*)b;
+	const float aa = *(const float*)a;
+	const float bb = *(const float*)b;
 	if(aa<bb) return -1;
 	else if(aa>bb) return 1;
 	else return 0;
@@ -52,8 +51,11 @@ void unwrap_periodic_box(SimpleBasicParticleType *particles,lint n_particles,flo
 			particles[i].x += nx;
 		}
 		*/
-		*xinit = particles[upbound+1].x;
-		*xmax = particles[upbound].x;
+		*xinit = size; *xmax = -size;
+		for(i=0;i<n_particles;i++){
+			*xinit = MIN(*xinit,particles[i].x);
+			*xmax = MAX(*xmax,particles[i].x);
+		}
 		Free(tmparr);
 	}
 	if(floor(*yinit) <= 0+nblur && ceil(*ymax) >= size-nblur){
@@ -78,8 +80,11 @@ void unwrap_periodic_box(SimpleBasicParticleType *particles,lint n_particles,flo
 			particles[i].y += ny;
 		}
 		*/
-		*yinit = particles[upbound+1].y;
-		*ymax = particles[upbound].y;
+		*yinit = size; *ymax = -size;
+		for(i=0;i<n_particles;i++){
+			*yinit = MIN(*yinit,particles[i].y);
+			*ymax = MAX(*ymax,particles[i].y);
+		}
 		Free(tmparr);
 	}
 	if(floor(*zinit) <= 0+nblur && ceil(*zmax) >= size-nblur){
@@ -104,8 +109,11 @@ void unwrap_periodic_box(SimpleBasicParticleType *particles,lint n_particles,flo
 			particles[i].z += nz;
 		}
 		*/
-		*zinit = particles[upbound+1].z;
-		*zmax = particles[upbound].z;
+		*zinit = size; *zmax = -size;
+		for(i=0;i<n_particles;i++){
+			*zinit = MIN(*zinit,particles[i].z);
+			*zmax = MAX(*zmax,particles[i].z);
+		}
 		Free(tmparr);
 	}
 }

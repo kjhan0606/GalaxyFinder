@@ -28,10 +28,14 @@ INCLUDES = -I$(FFTW)/include
 
 DFLAGS = -DNMEG=90000L
 
-# The particle records consumed from opFoF use the same RAMSES layout as
-# NewDD/opFoF.  Keep NCHEM/NDUST identical so sizeof(DmType/StarType/GasType)
-# and the member-file offsets remain compatible across the pipeline.
-OPT = -O3  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 -DNDUST=4 -DADV
+# Add -DNBODY when reading a dark-matter-only opFoF member file. Leave this
+# empty for hydro catalogues, whose particle records carry the extra fields.
+DMO_FLAGS ?=
+
+# The particle records consumed from opFoF must use the same RAMSES layout as
+# NewDD/opFoF. Keep NCHEM/NDUST identical for hydro inputs and set DMO_FLAGS
+# for the compact DMO layout.
+OPT = -O3  -qopenmp -DINDEX -DVarPM   -DXYZDBL -DNENER=0 -DNPRE=8 -DREAD_SINK -DNCHEM=9 -DNDUST=4 -DADV $(DMO_FLAGS)
 
 FFLAGS = $(FDFLAGS) $(OPT)  -mcmodel=medium
 CFLAGS = $(DFLAGS)  $(OPT) $(INCLUDES) -I. -Isrc -DDEBUG=1 -DLOG=1

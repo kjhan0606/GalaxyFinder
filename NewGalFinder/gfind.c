@@ -15,6 +15,9 @@
 #include "tree.h"
 #include "defs.h"
 #include "hfind.h"
+#ifdef NBODY
+_Static_assert(sizeof(DmType) == 72, "unexpected DMO member-record ABI");
+#endif
 static int tidal_start=1;
 float m_tidal[NUM_MASS],r_tidal[NUM_MASS];
 
