@@ -54,44 +54,64 @@ size_t read_ramses_data(FoFTPtlStruct **Bp, size_t np, char *file1, char *type, 
 	HydroCellType *hcell;
 	GasType *gas;
 	struct stat st;
-	size_t size,mp;
-
-	int ierr = stat(file1, &st);
-	size = st.st_size;
-	size_t dsize;
-	void *aa;
-
-	if(strcmp(type,"STAR")==0){
-		dsize = sizeof(StarType);
-		aa = (void*) star = (StarType*)malloc(sizeof(char)*size);
-	}
-	else if(strcmp(type,"SINK")==0){
-		dsize = sizeof(SinkType);
-		aa = (void*)sink = (SinkType*)malloc(sizeof(char)*size);
-	}
-	else if(strcmp(type,"GAS")==0){
-		dsize = sizeof(GasType);
-		aa = (void*)gas = (GasType*)malloc(sizeof(char)*size);
-	}
-	else if(strcmp(type,"DM")==0){
-		dsize = sizeof(DmType);
-		aa = (void*)dm = (DmType*)malloc(sizeof(char)*size);
-	}
-	else {
-		fprintf(stderr,"Oooooooooops. Wrong size in file and type\n");
-	}
-
-	if(ierr == 0 && size%dsize !=0){
-		printf("Error in file size,,,, %s\n", file1);
-//		exit(99);
-	}
-
+	size_t size = 0,mp;
+	size_t dsize = 0;
+	void *aa = NULL;
+	int ierr;
 	int nid,myid;
 	MPI_Status status;
 	int itag=1;
+	int required_missing = 0;
 
+	/* MPI ranks must enter the same reader-side synchronization even when
+	 * an optional component is absent.  In particular, a DM-only NewDD
+	 * dump legitimately has no GAS or SINK slab files. */
 	MPI_Comm_rank(MPI_COMM_WORLD,&myid);
 	MPI_Comm_size(MPI_COMM_WORLD,&nid);
+
+	if(strcmp(type,"STAR")==0){
+		dsize = sizeof(StarType);
+	}
+	else if(strcmp(type,"SINK")==0){
+		dsize = sizeof(SinkType);
+	}
+	else if(strcmp(type,"GAS")==0){
+		dsize = sizeof(GasType);
+	}
+	else if(strcmp(type,"DM")==0){
+		dsize = sizeof(DmType);
+	}
+	else {
+		fprintf(stderr,"opFoF: unsupported particle type '%s'\n", type);
+		MPI_Abort(MPI_COMM_WORLD, 97);
+		return 0;
+	}
+
+	ierr = stat(file1, &st);
+	if(ierr == 0) size = st.st_size;
+	if(ierr != 0 || size == 0) {
+		if(strcmp(type,"DM")==0) required_missing = 1;
+		if(myid == 0) {
+			fprintf(stderr,
+				"opFoF: %s component file %s is %s; treating it as empty%s\n",
+				 type, file1, ierr != 0 ? "missing" : "empty",
+				 required_missing ? " (DM is required)" : "");
+		}
+	} else if(size % dsize != 0) {
+		fprintf(stderr,"opFoF: file size is not a multiple of the %s record size: %s\n",
+			 type, file1);
+		MPI_Abort(MPI_COMM_WORLD, 98);
+		return 0;
+	} else {
+		if(strcmp(type,"STAR")==0)
+			aa = (void*) star = (StarType*)malloc(sizeof(char)*size);
+		else if(strcmp(type,"SINK")==0)
+			aa = (void*) sink = (SinkType*)malloc(sizeof(char)*size);
+		else if(strcmp(type,"GAS")==0)
+			aa = (void*) gas = (GasType*)malloc(sizeof(char)*size);
+		else
+			aa = (void*) dm = (DmType*)malloc(sizeof(char)*size);
+	}
 
 	int isend,iget;
 	isend = iget = 1;
@@ -100,21 +120,28 @@ size_t read_ramses_data(FoFTPtlStruct **Bp, size_t np, char *file1, char *type, 
 	int tgt = myid + 1;
 
 	if(RANKINGROUP(myid,WGroupSize) !=0) MPI_Recv(&i,1,MPI_INT,src,itag,MPI_COMM_WORLD,&status);
-	if(ierr ==0){
+	if(ierr ==0 && size > 0 && aa != NULL){
 		FILE *fp = NULL;
 		fp = fopen(file1,"r");
 		if(fp == NULL){
-//			printf("error in opening file %s\n", file1);exit(99);
+			fprintf(stderr,"opFoF: cannot open %s\n", file1);
+			if(strcmp(type,"DM")==0) required_missing = 1;
+			mp = 0;
+		} else {
+			fread(aa, sizeof(char), size, fp);
+			mp = size/dsize;
+			fclose(fp);
 		}
-		fread(aa, sizeof(char), size, fp);
-		mp = size/dsize;
-		fclose(fp);
 	}
 	else {
 		mp = 0;
 	}
 	printf("P%d has read %s with np= %ld\n", myid, file1, mp);fflush(stdout);
 	if(GROUPID(myid,WGroupSize) == GROUPID(tgt,WGroupSize) && tgt < nid) MPI_Send(&i,1,MPI_INT,tgt,itag,MPI_COMM_WORLD);
+	if(required_missing){
+		MPI_Abort(MPI_COMM_WORLD, 99);
+		return 0;
+	}
 
 	FoFTPtlStruct *p, *bp;
 	bp = *Bp;
