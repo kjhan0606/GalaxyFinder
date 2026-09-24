@@ -7,9 +7,9 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 	if(halo.max_cores < MAXNUMCORE) halo.max_cores = MAXNUMCORE;
 	float xinit,yinit,zinit;
 	float xmax,ymax,zmax;
-	long long *neighbor;
+	long long *neighbor = NULL;
 	int n_neighbors,n_cores;
-	float *density;
+	float *density = NULL;
 	Coretype *cores;
 	SimpleBasicParticleType *particles;
 
@@ -31,7 +31,14 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 		float  mdm_gate    = total_dm_mass(particles,n_particles);
 		int    do_grid     = ((nstar_gate > NUMNEIGHBOR) && (mstar_gate >= MINSTELLARMASS))
 		                     || (mdm_gate >= (float)MINDMMASS);
-		if(!do_grid){
+		/* A DMO halo cannot produce a stellar peak when DM_DENSITY_WEIGHT is
+		 * zero. Skip the empty 3-kpc stellar FFT and enter the dedicated,
+		 * adaptively capped DMO peak finder below. */
+		if(nstar_gate == 0 && mdm_gate > 0.f){
+			cores = (Coretype*)Malloc(sizeof(Coretype)*halo.max_cores,PPTR(cores));
+			n_cores = 0;
+		}
+		else if(!do_grid){
 			neighbor = (long long*)Malloc(sizeof(long long)*n_particles*n_neighbors,PPTR(neighbor));
 			density = (float*)Malloc(sizeof(float)*n_particles,PPTR(density));
 			void findsphdensity(SimpleBasicParticleType *,int ,long long *, int , float *);
@@ -67,6 +74,7 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 			cores[i].is_dark = 0; /* default; dark cores get this set explicitly later */
 		}
 		halo.particles = (ParticleState *)Malloc(sizeof(ParticleState)*n_particles,PPTR(halo.particles));
+		memset(halo.particles, 0, sizeof(ParticleState)*(size_t)n_particles);
 	}
 	if(n_cores == 0) {
 		int nstar_now = count_stars(particles, n_particles);
@@ -74,11 +82,11 @@ int find_galaxies(FoFTPtlStruct *raw, lint n_particles,lint *galaxy_ids){
 			DEBUGPRINT("DMO halo: no stellar peaks, seeding on dark matter\n");
 			for(i=0;i<n_particles;i++) set_galaxy_id(i, NOT_HALO_MEMBER);
 			n_cores = assign_dmo_halos(particles, (int)n_particles, cores);
-			Free(density);
+			if(density != NULL) Free(density);
 			if(n_cores <= 0){
 				for(i=0;i<n_particles;i++) galaxy_ids[i] = 0;
 				Free(halo.particles);
-				Free(neighbor);
+				if(neighbor != NULL) Free(neighbor);
 				Free(cores);
 				Free(particles);
 				return 1;
@@ -227,7 +235,8 @@ gogo:
 
 
 
-		Free(halo.particles); Free(neighbor);
+		Free(halo.particles);
+		if(neighbor != NULL) Free(neighbor);
 	/*
 	*/
 
