@@ -924,7 +924,10 @@ void findStellarCore(
 
 	int merge_nearby_peaks(SimpleBasicParticleType *, int, Coretype *, int, int, float);
 	if(numcore >10) numcore = merge_nearby_peaks(bp,np, core, numcore,0, (float)MERGINGPEAKLENGTH);
-	core = *Core = Realloc(*Core, sizeof(Coretype)*numcore);
+	/* Keep one sentinel slot when no stellar peaks survive.  The DMO fallback
+	 * receives this pointer and seeds its first dark core; Realloc(..., 0)
+	 * would free it and pass NULL into assign_dmo_halos(). */
+	core = *Core = Realloc(*Core, sizeof(Coretype)*(size_t)(numcore > 0 ? numcore : 1));
 
 	DEBUGPRINT("The number of cores : %d and after merge_nearby_peaks\n", numcore);
 
@@ -1341,7 +1344,9 @@ void find_peaks_with_thresholds(
 	StageTimer stage_merge;
 	stage_begin(&stage_merge);
 	if(numcore >10) numcore = merge_nearby_peaks(bp,np, core, numcore,0, _merging_l);
-	core = *Core = Realloc(*Core, sizeof(Coretype)*numcore);
+	/* A zero-core result is still followed by the DMO fallback, so retain a
+	 * valid one-element Coretype buffer instead of freeing it. */
+	core = *Core = Realloc(*Core, sizeof(Coretype)*(size_t)(numcore > 0 ? numcore : 1));
 
 //	DEBUGPRINT("C70 has peak id= %d  den= %g after merging\n", core[70].peak_particle, core[70].peak_density);
 
@@ -1660,4 +1665,3 @@ void find_density_peaks(
 	find_peaks_with_thresholds(bp, np, Numnear, densph, Core, NumCore, max_cores,
 			nearindex, TYPE_STAR_DM, -1.f, -1.f, -1.f, -1.f);
 }
-

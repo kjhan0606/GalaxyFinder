@@ -52,7 +52,8 @@ void i_force_spline(){
 		diff[i][2] = 0.5L*(fpp/x - fp/x/x + 3.L*f(x)/x/x/x
 				-2.L*fp/x/x)/x/x;
 	}
-	for(i=1;i<NSPLINE;i++){
+	/* diff[i+1] is accessed below, so i=NSPLINE-1 is out of bounds. */
+	for(i=1;i<NSPLINE-1;i++){
 		/*
 		x = (double)(i) * (double)RANGE2 / (double)NSPLINE;
 		xstep = (double)(i+1)*(double)RANGE2/(double)NSPLINE - x;
@@ -106,7 +107,9 @@ void i_potent_spline(){
 		diff[i][1] = 0.5L*gp/x;
 		diff[i][2] = 0.5L*(gpp/x/x - gp/x/x/x);
 	}
-	for(i=1;i<NSPLINE;i++){
+	/* The finite-difference slope uses diff[i+1]; stop before the last
+	 * tabulated point.  The old bound wrote one row past both global arrays. */
+	for(i=1;i<NSPLINE-1;i++){
 		/*
 		x = (double)(i) * (double)RANGE2 / (double)NSPLINE;
 		xstep = (double)(i+1)*(double)RANGE2/(double)NSPLINE - x;
