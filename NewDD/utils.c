@@ -44,6 +44,16 @@ extern int nid, myid;
 
 #endif
 
+static void splitdump_fatal(const char *operation, const char *path, int rank){
+	fprintf(stderr, "NewDD rank %d: %s '%s': %s\n", rank, operation, path, strerror(errno));
+	fflush(stderr);
+#ifdef USE_MPI
+	MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+#else
+	exit(EXIT_FAILURE);
+#endif
+}
+
 int dmsortx(const void *aa, const void *bb){
 	dptype ai, bi;
 	DmType *a = (DmType *)aa;
@@ -243,8 +253,9 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 	sprintf(dir,"./FoF_Data/NewDD.%.5d", istep);
 	if(myid==0){
 		struct stat sb;
-		stat(dir,&sb);
-		if(!S_ISDIR(sb.st_mode)) mkfolder(dir);
+		if(stat(dir,&sb) != 0 || !S_ISDIR(sb.st_mode)) mkfolder(dir);
+		if(stat(dir,&sb) != 0 || !S_ISDIR(sb.st_mode))
+			splitdump_fatal("cannot create output directory", dir, myid);
 	}
 
 	if(icpu==1 && type == DM){
@@ -252,6 +263,7 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 			char outfile[190];
 			sprintf(outfile,"%s/SN.%.5d.%.5d.info",dir,istep, i);
 			FILE *wp = fopen(outfile,"w");
+			if(!wp) splitdump_fatal("cannot open header for writing", outfile, myid);
 			ram->xmin = xpos[i];
 			ram->xmax = xpos[i+1];
 			ram->icpu = i;
@@ -378,20 +390,26 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 				FILE *wp;
 				if(icpu==1) {
 					wp= fopen(outfile,"w");
+					if(!wp) splitdump_fatal("cannot create slab file", outfile, myid);
 					baseoffset[i] = 0;
 					fclose(wp);
 				}
 				else {
 					struct stat st;
-					stat(outfile,&st);
+					if(stat(outfile,&st) != 0)
+						splitdump_fatal("cannot stat slab file", outfile, myid);
 					baseoffset[i] = st.st_size;
 				}
 
 //				off_t offset = dsize*(asize[nid-1 + nid*i] + bsize[nid-1+nid*i]) + baseoffset[i];
 				off_t offset = dsize*(asize(nid-1 ,i) + bsize(nid-1,i)) + baseoffset[i];
 				int filenum = open(outfile,O_RDWR);
-				ftruncate(filenum, offset);
-				close(filenum);
+				if(filenum < 0) splitdump_fatal("cannot open slab file", outfile, myid);
+				if(ftruncate(filenum, offset) != 0) {
+					close(filenum);
+					splitdump_fatal("cannot size slab file", outfile, myid);
+				}
+				if(close(filenum) != 0) splitdump_fatal("cannot close slab file", outfile, myid);
 			}
 		}
 		MPI_Bcast(baseoffset, nsplit, MPI_SIZE_T, 0, MPI_COMM_WORLD);
@@ -405,17 +423,21 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 				sprintf(outfile,"%s.%.5d.dat", outmiddle, i);
 				FILE *wp;
 				wp= fopen(outfile,"r+");
+				if(!wp) splitdump_fatal("cannot open slab file for update", outfile, myid);
 //				fseek(wp, baseoffset[i] + dsize*asize[nid-1+ nid*i], SEEK_SET);
 				long nowoffset = dsize*asize(myid,i)  + baseoffset[i];
-  				fseek(wp, nowoffset, SEEK_SET);
+				if(fseek(wp, nowoffset, SEEK_SET) != 0)
+					splitdump_fatal("cannot seek in slab file", outfile, myid);
 				/*
 				if(type==STAR && i == 18){
 					printf("P%d is dumping %d %d from offset= %ld with asize= %d/%d\n",myid, dsize, 
 							jpos[i]-ipos[i]+1, nowoffset, asize(myid,i),asize(myid+1,i));
 				}
 				*/
-				fwrite(a+ipos[i]*dsize, dsize, jpos[i]-ipos[i]+1, wp);
-				fclose(wp);
+				size_t nwant = (size_t)(jpos[i]-ipos[i]+1);
+				if(fwrite(a+ipos[i]*dsize, dsize, nwant, wp) != nwant)
+					splitdump_fatal("short write to slab file", outfile, myid);
+				if(fclose(wp) != 0) splitdump_fatal("cannot close slab file", outfile, myid);
 			}
 		}
 		Wait2Go(WGroupSize);
