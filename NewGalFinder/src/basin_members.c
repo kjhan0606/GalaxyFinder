@@ -12,6 +12,9 @@
 #define _GNU_SOURCE
 #include "finder_internal.h"
 #include "stage_timer.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 static int basin_owner_cmp(const void *a, const void *b) {
 	float ka = ((const float *)a)[1];
@@ -930,6 +933,9 @@ static int dark_nearer(const void *a, const void *b, void *arg) {
 static void gauss_axis(const float *in, float *out, int nx, int ny, int nz,
 		int axis, const float *ker, int hw) {
 	int x, y, z, t;
+#ifdef _OPENMP
+#pragma omp parallel for collapse(2) schedule(static)
+#endif
 	for(z=0;z<nz;z++){
 		for(y=0;y<ny;y++){
 			for(x=0;x<nx;x++){
@@ -1029,6 +1035,9 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 	tmp = (float *)Malloc(sizeof(float)*(size_t)ncell, PPTR(tmp));
 	{
 		long c;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
 		for(c=0;c<ncell;c++) den[c]=0.f;
 	}
 	for(i=0;i<n_particles;i++){
@@ -1066,21 +1075,27 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 		Free(ker);
 		{
 			long c;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
 			for(c=0;c<ncell;c++) den[c]=tmp[c];
 		}
 	}
-	Free(tmp);
-
 	n_peak = 0;
 	peaks = (DarkPeak *)Malloc(sizeof(DarkPeak)*4096, PPTR(peaks));
+	/* Candidate tests are independent. Keep their flags in the no-longer-needed
+	 * scratch grid, then retain the original serial traversal/top-4096 update
+	 * below: its order determines which peak claims overlapping particles. */
+#ifdef _OPENMP
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
 	for(iz=1;iz<gnz-1;iz++){
 		for(iy=1;iy<gny-1;iy++){
 			for(ix=1;ix<gnx-1;ix++){
 				long c = ((long)iz*gny+iy)*gnx+ix;
 				float v = den[c];
 				int dx, dy, dz, maxed;
-				if(!(v>0.f)) continue;
-				maxed = 1;
+				maxed = (v > 0.f);
 				for(dz=-1;dz<=1 && maxed;dz++){
 					for(dy=-1;dy<=1 && maxed;dy++){
 						for(dx=-1;dx<=1;dx++){
@@ -1092,7 +1107,17 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 						}
 					}
 				}
-				if(!maxed) continue;
+				tmp[c] = maxed ? 1.f : 0.f;
+			}
+		}
+	}
+	/* The serial pass deliberately preserves the old candidate ordering. */
+	for(iz=1;iz<gnz-1;iz++){
+		for(iy=1;iy<gny-1;iy++){
+			for(ix=1;ix<gnx-1;ix++){
+				long c = ((long)iz*gny+iy)*gnx+ix;
+				float v = den[c];
+				if(!(tmp[c] > 0.f)) continue;
 				if(n_peak < 4096){
 					peaks[n_peak].x = xmin + (ix+0.5f)*cell;
 					peaks[n_peak].y = ymin + (iy+0.5f)*cell;
@@ -1115,6 +1140,7 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 		}
 	}
 	Free(den);
+	Free(tmp);
 	DEBUGPRINT("dark maxima %d\n", n_peak);
 	if(n_cores <= 0){
 		int ibest = 0, pnear = -1, nlab = 0;
@@ -1182,6 +1208,47 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 
 	n_dm = 0;
 	dmshell = (RadiusMass *)Malloc(sizeof(RadiusMass)*(size_t)n_particles, PPTR(dmshell));
+#ifdef _OPENMP
+	{
+		int max_threads = omp_get_max_threads();
+		int *counts = (int *)Malloc(sizeof(int)*(size_t)max_threads, PPTR(counts));
+		int *offsets = (int *)Malloc(sizeof(int)*(size_t)(max_threads+1), PPTR(offsets));
+#pragma omp parallel
+		{
+			int tid = omp_get_thread_num();
+			int team_size = omp_get_num_threads();
+			int begin = (int)(((long long)n_particles*tid)/team_size);
+			int end = (int)(((long long)n_particles*(tid+1))/team_size);
+			int q, count = 0;
+			for(q=begin;q<end;q++)
+				if(particles[q].type == TYPE_DM) count++;
+			counts[tid] = count;
+#pragma omp barrier
+#pragma omp single
+			{
+				int t;
+				offsets[0] = 0;
+				for(t=0;t<team_size;t++) offsets[t+1] = offsets[t] + counts[t];
+				n_dm = offsets[team_size];
+			}
+			{
+				int out = offsets[tid];
+				for(q=begin;q<end;q++){
+					double dx, dy, dz;
+					if(particles[q].type != TYPE_DM) continue;
+					dx = particles[q].x - hx;
+					dy = particles[q].y - hy;
+					dz = particles[q].z - hz;
+					dmshell[out].radius = (float)sqrt(dx*dx+dy*dy+dz*dz);
+					dmshell[out].mass = particles[q].mass;
+					out++;
+				}
+			}
+		}
+		Free(offsets);
+		Free(counts);
+	}
+#else
 	for(i=0;i<n_particles;i++){
 		double dx, dy, dz;
 		if(particles[i].type != TYPE_DM) continue;
@@ -1192,6 +1259,7 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 		dmshell[n_dm].mass = particles[i].mass;
 		n_dm++;
 	}
+#endif
 	if(n_dm>1) qsort(dmshell, (size_t)n_dm, sizeof(RadiusMass), radius_mass_cmp);
 	dmprefix = (double *)Malloc(sizeof(double)*(size_t)(n_dm+1), PPTR(dmprefix));
 	dmprefix[0] = 0;
@@ -1210,6 +1278,9 @@ static int add_dark_galaxies(SimpleBasicParticleType *particles, int n_particles
 			int q;
 			local_shell = (RadiusMass *)Malloc(sizeof(RadiusMass)*(size_t)n_particles, PPTR(local_shell));
 			local_prefix = (double *)Malloc(sizeof(double)*(size_t)(n_particles+1), PPTR(local_prefix));
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
 			for(q=0;q<n_particles;q++){
 				double dx = particles[q].x - hx;
 				double dy = particles[q].y - hy;
