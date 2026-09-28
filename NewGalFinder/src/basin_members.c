@@ -934,7 +934,7 @@ static void gauss_axis(const float *in, float *out, int nx, int ny, int nz,
 		int axis, const float *ker, int hw) {
 	int x, y, z, t;
 #ifdef _OPENMP
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) private(x, t)
 #endif
 	for(z=0;z<nz;z++){
 		for(y=0;y<ny;y++){
