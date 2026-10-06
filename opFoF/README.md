@@ -87,6 +87,7 @@ opFoF/
 ├── Treewalk.fof.ordered.c     # Active tree walking implementation
 ├── Treewalk.fof.ordered.org.c # Original tree walking (backup)
 ├── Treewalk.fof.c             # Legacy tree walking variant
+├── variant/                   # In-memory component labels for a supplied particle set
 ├── fof.c                      # Test/benchmark program
 ├── fof.h                      # Core data structure definitions
 ├── pmheader.h                 # Particle & simulation structures
