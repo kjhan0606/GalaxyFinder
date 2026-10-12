@@ -1,0 +1,124 @@
+{
+  "n_halos": 76,
+  "n_input_stars": 563889503,
+  "counts": {
+    "young": 352551,
+    "old": 0,
+    "metal_low": 1800014,
+    "metal_high": 6428
+  },
+  "percentiles": {
+    "young_flux_fraction_V": [
+      0.021505430644572544,
+      0.08001556682340571,
+      0.20164337733007714
+    ],
+    "young_flux_fraction_g": [
+      0.039220216076985205,
+      0.1301112690027003,
+      0.2541649696757712
+    ],
+    "old_flux_fraction_V": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "old_flux_fraction_g": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "metal_low_flux_fraction_V": [
+      0.0008656572201513504,
+      0.0018979273753067676,
+      0.0037507665513694323
+    ],
+    "metal_low_flux_fraction_g": [
+      0.0005720667994264732,
+      0.0016428895299592128,
+      0.004176020471477191
+    ],
+    "metal_high_flux_fraction_V": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "metal_high_flux_fraction_g": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "maximum": {
+    "young_flux_fraction_V": 0.3497722566386069,
+    "young_flux_fraction_g": 0.39822612315475375,
+    "old_flux_fraction_V": 0.0,
+    "old_flux_fraction_g": 0.0,
+    "metal_low_flux_fraction_V": 0.006511540232716066,
+    "metal_low_flux_fraction_g": 0.0076469800376154475,
+    "metal_high_flux_fraction_V": 0.028144103170336433,
+    "metal_high_flux_fraction_g": 0.044917472885309916
+  },
+  "per_output": {
+    "00081": {
+      "young_flux_fraction_V": 0.30029320864784853,
+      "young_flux_fraction_g": 0.3793066304118605,
+      "old_flux_fraction_V": 0.0,
+      "old_flux_fraction_g": 0.0,
+      "metal_low_flux_fraction_V": 0.002627751206899002,
+      "metal_low_flux_fraction_g": 0.0020783083155469133,
+      "metal_high_flux_fraction_V": 0.0,
+      "metal_high_flux_fraction_g": 0.0
+    },
+    "00178": {
+      "young_flux_fraction_V": 0.277328070517549,
+      "young_flux_fraction_g": 0.3020783356808531,
+      "old_flux_fraction_V": 0.0,
+      "old_flux_fraction_g": 0.0,
+      "metal_low_flux_fraction_V": 0.0005176784082955134,
+      "metal_low_flux_fraction_g": 0.00035130372419768215,
+      "metal_high_flux_fraction_V": 0.0,
+      "metal_high_flux_fraction_g": 0.0
+    },
+    "00475": {
+      "young_flux_fraction_V": 0.20164337733007714,
+      "young_flux_fraction_g": 0.2541649696757712,
+      "old_flux_fraction_V": 0.0,
+      "old_flux_fraction_g": 0.0,
+      "metal_low_flux_fraction_V": 0.0014585043208277775,
+      "metal_low_flux_fraction_g": 0.0009117980369264942,
+      "metal_high_flux_fraction_V": 0.0,
+      "metal_high_flux_fraction_g": 0.0
+    },
+    "00786": {
+      "young_flux_fraction_V": 0.08009932653463152,
+      "young_flux_fraction_g": 0.1340514005565731,
+      "old_flux_fraction_V": 0.0,
+      "old_flux_fraction_g": 0.0,
+      "metal_low_flux_fraction_V": 0.0021007463397384354,
+      "metal_low_flux_fraction_g": 0.0016850325492453941,
+      "metal_high_flux_fraction_V": 0.0,
+      "metal_high_flux_fraction_g": 0.0
+    },
+    "00967": {
+      "young_flux_fraction_V": 0.02155661251723327,
+      "young_flux_fraction_g": 0.04027629248822283,
+      "old_flux_fraction_V": 0.0,
+      "old_flux_fraction_g": 0.0,
+      "metal_low_flux_fraction_V": 0.0018979273753067676,
+      "metal_low_flux_fraction_g": 0.002065973348982595,
+      "metal_high_flux_fraction_V": 0.0,
+      "metal_high_flux_fraction_g": 0.0
+    },
+    "01001": {
+      "young_flux_fraction_V": 0.012801528099578574,
+      "young_flux_fraction_g": 0.024160337380374583,
+      "old_flux_fraction_V": 0.0,
+      "old_flux_fraction_g": 0.0,
+      "metal_low_flux_fraction_V": 0.0031276115232168403,
+      "metal_low_flux_fraction_g": 0.003517276273502728,
+      "metal_high_flux_fraction_V": 0.0,
+      "metal_high_flux_fraction_g": 0.0
+    }
+  }
+}

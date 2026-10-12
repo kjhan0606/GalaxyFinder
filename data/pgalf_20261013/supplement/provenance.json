@@ -1,0 +1,47 @@
+{
+  "audit_date": "2026-10-12",
+  "baseline_manuscript_commit": "4c15f10a9801958277a6cc8ba920e22bedd20dcc",
+  "source_data_commit": "5e3cc51",
+  "available_python_fsps_version": "0.4.7",
+  "fsps_data_commit": "82a873508d500ca353bbb922459bf928498f7a72",
+  "historical_flux_cache_version_recorded": false,
+  "photometry_source": "Darwin1/sb_vs_b.py:ssp_flux,star_flux",
+  "psf_score_source": "Darwin1/analysis_sb/revision/sb_fine.py:scores_frac",
+  "installed_fsps_source_cosmology": {
+    "Omega_m": 0.27,
+    "Omega_Lambda": 0.73,
+    "H0_km_s_Mpc": 72.0
+  },
+  "angular_scale_cosmology": {
+    "Omega_m": 0.315,
+    "Omega_Lambda": 0.685,
+    "H0_km_s_Mpc": 67.4
+  },
+  "note": "Historical generating metadata are absent. Every archived flux grid value was reproduced exactly with the recorded current installation. All 76 original score curves and group counts reproduced. Corrected boundary scores and a separate calibration using consistent luminosity distances are supplied.",
+  "revision_date": "2026-10-13",
+  "archived_grid_reproduction": {
+    "host": "LagEunha",
+    "python_fsps": "0.4.7",
+    "n_grids": 7,
+    "max_magnitude_difference": 0.0,
+    "report": "photometry_audit.json"
+  },
+  "boundary_score_status": "Complete. boundary_ring.tsv replaces the legacy comparison with a boundary-restricted score for all 76 entries.",
+  "distance_recalculation": {
+    "n_halo_entries": 76,
+    "n_retained_V": 75,
+    "n_retained_g": 75,
+    "median_b_V": 0.08,
+    "median_b_g": 0.1,
+    "halo_b_changed_V": 8,
+    "halo_b_changed_g": 11,
+    "reference_normalization_preserved": true,
+    "finer_grid_and_sensitivity_repeated_with_corrected_distances": false
+  },
+  "fsps_build_record": "fsps_build.json",
+  "derived_result_report": "revision_summary.json",
+  "primary_results": "consistent_distance",
+  "primary_summary": "primary_summary.json",
+  "archived_controls": "Finer grid, PSF fractions, sampling, radial sums, and diagnostic maps retain archived distances.",
+  "astra_revision": "2026-10-13"
+}

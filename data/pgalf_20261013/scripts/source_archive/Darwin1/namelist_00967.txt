@@ -1,0 +1,159 @@
+&RUN_PARAMS 
+cosmo=.true.
+pic=.true.
+poisson=.true.
+hydro=.true.
+nrestart=970
+nremap=50
+nsubcycle=1,1,2
+ncontrol=1
+rt=.false.
+verbose=.false.
+sink=.true.
+!nstepmax=80588
+/
+
+&INIT_PARAMS
+filetype='grafic'
+initfile(1)='/scratch/g161a01/Darwin1/ICs/DARWIN1_lv10/level_010'
+/
+
+&AMR_PARAMS
+levelmin=10
+levelmax=17
+ngridtot=10000000000
+nparttot=60000000000
+boxlen=1d0
+/
+
+&REFINE_PARAMS
+m_refine=20*8.,
+ivar_refine=0
+sink_refine=.true.
+mass_cut_refine=1.86265e-09
+interpol_var=1
+interpol_type=0
+!jeans_refine=20*4.
+!mISM_refine=1e6   ! Msun
+!nISM_refine=1d-8  ! H/cc
+!aISM_refine=0.0322581 ! z=30
+/
+
+&HYDRO_PARAMS
+gamma=1.666666667 
+courant_factor=0.8
+slope_type=1
+pressure_fix=.true.
+riemann='hllc'
+scheme='muscl'
+/
+
+&SF_PARAMS
+n_star=0.1
+t_star=1.632456
+T2_star=15.
+g_star=1.0
+n_gmc=100.
+mstar_min=1e5      ! [Msun]
+star_maker='dencon'
+eps_star=1.0       ! 10%
+use_initial_mass=.true.
+log_SF=.false.
+log_SF_term=.false.
+/
+
+&COOLING_PARAMS
+cooling=.true.
+metal=.true.
+haardt_madau=.true.
+self_shielding=.true.
+SolarMetallicity=0.0134
+neq_chem=.false.
+z_ave=0.001         ! initial metallicity in Zsun
+metal_cooling_KI02=.true.
+chem_list='H','O','Fe'
+/
+
+&OUTPUT_PARAMS
+noutput=300
+foutput=100
+walltime_hrs=47.0
+aout=0.00497512,0.05882352,0.06022888,0.06166780,0.06314112,0.06464962,0.06619417,0.06777562,0.06939484,0.07105277,0.07275029,0.07448836,0.07626797,0.07809009,0.07995574,0.08186598,0.08382183,0.08582443,0.08787484,0.08997428,0.09212387,0.09432478,0.09657831,0.09888568,0.10124815,0.10366708,0.10614379,0.10867967,0.11127615,0.11393464,0.11665666,0.11944371,0.12229734,0.12521917,0.12821077,0.13127385,0.13441013,0.13762131,0.14090924,0.14427571,0.14772260,0.15125184,0.15486540,0.15856531,0.16235359,0.16623239,0.17020386,0.17427018,0.17843370,0.18269666,0.18706149,0.19153492,0.19595872,0.20034088,0.20467123,0.20896356,0.21321638,0.21744201,0.22161345,0.22574596,0.22984326,0.23390956,0.23795067,0.24194850,0.24592619,0.24986739,0.25379306,0.25767544,0.26154059,0.26538706,0.26919851,0.27298605,0.27675334,0.28049985,0.28422564,0.28793049,0.29161444,0.29527834,0.29892299,0.30254960,0.30615965,0.30975482,0.31333721,0.31689429,0.32042763,0.32395145,0.32746908,0.33097634,0.33444381,0.33791104,0.34138244,0.34480977,0.34823543,0.35167414,0.35505471,0.35845223,0.36183593,0.36519417,0.36857632,0.37189770,0.37525544,0.37856144,0.38189319,0.38518521,0.38849616,0.39176977,0.39506584,0.39831713,0.40160549,0.40483037,0.40810746,0.41131386,0.41455916,0.41777322,0.42098299,0.42421496,0.42738602,0.43060482,0.43377638,0.43695155,0.44016361,0.44329229,0.44646579,0.44963807,0.45276064,0.45592690,0.45907059,0.46218169,0.46533531,0.46846354,0.47155812,0.47469383,0.47782168,0.48089480,0.48400778,0.48715225,0.49019942,0.49328485,0.49640939,0.49948162,0.50253528,0.50562650,0.50875401,0.51177198,0.51482594,0.51791662,0.52101052,0.52402359,0.52707171,0.53015554,0.53323781,0.53624034,0.53927678,0.54234791,0.54544371,0.54843009,0.55144936,0.55450207,0.55758876,0.56060487,0.56360173,0.56663090,0.56969273,0.57278109,0.57575083,0.57875150,0.58178365,0.58484775,0.58791739,0.59088534,0.59388340,0.59691197,0.59997165,0.60305798,0.60601813,0.60900742,0.61202645,0.61507547,0.61815500,0.62116510,0.62413996,0.62714344,0.63017595,0.63323796,0.63632989,0.63930327,0.64228594,0.64529657,0.64833564,0.65140343,0.65450037,0.65748334,0.66046727,0.66347849,0.66651726,0.66958398,0.67267907,0.67572421,0.67870331,0.68170881,0.68474096,0.68780029,0.69088703,0.69400162,0.69702196,0.70001596,0.70303583,0.70608181,0.70915431,0.71225363,0.71538025,0.71843731,0.72143948,0.72446686,0.72751975,0.73059839,0.73370332,0.73683470,0.73999292,0.74300277,0.74603128,0.74908465,0.75216305,0.75526696,0.75839645,0.76155210,0.76473403,0.76777011,0.77081800,0.77389026,0.77698702,0.78010863,0.78325546,0.78642780,0.78962588,0.79277307,0.79583371,0.79891801,0.80202627,0.80515891,0.80831617,0.81149817,0.81470525,0.81793797,0.82112694,0.82421720,0.82733071,0.83046782,0.83362895,0.83681411,0.84002382,0.84325814,0.84651744,0.84980220,0.85296482,0.85610080,0.85925990,0.86244237,0.86564857,0.86887866,0.87213296,0.87541169,0.87871522,0.88204372,0.88529116,0.88846570,0.89166313,0.89488363,0.89812750,0.90139496,0.90468633,0.90800178,0.91134161,0.91470611,0.91809559,0.92137468,0.92460352,0.92785507,0.93112957,0.93442732,0.93774843,0.94109327,0.94446206,0.94785506,0.95127249,0.95471466,0.95816749,0.96144348,0.96474195,0.96806318,0.97140729,0.97477460,0.97816533,0.98157972,0.98501807,0.98848069,0.99196762,0.99547923,0.99901581,1.00000000
+/
+
+
+&POISSON_PARAMS
+epsilon=1d-4
+cg_levelmin=11
+/
+
+
+&FEEDBACK_PARAMS
+snII_mech=.true.
+snII_random_pos=.false.
+E_SNII=7d51
+eta_sn=0.20
+snII_freq=0.01
+t_sne=5.        ! Myr
+snII_random_delay=.true.  ! if set, t_sne will be sampled randomly for each star particle as a single event
+!!snIa_mech=.true.
+snIa_thermal=.true.
+f_snIa=0.00134
+stellar_winds=.false.
+log_SN=.false.
+log_SN_term=.false.
+expZ_snII=0.150515  ! -0.14 is the default 0.349485: 1/5 at 0.01 Zsun, 0.422549: 1/7 at 0.01
+/
+
+&AGN_PARAMS
+sink_AGN=.true.
+sinkprops=.true.
+spin_bh=.true.    ! Activate the BH spin evolution (Dubois et al, 2014). Impact the accretion and feedback in
+mad_jet=.true.    ! Activate the MAD jet model (McKinney et al, 2012). Only works with spin_bh=.true.
+vrel_merge=.true. ! Activate relative velocity criterion to merge BHs together
+bondi=.true.	  ! Activate Bondi accretion
+f_ekAGN=1.d0	! AGN kinetic energy fraction (only between 0 and 1)
+rAGN   =4.D0     ! AGN superbubble radius in kpc
+eAGN_K =1d0       ! AGN energy efficiency in Radio mode 
+eAGN_T =0.60d0    ! AGN energy efficiency in Quasar mode
+TAGN   =0.0d0     ! AGN temperature floor for energy release in Quasar mode
+T2maxAGN=1d9      ! Maximum temperature allowed after AGN energy input 
+jetfrac=0.0d0     ! Fraction of accreted mass before releasing jet AGN energy
+MseedBH  =5d4     ! Mass of the initial sink particle in solar mass
+boost_acc=0.0d0   ! Boost power factor for the accretion rate
+boost_drag=2.0d0  ! Boost power factor for drag force
+r_gal  =10d0     ! Exclusion radius for the formation of new BHs in kpc
+drag=.true.      ! Activate drag force
+sigmav_max=10d15  ! Maximum relative velocity in the Bondi accretion rate in kpc
+mloadAGN=1d2      ! Mass loading factor of the jet
+f_bondi=1d0       ! Fraction of the Bondi rate
+maxspin=0.998d0   ! Maximum spin amplitude
+X_floor=1.0d-2    ! radio/quasar floor
+rmerge=4.0d0      ! Number of dx_min to allow for BH coalescence
+/
+
+&MOVIE_PARAMS
+movie = .true.
+aendmov = 1.
+astartmov=0.03846153846
+imovout=500
+imov=1
+nw_frame=512
+nh_frame=512
+levelmax_frame=13
+xcentre_frame= 0.5, 0., 0., 0.,  0.5, 0., 0., 0.,  1.9405e-01,-1.9440e+00, 2.3975e+01,-7.5825e+01,   1.9405e-01,-1.9440e+00, 2.3975e+01,-7.5825e+01,   1.04
+ycentre_frame= 0.5, 0., 0., 0.,  0.5, 0., 0., 0.,  2.6642e-01, 3.9207e+00,-4.2724e+01, 1.4263e+02,   2.6642e-01, 3.9207e+00,-4.2724e+01, 1.4263e+02,   4.91
+zcentre_frame= 0.5, 0., 0., 0.,  0.5, 0., 0., 0.,  5.9208e-01,-3.3786e-01, 2.8889e+00,-6.2251e+00,   5.9208e-01,-3.3786e-01, 2.8889e+00,-6.2251e+00,   8.94
+deltax_frame= 1.0, 0.0,  1.6, 0.0,  0.2, 0.0,  0.04, 0.0,  0.1, 0.0
+deltay_frame= 1.0, 0.0,  1.6, 0.0,  0.2, 0.0,  0.04, 0.0,  0.1, 0.0
+deltaz_frame= 1.0, 0.0,  1.6, 0.0,  0.2, 0.0,  0.04, 0.0,  0.1, 0.0
+proj_axis='zzzzz'
+movie_vars_txt = 'dm', 'dens', 'temp', 'stars', 'var6'
+perspective_camera = .true.,  .true.,  .true., .true., .true.
+shader_frame =       'cube', 'cube', 'cube', 'cube', 'cube'
+dtheta_camera=       2000.,       3000.,       2000.,   2000.,   2000. ! total rotation in degrees
+phi_camera=          65.,       85.,       65.,    65.,    65.  ! initial LOS inclination in degrees
+focal_camera=        1.,        3.,        1.,     1.      1.
+dist_camera=         1.,        3.,        1.,     1.      1.
+/
+

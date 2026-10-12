@@ -1,0 +1,73 @@
+{
+  "python_fsps_version": "0.4.7",
+  "recovered_by_grid_reproduction": true,
+  "grid_reproduction_passed": true,
+  "records": [
+    {
+      "file": "fsps_rest_z0.npz",
+      "z": 0.0,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "9016236eb287410c49e218d43703dad4c741288cb4ea0a02cc16b306ca22af44"
+    },
+    {
+      "file": "fsps_z0.190.npz",
+      "z": 0.19043796228481114,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "92ee3b47bd2b316f66d2eed05f33899ef05c3a5ee2dbe67c7b0f2a378165f71d",
+      "fsps_distance_pc": 905947170.9964666,
+      "simulation_distance_pc": 961750798.4474014,
+      "flux_factor": 0.887320745174825,
+      "magnitude_shift": 0.12979841186354946
+    },
+    {
+      "file": "fsps_z0.227.npz",
+      "z": 0.22742360748906965,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "b6f02c4aa57244c6891eea9bb4bb959fd734846fcf7f625ac77fbc722897e473",
+      "fsps_distance_pc": 1106125865.4307811,
+      "simulation_distance_pc": 1172850560.7882135,
+      "flux_factor": 0.8894544988697114,
+      "magnitude_shift": 0.12719065969000068
+    },
+    {
+      "file": "fsps_z0.500.npz",
+      "z": 0.5003188035806874,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "9a10b1f53418cf511803f9b175e894c4904628edf686e392d4676d5ed25f2fce",
+      "fsps_distance_pc": 2785320930.016881,
+      "simulation_distance_pc": 2929311526.017922,
+      "flux_factor": 0.9041060270964737,
+      "magnitude_shift": 0.10945158895873053
+    },
+    {
+      "file": "fsps_z1.002.npz",
+      "z": 1.002070183368986,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "2c274e683b8fe3ecede89084c43dbf9a2b865220f4709bb02029da1d4e318f8d",
+      "fsps_distance_pc": 6558693394.030688,
+      "simulation_distance_pc": 6819858363.892764,
+      "flux_factor": 0.9248769318150767,
+      "magnitude_shift": 0.08479013136715909
+    },
+    {
+      "file": "fsps_z1.990.npz",
+      "z": 1.9900013482189296,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "23fc8ab45c6f24f2ee952c9a07ce0b59ce409d1cd7790b187ba5fdc7a8ccba66",
+      "fsps_distance_pc": 15418833849.071978,
+      "simulation_distance_pc": 15839146094.167576,
+      "flux_factor": 0.9476315859611616,
+      "magnitude_shift": 0.058401180077852395
+    },
+    {
+      "file": "fsps_z3.002.npz",
+      "z": 3.0020330743725827,
+      "max_abs_magnitude_difference": 0.0,
+      "sha256": "9cabf594ff6245a2a477f4f867dc2ce24906059bee6be6a2fbe6e26749df2d6a",
+      "fsps_distance_pc": 25504449149.864666,
+      "simulation_distance_pc": 26045400013.16963,
+      "flux_factor": 0.9588923023703,
+      "magnitude_shift": 0.045575419280878895
+    }
+  ]
+}

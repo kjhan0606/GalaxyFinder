@@ -1,0 +1,7 @@
+kind	band	n_original	n_retained	n_lower_halos	n_upper_halos	n_below090_at_b010	iou_b010_median
+thin2	V	75	66	0	9	18	0.952337
+thin2	g	75	66	0	9	20	0.95389
+thin4	V	75	50	0	25	27	0.934104
+thin4	g	75	51	0	24	26	0.943939
+thin8	V	75	30	0	45	37	0.900952
+thin8	g	75	30	0	45	36	0.906119
