@@ -80,7 +80,8 @@ def psf_kernel(pix, fwhm, beta, amplitude, rmax):
 
     The wing is zero inside 7 arcsec and rises linearly to full strength
     at 8 arcsec, matching the Legacy Surveys halo model. The Moffat is the
-    analytic unit-integral profile sampled at pixel centres.
+    analytic unit-integral profile sampled at pixel centres. The support is
+    a square extending rmax along each axis, not a circular radial cutoff.
     """
     n = int(np.ceil(rmax / pix))
     yy, xx = np.mgrid[-n:n + 1, -n:n + 1]

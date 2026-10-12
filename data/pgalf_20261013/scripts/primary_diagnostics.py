@@ -81,7 +81,7 @@ def main():
    objective=np.median([halo[(*k,band)] for k in train],axis=0);j=int(np.argmax(objective))
    folds.append(dict(held_out_step=step,band=band,n_train=len(train),n_neighbours_removed=near,n_held=len(held),selected_b=float(B[j])))
    for k in held:
-    a=halo[(*k,band)];predictions.append(dict(step=k[0],nstar=k[1],band=band,interior=int(good[(*k,band)]),selected_b=float(B[j]),held_out_iou=float(a[j]),iou_b010=float(a[4]),iou_b020=float(a[-1]),fitted_iou=float(a.max())))
+    a=halo[(*k,band)];predictions.append(dict(step=k[0],nstar=k[1],band=band,interior=int(good[(*k,band)]),selected_b=float(B[j]),held_out_iou=float(a[j]),iou_b010=float(a[4]),iou_b020=float(a[-1]),best_common_b_iou=float(a.max())))
  for band in ['V','g']:
   rs=[r for r in predictions if r['band']==band]
   validation[band]=dict(n=len(rs),held_out_iou=q([r['held_out_iou'] for r in rs]),gain_over_b020=q([r['held_out_iou']-r['iou_b020'] for r in rs]),n_below_090=sum(r['held_out_iou']<.9 for r in rs),fold_b=sorted(set(r['selected_b'] for r in rs)),conditional_75_iou=q([r['held_out_iou'] for r in rs if r['interior']]))

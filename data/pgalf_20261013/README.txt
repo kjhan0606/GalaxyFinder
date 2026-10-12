@@ -13,3 +13,9 @@ sha256sum -c SHA256SUMS
 
 Raw-particle and membership reconstruction requires original catalogues and
 caches. Contact the manuscript corresponding author for access requests.
+
+Minor referee revision
+The validation auxiliary column is named best_common_b_iou. The values and
+primary results are unchanged. The PSF support is square, extending 80 arcsec
+along each axis. supplement/README.txt defines the residual-light ratios.
+The release-level SHA256SUMS checks every public file.

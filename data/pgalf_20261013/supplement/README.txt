@@ -27,6 +27,11 @@ validation on the primary grid. Training includes all other-output entries after
 excluding periodic neighbours within 0.5 h^-1 cMpc of a held-out entry. Training
 has no fitted-interior filter. Evaluation always includes all 76 entries.
 validation_output_summary.tsv reports gains and failures at every output.
+In validation_corrected_predictions.tsv, best_common_b_iou maximises over b
+after taking the median over the three views. The auxiliary value permits one
+common b per halo and is not a held-out prediction. In primary_summary.json,
+fitted_iou takes each view's maximum first, then the median over views.
+The two operations need not give the same value.
 A positional exclusion cannot guarantee progenitor independence.
 
 Targets and catalogues
@@ -75,6 +80,9 @@ undefined if any view ratio is undefined. Quantiles omit undefined halo values.
 boundary_distance.tsv stores ARCHIVED image light near isophotes at published
 best b. L_miss denotes exterior group light; L_extra denotes interior non-member
 light. le1/le2/le5 give Euclidean pixel-centre separations in arcseconds.
+Distances run from each star's assigned pixel to the nearest pixel on the
+opposite side of the region mask. L_miss_le1/L_miss and L_extra_le1/L_extra
+normalise near-boundary exterior and interior residual light separately.
 radial_luminosity.tsv and luminosity_summary.json use ARCHIVED normalization.
 The annuli have edges 0, 0.5, 1, 1.5 and infinity in units of equivalent radius.
 The primary absolute luminosity errors are regenerated from corrected light
