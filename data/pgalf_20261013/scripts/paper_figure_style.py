@@ -3,7 +3,7 @@ from matplotlib.text import Text
 BODY_TEX_PT = 9.0
 TEXT_WIDTH_TEX_PT = 508.0
 
-def save_paper_figure(fig, path, dpi=300, tight=True):
+def save_paper_figure(fig, path, dpi=300, tight=True, width_tex_pt=TEXT_WIDTH_TEX_PT):
     # Matplotlib uses 72 points/inch, TeX uses 72.27. The ratio below
     # compensates for both units and the includegraphics width scaling.
     box = None
@@ -14,7 +14,7 @@ def save_paper_figure(fig, path, dpi=300, tight=True):
             width_in = box.width
         else:
             width_in = fig.get_figwidth()
-        source_size = BODY_TEX_PT * width_in * 72 / TEXT_WIDTH_TEX_PT
+        source_size = BODY_TEX_PT * width_in * 72 / width_tex_pt
         for label in fig.findobj(Text):
             label.set_fontsize(source_size)
     fig.canvas.draw()

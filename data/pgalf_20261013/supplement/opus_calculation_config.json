@@ -73,9 +73,9 @@
   "postprocessing_source_sha256": {
     "aggregate_new.py": "27be71cda8fc436705b422a71152f699fae3cc44232b79f8569a171555c63c99",
     "conditional_uncertainty.py": "0333c71ba6fc0853cc33b047b4d8c83fe44a5a157a097692760eb035c28792af",
-    "plot_revision.py": "2ebc37d140c3b85c8055bf39929db4992fc7afd61c68cdea6977c5018c2545c5",
+    "plot_revision.py": "7f61d5034a7eb99ae97268cf337365e6fd8eb634995c7d660a43b60312b5e2b2",
     "plot_cluster.py": "ec3093c7a2ff3a56da8f90096092ef8a2cff264a76d1839c6f3d9480354b4c01",
-    "paper_figure_style.py": "e87f4f83a6812c5da67db3efed8274dc34a19e00cced5bc9f7192d836dfb90c3"
+    "paper_figure_style.py": "395b0d2ae0c86976c1b59492dbb8f69d15a3694c86f406afd17986b99867636e"
   },
   "figure_plot_versions": {
     "numpy": "2.3.3",
@@ -101,6 +101,7 @@
       ],
       "panel_c_heading": "inside lower right",
       "white_separator_width_pt": 0.65
-    }
+    },
+    "figure_4_layout": "one-column, two vertically adjoining full-range panels with near-unity insets; text9 TeX pt at244 TeX pt width"
   }
 }

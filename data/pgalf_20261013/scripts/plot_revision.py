@@ -89,24 +89,37 @@ def main():
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
     save(fig,'b_curves.pdf')
-    fig,axes=plt.subplots(2,2,figsize=(7.1,5.0))
-    for j,band in enumerate(['V','g']):
-        cc=curves[(curves.band==band)&(curves.b==.1)]
-        for row in range(2):
-            ax=axes[row,j]
-            for i,step in enumerate(STEPS):
-                h=cc[cc.step==step];good=h.iou>=.9
-                ax.scatter(h.loc[good,'completeness'],h.loc[good,'precision'],s=15,color=COLORS[i],lw=0)
-                ax.scatter(h.loc[~good,'completeness'],h.loc[~good,'precision'],s=20,facecolor='white',edgecolor=COLORS[i],marker='s',lw=.8,zorder=5)
-            lo=.88 if row==0 else -.025
-            hi=1.005 if row==0 else 1.025
-            ax.plot([max(lo,0),1],[max(lo,0),1],color='.55',ls=':',lw=.7)
-            ax.set(xlim=(lo,hi),ylim=(lo,hi),xlabel='Completeness',ylabel='Precision',aspect='equal')
-        inside_title(axes[1,j],f'{band}, common $b=0.10$')
-    fig.tight_layout();save(fig,'b_residual.pdf')
+    residuals(curves)
     purpose(curves)
     failures(curves)
     rest_control(curves)
+def residuals(curves):
+    from matplotlib.patches import Rectangle
+    fig,axes=plt.subplots(2,1,figsize=(3.5,6.6),sharex=True)
+    for ax,band in zip(axes,['V','g']):
+        cc=curves[(curves.band==band)&(curves.b==.1)]
+        inset=ax.inset_axes([.12,.36,.51,.51])
+        for panel,lo,hi in [(ax,-.025,1.025),(inset,.88,1.005)]:
+            for i,step in enumerate(STEPS):
+                h=cc[cc.step==step];good=h.iou>=.9
+                panel.scatter(h.loc[good,'completeness'],h.loc[good,'precision'],s=15,color=COLORS[i],lw=0)
+                panel.scatter(h.loc[~good,'completeness'],h.loc[~good,'precision'],s=20,facecolor='white',edgecolor=COLORS[i],marker='s',lw=.8,zorder=5)
+            panel.plot([max(lo,0),1],[max(lo,0),1],color='.55',ls=':',lw=.7)
+            panel.set(xlim=(lo,hi),ylim=(lo,hi),aspect='equal')
+            panel.tick_params(direction='in',top=True,right=True)
+        inset.set(xticks=[.9,.95,1],yticks=[.9,.95,1])
+        ax.set(ylabel='Precision')
+        ax.add_patch(Rectangle((.88,.88),.125,.125,fill=False,edgecolor='.4',lw=.6,zorder=6))
+        inside_title(ax,f'{band}, common $b=0.10$')
+    axes[0].tick_params(labelbottom=False)
+    axes[0].set_yticks([0,.2,.4,.6,.8,1],labels=['','.2','.4','.6','.8','1'])
+    axes[1].set_yticks([0,.2,.4,.6,.8,1],labels=['0','.2','.4','.6','.8',''])
+    axes[1].set_xlabel('Completeness')
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0)
+    save_paper_figure(fig,OUT/'b_residual.pdf',width_tex_pt=244)
+    plt.close(fig)
+
 def rest_control(curves):
     from collections import defaultdict
     rest=defaultdict(list);mass={}
