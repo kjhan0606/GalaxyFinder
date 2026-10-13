@@ -24,3 +24,8 @@ preserves mass and light in expectation, rather than exactly per draw.
 Raw reconstruction requires the original catalogues, cache layout and compiled
 linking library. Source files and library hash document the producing setup.
 Contact the corresponding author for catalogue access.
+
+October 13 referee-control update: supplement/referee_controls contains
+12-system outer-truncation, population, and recentered-image controls,
+absolute properties, figure 8, and reproducible summary/plot commands.
+The controls supersede earlier interpretations of a physical size change.

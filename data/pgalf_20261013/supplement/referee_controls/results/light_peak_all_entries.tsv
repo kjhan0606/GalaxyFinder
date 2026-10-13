@@ -1,0 +1,5 @@
+variant	band	n_entries	median_iou	failed_entries	n_views	failed_views
+light_peak	V	76	0.9600392799589261	16	228	47
+light_peak	g	76	0.9628684382261332	14	228	44
+primary	V	76	0.956902506721615	16	228	47
+primary	g	76	0.9623433722308695	14	228	44
