@@ -1,0 +1,122 @@
+{
+  "n_entries": 76,
+  "n_groups": 66,
+  "n_known_pairs": 10,
+  "n_draws": 2000,
+  "seed": 20261013,
+  "scope": "Conditional resampling of one-volume output entries. Positional pairs are grouped; unrecognized progenitors remain possible. Intervals are not independent-population confidence intervals.",
+  "bands": {
+    "V": {
+      "position": {
+        "median_selected_b": [
+          0.08,
+          0.09,
+          0.1
+        ],
+        "median_iou_b010": [
+          0.9369241966200614,
+          0.9582456876975404,
+          0.9671019395487916
+        ],
+        "median_gain_b010_over_b020": [
+          0.025527875351284646,
+          0.03580974726851105,
+          0.04712797707945783
+        ],
+        "median_absolute_luminosity_error_b010": [
+          0.018173575330800218,
+          0.02410630005347425,
+          0.03084557131101895
+        ],
+        "median_absolute_luminosity_error_reduction_b010_vs_b020": [
+          0.03944954178573623,
+          0.05516570251272929,
+          0.06719114798930459
+        ]
+      },
+      "PSF": {
+        "median_selected_b": [
+          0.08,
+          0.09,
+          0.1
+        ],
+        "median_iou_b010": [
+          0.923206706652107,
+          0.9367328027994672,
+          0.9550571724651805
+        ],
+        "median_gain_b010_over_b020": [
+          0.025242982638046918,
+          0.035386876842309345,
+          0.04591648595508364
+        ],
+        "median_absolute_luminosity_error_b010": [
+          0.019504504275928092,
+          0.038581649284454955,
+          0.047847922129608644
+        ],
+        "median_absolute_luminosity_error_reduction_b010_vs_b020": [
+          0.052346490247531685,
+          0.061645689742796606,
+          0.07599993804855654
+        ]
+      }
+    },
+    "g": {
+      "position": {
+        "median_selected_b": [
+          0.08,
+          0.09,
+          0.1
+        ],
+        "median_iou_b010": [
+          0.9395918961755473,
+          0.9625840038457568,
+          0.9692847617747441
+        ],
+        "median_gain_b010_over_b020": [
+          0.02070895800378192,
+          0.03228449557617491,
+          0.047822136924988434
+        ],
+        "median_absolute_luminosity_error_b010": [
+          0.014186816036524164,
+          0.01980376838711506,
+          0.02844961261380119
+        ],
+        "median_absolute_luminosity_error_reduction_b010_vs_b020": [
+          0.034134371271328734,
+          0.047550181721711327,
+          0.07712499801134642
+        ]
+      },
+      "PSF": {
+        "median_selected_b": [
+          0.08,
+          0.09,
+          0.1
+        ],
+        "median_iou_b010": [
+          0.9218566609395377,
+          0.9396053277460599,
+          0.9557677818742543
+        ],
+        "median_gain_b010_over_b020": [
+          0.019960241703483317,
+          0.03205448629626123,
+          0.04779509430163721
+        ],
+        "median_absolute_luminosity_error_b010": [
+          0.02034689019728697,
+          0.03282179840648092,
+          0.04109755873782134
+        ],
+        "median_absolute_luminosity_error_reduction_b010_vs_b020": [
+          0.04298505331260852,
+          0.0508453883830578,
+          0.08302825177414408
+        ]
+      }
+    }
+  }
+}

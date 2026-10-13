@@ -1,0 +1,78 @@
+{
+  "python": "3.13.11 | packaged by Anaconda, Inc. | (main, Dec 10 2025, 21:28:48) [GCC 14.3.0]",
+  "numpy": "2.3.3",
+  "scipy": "1.18.0",
+  "platform": "Linux-5.14.0-570.17.1.el9_6.x86_64-x86_64-with-glibc2.34",
+  "host": "LagEunha",
+  "base_manuscript_commit": "96f33e0e02437c8226ba1844387c1d2265de5eff",
+  "threads": 1,
+  "grid": [
+    0.02,
+    0.03,
+    0.05,
+    0.06,
+    0.07,
+    0.08,
+    0.09,
+    0.1,
+    0.11,
+    0.12,
+    0.13,
+    0.14,
+    0.15,
+    0.18,
+    0.2
+  ],
+  "sampling": {
+    "factors": [
+      2,
+      4,
+      8
+    ],
+    "mass_flux_reweighting": "inverse probability",
+    "nested": true,
+    "seed_sequence": [
+      "20261013",
+      "integer output number",
+      "catalogue total star count"
+    ]
+  },
+  "boundary_width_arcsec_per_side": [
+    1,
+    2
+  ],
+  "controls": [
+    "primary",
+    "threshold_bright",
+    "threshold_faint",
+    "wing_off",
+    "light_peak"
+  ],
+  "distance": "simulation cosmology for both angular and luminosity distances",
+  "source_sha256": {
+    "scripts/measure_halo.py": "b3ef252f6a890ca27d249eab20eb0a34acf1b73f1082e808c9ceaefc6fb767b5",
+    "scripts/pilot_properties.py": "354f4105eff3cc1bc3089fd5aa4678a3afe14e83a4ec3feb694e3f22a47323d0",
+    "scripts/source/sb_vs_b.py": "6a6ed2f345eb1da7fd128c409029503c4b35b4360c92a9f62df6c041754438b8",
+    "scripts/source/sb_revise.py": "e75b2a5b52231b9e16804784ff97c704368e4aaee0a6424c5d52bdd1743be047",
+    "original linking shared library": "bcaf9eb3bedff55739de859615c0d4d37dc74928f90d8222d14cd13d8ce2fb2d",
+    "inputs/supplement/photometry_audit.json": "c80ad8e4dd62705ec1fce0995c276204e968abb3d25437790e08db40dd563b84",
+    "inputs/supplement/halo_metadata.tsv": "c7c563d2ee8992407fc610d36e083b504bcc8a6e8904d57425f6caec9487fdd8"
+  },
+  "additional_source_sha256": {
+    "scripts/drawing_coordinates.py": "2e1e6e16f33d9c55acf548a39abb08d603d538313f17dd5b470c918e99f149a9",
+    "scripts/make_drawing_inputs.py": "6e0c1ebbd23a129288c9504099813f96ce52ce654f564c2e50a68a311aaf0064"
+  },
+  "drawing_positions": "Bounded samples use true projected stellar coordinates. Image photometry still deposits flux on the documented pixel grid.",
+  "astropy": "7.2.0",
+  "pandas": "2.3.3",
+  "matplotlib": "3.10.8",
+  "cluster_plot_versions": {
+    "numpy": "2.3.3",
+    "matplotlib": "3.10.8"
+  },
+  "postprocessing_source_sha256": {
+    "aggregate_new.py": "27be71cda8fc436705b422a71152f699fae3cc44232b79f8569a171555c63c99",
+    "conditional_uncertainty.py": "0333c71ba6fc0853cc33b047b4d8c83fe44a5a157a097692760eb035c28792af",
+    "plot_revision.py": "256445c7d8b8ac5e586828305c7659f3c8bd1dd8d62cf45369daa9cdbfb9fabe"
+  }
+}

@@ -1,0 +1,5 @@
+band	weighting	n_views	n_failed	n_failed_held_out	small_region	seed_outside	fallback	offset_gt3
+V	position	228	47	49	22	2	13	11
+V	PSF	228	65	68	34	2	20	13
+g	position	228	44	49	18	3	12	11
+g	PSF	228	61	72	29	3	14	15

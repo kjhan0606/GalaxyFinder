@@ -1,21 +1,26 @@
-PGalF data and code release, 2026-10-13
+PGalF final-analysis data and code release, 2026-10-13
 
-Primary results use consistent simulation distances. Archived constructions
-retain their original normalization and are labelled controls. Start with
-supplement/README.txt and scripts/README.txt. The released data include every
-original entry in validation, clipping fractions, target membership checks,
-light sums and figure drawing inputs. No manuscript TeX, compiled manuscript
-PDF or original particle catalogue is included. Existing data at the parent
-repository commit 5e3cc51 are preserved without modification.
+The canonical analysis uses simulation distances for both angular size and
+stellar flux, a 15-node linking grid, positional and PSF aperture comparisons,
+and inverse-probability reweighted sampling. Start with supplement/README.txt
+and scripts/README.txt. Original nine-node and other older products remain
+for provenance and are not inputs to the final headline statistics.
 
-Check hashes from this directory with
+The released products contain aggregate curves for all 76 output entries,
+validation predictions, boundary bands, stellar-mass and mean-age comparisons,
+image controls, failure flags, conditional resampling results, and compact
+corrected drawing inputs. Full particle catalogues, full membership caches,
+full per-halo images, manuscript TeX and manuscript PDFs are absent.
+
+Check hashes from the release root with
 sha256sum -c SHA256SUMS
 
-Raw-particle and membership reconstruction requires original catalogues and
-caches. Contact the manuscript corresponding author for access requests.
+Population independence, hydrodynamical resolution convergence, kinematic
+accuracy, realistic survey noise, dust attenuation, and IGM absorption are
+not established by the supplied idealized-image calibration. Known positional
+pairs are grouped only for conditional resampling. Sampling reweighting
+preserves mass and light in expectation, rather than exactly per draw.
 
-Minor referee revision
-The validation auxiliary column is named best_common_b_iou. The values and
-primary results are unchanged. The PSF support is square, extending 80 arcsec
-along each axis. supplement/README.txt defines the residual-light ratios.
-The release-level SHA256SUMS checks every public file.
+Raw reconstruction requires the original catalogues, cache layout and compiled
+linking library. Source files and library hash document the producing setup.
+Contact the corresponding author for catalogue access.

@@ -1,42 +1,35 @@
-Reproducing the PGalF revision
+Reproducing the final PGalF analysis
 
-Run from the package root with the versions in supplement/calculation_config.json.
+Run from the package root. The final table-based commands require Python,
+NumPy, SciPy, pandas, and matplotlib. Producing versions and numerical
+settings are recorded in supplement/opus_calculation_config.json.
 
-python scripts/primary_diagnostics.py
-python scripts/plot_scores.py
-python scripts/plot_failures.py
+python scripts/aggregate_new.py --data supplement --out regenerated
+python scripts/conditional_uncertainty.py --data supplement --out regenerated
+python scripts/plot_revision.py --data supplement --out figures
 python scripts/plot_cluster.py
 
-primary_diagnostics.py calculates the consistent-distance calibration, all-76
-omitted-output validation, output-specific gains/failures and fixed-b luminosity
-errors. Training is not filtered by a fitted interior maximum. It also reports
-endpoint counts and all-original-entry scores for archived fixed-mask thinning.
-plot_scores.py draws primary consistent-distance scores, selected parameters,
-completeness/precision and total-versus-boundary curves. The unredshifted control
-figure overlays corresponding primary image curves.
-Cluster and failure illustrations retain archived image normalization and are
-labelled as construction/selection controls in the manuscript.
+The first command reproduces fine-grid selections, all-entry common-b scores,
+output-held-out validation, radius/redshift strata, sampling summaries,
+wide-band ratios, failure flags, mass correlations, and stellar-population
+summaries from the released flat tables. The bootstrap uses the ten known
+positional pairs and 66 groups of entries. Unidentified repeated progenitors
+are not removed. Aggregate products use positional or PSF weights explicitly.
 
-The archived control summaries can be regenerated separately with
-python scripts/calibration_diagnostics.py
-python scripts/luminosity_diagnostics.py
-python scripts/revision_diagnostics.py
-Those commands preserve historical definitions and do not replace primary files.
+plot_revision.py regenerates the corrected parameter, score, completeness-
+precision, failure-map, photometry/sampling, and unredshifted-control figures.
+Failure maps use bounded cutouts. plot_cluster.py uses compact saved drawing
+arrays with the corrected contour. The unchanged mass map and stellar point
+geometry do not depend on luminosity-distance normalization. A uniform flux
+factor also leaves the relative flux-weighted sampling probabilities unchanged.
 
-With python-fsps 0.4.7 and the recorded libraries under SPS_HOME,
-python scripts/audit_photometry.py
-reproduces the seven archived grids and distance factors. The primary image uses
-the distance factor before convolution and isophote selection, never after scoring.
+The source archive retains original readers, compiled-library build sources,
+and producing scripts. Full particle reconstruction requires the original
+catalogues/cache layout, configured project paths, and an appropriate compute
+host. The producing source and library hashes accompany the configuration.
+Image and membership reconstruction is not possible from aggregate tables.
+The release excludes full per-halo images, full group caches, and raw catalogues.
 
-measurement_methods.py contains the numerical image and score definitions.
-source_archive includes production readers, linking/image routines, C sources,
-headers/build recipe, original simulation namelist and PSF reference source.
-Absolute paths in the producing environment require configuration elsewhere.
-The binary hash is recorded, but the compiled library and particle catalogues
-are not included. No claim of full membership reproduction from tables is made.
-Source archives preserve original whitespace and historical labels.
-
-audit_targets.py derives target_membership.tsv from existing membership caches
-and the catalogue ordering. audit_particles.py in the source archive audits
-SSP-grid clipping from original particles on Lageunha. The scripts require the
-original project paths and caches and are not runnable using only released tables.
+Older diagnostic and plotting scripts reproduce prior products and are not
+the canonical entry points for the final manuscript. The fixed Git history
+preserves the previous analysis. Use the commands above for final figures.
