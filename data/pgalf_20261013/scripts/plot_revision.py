@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from matplotlib.lines import Line2D
 from scipy import ndimage
 from paper_figure_style import save_paper_figure
 ROOT=Path(__file__).resolve().parents[1]
@@ -164,11 +165,11 @@ def failures(curves):
     for ip,(ax,r) in enumerate(zip(axes.flat,cases)):
         band=r['band'];los=r['los'];half=r['half_arcsec'];mu=drawing[f'mu_{ip}'];mask=drawing[f'mask_{ip}']
         # Magnitudes already encode logarithmic flux. Display the same flux
-        # with LogNorm and extend the faint end to 30 mag arcsec^-2.
+        # with LogNorm and emphasize faint light over 24--32 mag arcsec^-2.
         flux=np.power(10.,-.4*(mu-26.5))
         display=ax.imshow(np.ma.masked_less_equal(flux,0),origin='lower',
             extent=[-half,half,-half,half],cmap='gray',
-            norm=LogNorm(vmin=10**(-.4*(30-26.5)),vmax=10**(-.4*(20-26.5))),
+            norm=LogNorm(vmin=10**(-.4*(32-26.5)),vmax=10**(-.4*(24-26.5))),
             interpolation='nearest')
         x=(np.arange(mu.shape[0])+.5)*.2-half
         ax.contour(x,x,mask,levels=[.5],colors=['#e4685b'],linewidths=.8)
@@ -197,8 +198,16 @@ def failures(curves):
         inside_title(ax,f'({chr(97+ip)}) {band}, {los}, $z={r["z"]:.3f}$\nOverlap {r["iou"]:.3f}, $b=0.10$',
                      x=.97,y=.03 if ip in (0,2) else .97,ha='right',
                      va='bottom' if ip in (0,2) else 'top',fontsize=9)
+    bottom=.50/height
+    # Thin white rules mark adjacent panels without reopening panel gaps.
+    for x in (1/3,2/3):
+        fig.add_artist(Line2D([x,x],[bottom,1],transform=fig.transFigure,
+                             color='white',lw=.65,zorder=30))
+    middle=bottom+(1-bottom)/2
+    fig.add_artist(Line2D([0,1],[middle,middle],transform=fig.transFigure,
+                         color='white',lw=.65,zorder=30))
     cax=fig.add_axes([.28,.065,.44,.018]);bar=fig.colorbar(display,cax=cax,orientation='horizontal')
-    levels=np.array([20,22,24,26,28,30])
+    levels=np.array([24,26,28,30,32])
     bar.set_ticks(10**(-.4*(levels-26.5)));bar.set_ticklabels(levels)
     bar.ax.invert_xaxis()
     bar.ax.minorticks_off()

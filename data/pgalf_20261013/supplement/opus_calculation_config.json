@@ -73,7 +73,7 @@
   "postprocessing_source_sha256": {
     "aggregate_new.py": "27be71cda8fc436705b422a71152f699fae3cc44232b79f8569a171555c63c99",
     "conditional_uncertainty.py": "0333c71ba6fc0853cc33b047b4d8c83fe44a5a157a097692760eb035c28792af",
-    "plot_revision.py": "ee15fb579d98512995f4f10f4889e237bf6731126e1fe494766c5a8699c0dd6e",
+    "plot_revision.py": "2ebc37d140c3b85c8055bf39929db4992fc7afd61c68cdea6977c5018c2545c5",
     "plot_cluster.py": "ec3093c7a2ff3a56da8f90096092ef8a2cff264a76d1839c6f3d9480354b4c01",
     "paper_figure_style.py": "e87f4f83a6812c5da67db3efed8274dc34a19e00cced5bc9f7192d836dfb90c3"
   },
@@ -86,7 +86,7 @@
   "figure_display": {
     "titles": "All main figure and supplementary rest-control titles are inside panels.",
     "figure_3": "zero vertical panel spacing, inward ticks on all four sides, precision labels at lower right",
-    "figure_5": "logarithmic flux intensity, 20 to 30 mag arcsec^-2, white bright and black faint",
+    "figure_5": "logarithmic flux intensity, 24 to 32 mag arcsec^-2, white bright and black faint",
     "font": "All text is 9 TeX pt after insertion at the MNRAS text width of 508 TeX pt; PDF crop and scaling are compensated.",
     "figure_5_layout": {
       "panel_gaps": 0,
@@ -99,7 +99,8 @@
         5,
         5
       ],
-      "panel_c_heading": "inside lower right"
+      "panel_c_heading": "inside lower right",
+      "white_separator_width_pt": 0.65
     }
   }
 }
