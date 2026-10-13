@@ -157,7 +157,10 @@ def purpose(curves):
 def failures(curves):
     cases=json.loads((DATA/'failure_drawing.json').read_text())
     drawing=np.load(DATA/'failure_drawing.npz')
-    fig,axes=plt.subplots(2,3,figsize=(7.1,5.1))
+    width=7.1
+    height=2*width/3+.50
+    fig,axes=plt.subplots(2,3,figsize=(width,height))
+    fig.subplots_adjust(left=0,right=1,bottom=.50/height,top=1,wspace=0,hspace=0)
     for ip,(ax,r) in enumerate(zip(axes.flat,cases)):
         band=r['band'];los=r['los'];half=r['half_arcsec'];mu=drawing[f'mu_{ip}'];mask=drawing[f'mask_{ip}']
         # Magnitudes already encode logarithmic flux. Display the same flux
@@ -177,13 +180,24 @@ def failures(curves):
             tip=np.asarray(seed)*(.82*half/max(abs(seed[0]),abs(seed[1])))
             ax.annotate('Seed outside',xy=tip,xytext=tip*.45,color='#edaa3e',fontsize=9,
                         arrowprops=dict(arrowstyle='->',color='#edaa3e',lw=.8))
-        ax.set(xlim=(-half,half),ylim=(-half,half),xlabel='Offset (arcsec)',ylabel='Offset (arcsec)',
-               aspect='equal')
+        ax.set(xlim=(-half,half),ylim=(-half,half),aspect='equal')
+        ax.set_axis_off()
+        # Angular scale bars replace the removed coordinate axes.
+        length=[2,20,20,5,5,5][ip]
+        fraction=length/(2*half)
+        left=.90-fraction if ip==0 else .08
+        ybar=.88 if ip in (0,2) else .08
+        ax.plot([left,left+fraction],[ybar,ybar],transform=ax.transAxes,
+                color='black',lw=3.5,solid_capstyle='butt',zorder=21)
+        ax.plot([left,left+fraction],[ybar,ybar],transform=ax.transAxes,
+                color='white',lw=1.5,solid_capstyle='butt',zorder=22)
+        ax.text(left+fraction/2,ybar+.025,rf'${length}\,\mathrm{{arcsec}}$',
+                transform=ax.transAxes,ha='center',va='bottom',color='white',fontsize=9,
+                bbox=dict(facecolor='black',edgecolor='none',alpha=.65,pad=1),zorder=22)
         inside_title(ax,f'({chr(97+ip)}) {band}, {los}, $z={r["z"]:.3f}$\nOverlap {r["iou"]:.3f}, $b=0.10$',
-                     x=.97,y=.03 if ip==0 else .97,ha='right',
-                     va='bottom' if ip==0 else 'top',fontsize=9)
-    fig.tight_layout(rect=[0,.10,1,1])
-    cax=fig.add_axes([.28,.055,.44,.018]);bar=fig.colorbar(display,cax=cax,orientation='horizontal')
+                     x=.97,y=.03 if ip in (0,2) else .97,ha='right',
+                     va='bottom' if ip in (0,2) else 'top',fontsize=9)
+    cax=fig.add_axes([.28,.065,.44,.018]);bar=fig.colorbar(display,cax=cax,orientation='horizontal')
     levels=np.array([20,22,24,26,28,30])
     bar.set_ticks(10**(-.4*(levels-26.5)));bar.set_ticklabels(levels)
     bar.ax.invert_xaxis()
