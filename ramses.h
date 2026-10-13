@@ -328,4 +328,4 @@ int gassortx(const void*, const void*);
 int starsortx(const void*, const void*);
 int dmsortx(const void*, const void*);
 void units(RamsesType *);
-void mkfolder(char *);
+int mkfolder(const char *);

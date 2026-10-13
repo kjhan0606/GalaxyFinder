@@ -151,16 +151,42 @@ void fopen_mkdir(char *path, char *mode) {
     }
     return;
 }
-void mkfolder(char *dir){
-	struct stat sb;
-	if(stat(dir,&sb) != 0 || !S_ISDIR(sb.st_mode)){
-		/*
-		fopen_mkdir(dir,"rw");
-		*/
-		char command[190];
-		sprintf(command,"mkdir -p %s",dir);
-		system(command);
+int mkfolder(const char *dir){
+	char *path = malloc(strlen(dir) + 1);
+	if(path == NULL){
+		errno = ENOMEM;
+		return -1;
 	}
+	strcpy(path, dir);
+
+	char *component = path + (path[0] == '/' ? 1 : 0);
+	for(char *p = component; ; p++){
+		if(*p != '/' && *p != '\0') continue;
+
+		char saved = *p;
+		*p = '\0';
+		if(path[0] != '\0' && mkdir(path, 0755) != 0){
+			if(errno != EEXIST){
+				free(path);
+				return -1;
+			}
+			struct stat sb;
+			if(stat(path, &sb) != 0){
+				free(path);
+				return -1;
+			}
+			if(!S_ISDIR(sb.st_mode)){
+				errno = ENOTDIR;
+				free(path);
+				return -1;
+			}
+		}
+		*p = saved;
+		if(saved == '\0') break;
+	}
+
+	free(path);
+	return 0;
 }
 /*
 int mkdirr(const char *, const mode_t, const int);
@@ -251,12 +277,13 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 
 
 	sprintf(dir,"./FoF_Data/NewDD.%.5d", istep);
-	if(myid==0){
-		struct stat sb;
-		if(stat(dir,&sb) != 0 || !S_ISDIR(sb.st_mode)) mkfolder(dir);
-		if(stat(dir,&sb) != 0 || !S_ISDIR(sb.st_mode))
-			splitdump_fatal("cannot create output directory", dir, myid);
-	}
+	if(myid == 0 && mkfolder(dir) != 0)
+		splitdump_fatal("cannot create output directory", dir, myid);
+#ifdef USE_MPI
+	/* All ranks use this path in collective dump modes. Synchronize after the
+	 * single-rank directory initialization; SINK output is rank-0-only. */
+	if(type != SINK) MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
 	if(icpu==1 && type == DM){
 		for(i=0;i<nsplit;i++){
@@ -268,7 +295,13 @@ void SplitDump(RamsesType *ram, const void *aa, int np, int type, int istep, int
 			ram->xmax = xpos[i+1];
 			ram->icpu = i;
 			write_head(wp, *ram);
-			fclose(wp);
+			if(ferror(wp)){
+				fclose(wp);
+				errno = EIO;
+				splitdump_fatal("cannot write output header", outfile, myid);
+			}
+			if(fclose(wp) != 0)
+				splitdump_fatal("cannot close output header", outfile, myid);
 		}
 	}
 
