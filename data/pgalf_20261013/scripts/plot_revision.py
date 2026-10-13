@@ -130,7 +130,7 @@ def rest_control(curves):
     fig.tight_layout();save(fig,'b_rest.pdf')
 def purpose(curves):
     thin=read('conserved_sampling_curves.tsv')
-    fig,axes=plt.subplots(2,2,figsize=(7.1,5.0))
+    fig,axes=plt.subplots(2,2,figsize=(7.1,4.55))
     for j,band in enumerate(['V','g']):
         cc=curves[curves.band==band]
         for prefix,color,label in [('', '#286090','Projected positions'),('psf_','#bf6532','PSF aperture flux')]:
