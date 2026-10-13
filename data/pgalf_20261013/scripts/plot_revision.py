@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from scipy import ndimage
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
@@ -25,6 +26,9 @@ ZLABEL=['3.002','1.990','1.002','0.500','0.227','0.190']
 def read(name):return pd.read_csv(DATA/name,sep='\t',dtype={'step':str})
 def save(fig,name):
     fig.savefig(OUT/name,dpi=300);plt.close(fig)
+def inside_title(ax,text,x=.04,y=.96,ha='left',va='top',fontsize=9):
+    ax.text(x,y,text,transform=ax.transAxes,ha=ha,va=va,fontsize=fontsize,
+            bbox=dict(facecolor='white',edgecolor='none',alpha=.88,pad=1.4),zorder=20)
 def grouped(frame,metric):
     return frame.groupby(['step','nstar','b'])[metric].agg(lambda a:float(np.median(a.to_numpy()))).reset_index()
 def main():
@@ -43,8 +47,9 @@ def main():
                            facecolor='white' if bad else COLORS[i],edgecolor=COLORS[i],lw=.8,zorder=5 if bad else 2)
         ax.axhline(.1,color='.35',ls='--',lw=.8,label='$b=0.10$')
         ax.axhline(.2,color='.35',ls=':',lw=.8,label='$b=0.20$')
-        ax.set(xticks=range(6),xticklabels=ZLABEL,xlabel='Output redshift',title=band,ylim=(0,.215))
-    axes[0].set_ylabel('Selected linking parameter $b$');axes[1].legend(loc='upper left',ncol=2)
+        ax.set(xticks=range(6),xticklabels=ZLABEL,xlabel='Output redshift',ylim=(0,.215))
+        inside_title(ax,band)
+    axes[0].set_ylabel('Selected linking parameter $b$');axes[1].legend(loc='upper right',ncol=2)
     fig.tight_layout();save(fig,'b_match.pdf')
     # All 76 entries remain in the displayed curves, including endpoint cases.
     fig,axes=plt.subplots(4,2,figsize=(7.1,7.0),sharex=True,sharey='row')
@@ -58,7 +63,12 @@ def main():
                 ax.plot(h.index,h.values,color=COLORS[i],lw=1.15,label='$z='+ZLABEL[i]+'$')
             ax.set_ylim(0,1.02);ax.axvline(.1,color='.45',ls=':',lw=.65)
             if j==0:ax.set_ylabel(metric.capitalize() if metric!='iou' else 'Overlap')
-        axes[0,j].set_title(band)
+        # Precision labels occupy the empty lower right, away from the curves.
+        for row in range(4):
+            label=f'({chr(97+2*row+j)}) {band}'
+            if row==2:inside_title(axes[row,j],label,x=.96,y=.08,ha='right',va='bottom')
+            elif row==1:inside_title(axes[row,j],label,x=.04,y=.08,va='bottom')
+            else:inside_title(axes[row,j],label)
         ax=axes[3,j]
         for width,ls in [('1.0','-'),('2.0','--')]:
             for metric,color in [('completeness','#286090'),('precision','#bf6532')]:
@@ -67,7 +77,16 @@ def main():
         ax.set_ylim(0,1.02);ax.set_xlabel('Linking parameter $b$');ax.axvline(.1,color='.45',ls=':',lw=.65)
     axes[3,0].set_ylabel('Boundary light fraction')
     axes[0,1].legend(loc='lower right',ncol=2);axes[3,1].legend(loc='lower right',ncol=1)
-    fig.tight_layout();save(fig,'b_curves.pdf')
+    for row in range(4):
+        for ax in axes[row]:
+            ax.set_ylim(0,1)
+            ax.set_yticks([0,.2,.4,.6,.8,1])
+            ax.set_yticklabels(['0' if row==3 else '', '.2','.4','.6','.8', '1' if row==0 else ''])
+            ax.tick_params(axis='both',which='both',direction='in',top=True,bottom=True,left=True,right=True)
+            ax.tick_params(axis='x',labelbottom=row==3)
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0)
+    save(fig,'b_curves.pdf')
     fig,axes=plt.subplots(2,2,figsize=(7.1,5.0))
     for j,band in enumerate(['V','g']):
         cc=curves[(curves.band==band)&(curves.b==.1)]
@@ -81,7 +100,7 @@ def main():
             hi=1.005 if row==0 else 1.025
             ax.plot([max(lo,0),1],[max(lo,0),1],color='.55',ls=':',lw=.7)
             ax.set(xlim=(lo,hi),ylim=(lo,hi),xlabel='Completeness',ylabel='Precision',aspect='equal')
-        axes[0,j].set_title(f'{band}, common $b=0.10$')
+        inside_title(axes[1,j],f'{band}, common $b=0.10$')
     fig.tight_layout();save(fig,'b_residual.pdf')
     purpose(curves)
     failures(curves)
@@ -126,7 +145,8 @@ def purpose(curves):
                     axes[1,j].errorbar(x,q[1],yerr=[[q[1]-q[0]],[q[2]-q[1]]],fmt=marker,color=color,
                         ms=4,capsize=2,lw=.7,mfc=color if kind=='fixed' else 'white',
                         label=f'{label}, {kind} image' if factor==2 else None)
-        axes[0,j].set(title=band,xlabel='Linking parameter $b$',ylabel='Median absolute luminosity error (%)')
+        axes[0,j].set(xlabel='Linking parameter $b$',ylabel='Median absolute luminosity error (%)')
+        inside_title(axes[0,j],band,x=.5,ha='center')
         axes[0,j].axvline(.1,color='.55',ls=':',lw=.7)
         axes[1,j].set(xticks=range(4),xticklabels=['1','1/2','1/4','1/8'],xlabel='Retained particle fraction',
                       ylabel='Overlap at $b=0.10$',ylim=(0,1.02))
@@ -138,7 +158,13 @@ def failures(curves):
     fig,axes=plt.subplots(2,3,figsize=(7.1,5.1))
     for ip,(ax,r) in enumerate(zip(axes.flat,cases)):
         band=r['band'];los=r['los'];half=r['half_arcsec'];mu=drawing[f'mu_{ip}'];mask=drawing[f'mask_{ip}']
-        display=ax.imshow(mu,origin='lower',extent=[-half,half,-half,half],cmap='gray',vmin=20,vmax=28,interpolation='nearest')
+        # Magnitudes already encode logarithmic flux. Display the same flux
+        # with LogNorm and extend the faint end to 30 mag arcsec^-2.
+        flux=np.power(10.,-.4*(mu-26.5))
+        display=ax.imshow(np.ma.masked_less_equal(flux,0),origin='lower',
+            extent=[-half,half,-half,half],cmap='gray',
+            norm=LogNorm(vmin=10**(-.4*(30-26.5)),vmax=10**(-.4*(20-26.5))),
+            interpolation='nearest')
         x=(np.arange(mu.shape[0])+.5)*.2-half
         ax.contour(x,x,mask,levels=[.5],colors=['#e4685b'],linewidths=.8)
         ax.scatter(drawing[f'x_{ip}'],drawing[f'y_{ip}'],color='#5199bd',s=1.2,lw=0,alpha=.6,rasterized=True)
@@ -150,9 +176,16 @@ def failures(curves):
             ax.annotate('Seed outside',xy=tip,xytext=tip*.45,color='#edaa3e',fontsize=6,
                         arrowprops=dict(arrowstyle='->',color='#edaa3e',lw=.8))
         ax.set(xlim=(-half,half),ylim=(-half,half),xlabel='Offset (arcsec)',ylabel='Offset (arcsec)',
-               title=f'({chr(97+ip)}) {band}, {los}, $z={r["z"]:.3f}$\nOverlap {r["iou"]:.3f} at $b=0.10$',aspect='equal')
+               aspect='equal')
+        inside_title(ax,f'({chr(97+ip)}) {band}, {los}, $z={r["z"]:.3f}$\nOverlap {r["iou"]:.3f} at $b=0.10$',
+                     x=.97,y=.03 if ip==0 else .97,ha='right',
+                     va='bottom' if ip==0 else 'top',fontsize=7)
     fig.tight_layout(rect=[0,.10,1,1])
     cax=fig.add_axes([.28,.055,.44,.018]);bar=fig.colorbar(display,cax=cax,orientation='horizontal')
-    bar.set_ticks([20,22,24,26,28]);bar.set_label(r'Surface brightness (mag arcsec$^{-2}$)',fontsize=7)
+    levels=np.array([20,22,24,26,28,30])
+    bar.set_ticks(10**(-.4*(levels-26.5)));bar.set_ticklabels(levels)
+    bar.ax.invert_xaxis()
+    bar.ax.minorticks_off()
+    bar.set_label(r'Surface brightness (mag arcsec$^{-2}$)',fontsize=7)
     save(fig,'fail_maps.pdf')
 if __name__=='__main__':main()
