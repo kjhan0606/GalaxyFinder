@@ -11,6 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse, Rectangle
 from matplotlib.ticker import MaxNLocator
+from paper_figure_style import save_paper_figure
 ROOT = Path(__file__).resolve().parents[1]
 B_SHOW = (0.05, 0.08, 0.10, 0.15, 0.20)
 
@@ -195,7 +196,7 @@ def render(path):
           "n_ell", int(cx.size), flush=True)
     fig_dir = ROOT / "figures"
     pdf = fig_dir / "cluster_38857678.pdf"
-    fig.savefig(pdf, dpi=200)
+    save_paper_figure(fig, pdf, dpi=200)
     print("WROTE", pdf, flush=True)
 
 if __name__ == "__main__":

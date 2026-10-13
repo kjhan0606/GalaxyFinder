@@ -73,7 +73,9 @@
   "postprocessing_source_sha256": {
     "aggregate_new.py": "27be71cda8fc436705b422a71152f699fae3cc44232b79f8569a171555c63c99",
     "conditional_uncertainty.py": "0333c71ba6fc0853cc33b047b4d8c83fe44a5a157a097692760eb035c28792af",
-    "plot_revision.py": "feb3515ae6a00fa0aab41dbb22880ed5af1fef10d68232fe5dbc2b5ef8233a86"
+    "plot_revision.py": "37dec367c045e4c528102b4fdf577ba33db463f1e8c059519dd7827ee80e3219",
+    "plot_cluster.py": "ec3093c7a2ff3a56da8f90096092ef8a2cff264a76d1839c6f3d9480354b4c01",
+    "paper_figure_style.py": "e87f4f83a6812c5da67db3efed8274dc34a19e00cced5bc9f7192d836dfb90c3"
   },
   "figure_plot_versions": {
     "numpy": "2.3.3",
@@ -82,8 +84,9 @@
     "scipy": "1.18.0"
   },
   "figure_display": {
-    "titles": "inside panels for Figures 1, 3, 4, 5, 6",
+    "titles": "All main figure and supplementary rest-control titles are inside panels.",
     "figure_3": "zero vertical panel spacing, inward ticks on all four sides, precision labels at lower right",
-    "figure_5": "logarithmic flux intensity, 20 to 30 mag arcsec^-2, white bright and black faint"
+    "figure_5": "logarithmic flux intensity, 20 to 30 mag arcsec^-2, white bright and black faint",
+    "font": "All text is 9 TeX pt after insertion at the MNRAS text width of 508 TeX pt; PDF crop and scaling are compensated."
   }
 }

@@ -10,6 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from scipy import ndimage
+from paper_figure_style import save_paper_figure
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--data',type=Path,default=ROOT/'results')
@@ -18,14 +19,14 @@ args=parser.parse_args()
 DATA=args.data
 OUT=args.out
 OUT.mkdir(exist_ok=True)
-plt.rcParams.update({'font.size':8,'axes.labelsize':8,'axes.titlesize':9,'legend.fontsize':7,
-                     'xtick.labelsize':7,'ytick.labelsize':7,'savefig.bbox':'tight'})
+plt.rcParams.update({'font.size':9,'axes.labelsize':9,'axes.titlesize':9,'legend.fontsize':9,
+                     'xtick.labelsize':9,'ytick.labelsize':9,'savefig.bbox':'tight'})
 COLORS=['#6b3a95','#d55e00','#0072b2','#009e73','#a65f82','#4d4d4d']
 STEPS=['00081','00178','00475','00786','00967','01001']
 ZLABEL=['3.002','1.990','1.002','0.500','0.227','0.190']
 def read(name):return pd.read_csv(DATA/name,sep='\t',dtype={'step':str})
 def save(fig,name):
-    fig.savefig(OUT/name,dpi=300);plt.close(fig)
+    save_paper_figure(fig,OUT/name);plt.close(fig)
 def inside_title(ax,text,x=.04,y=.96,ha='left',va='top',fontsize=9):
     ax.text(x,y,text,transform=ax.transAxes,ha=ha,va=va,fontsize=fontsize,
             bbox=dict(facecolor='white',edgecolor='none',alpha=.88,pad=1.4),zorder=20)
@@ -123,8 +124,9 @@ def rest_control(curves):
             ax.plot(xx,np.median(yy,axis=0),color=color,ls=styles[i],lw=1.2,
                     label=f'$z={z:.3f}$, $M={mass[(step,nstar)]/1e13:.3f}'+r'\times10^{13}$')
             ax.fill_between(xx,yy.min(axis=0),yy.max(axis=0),color=color,alpha=.12)
-        ax.set(xlim=(.01,.51),ylim=(0,1.03),xlabel='Linking parameter $b$',ylabel='Overlap',title=band)
-    axes[1].legend(loc='lower right',fontsize=6)
+        ax.set(xlim=(.01,.51),ylim=(0,1.03),xlabel='Linking parameter $b$',ylabel='Overlap')
+        inside_title(ax,band,x=.8,y=.72,ha='center')
+    axes[1].legend(loc='lower right',fontsize=9)
     fig.tight_layout();save(fig,'b_rest.pdf')
 def purpose(curves):
     thin=read('conserved_sampling_curves.tsv')
@@ -150,7 +152,7 @@ def purpose(curves):
         axes[0,j].axvline(.1,color='.55',ls=':',lw=.7)
         axes[1,j].set(xticks=range(4),xticklabels=['1','1/2','1/4','1/8'],xlabel='Retained particle fraction',
                       ylabel='Overlap at $b=0.10$',ylim=(0,1.02))
-    axes[0,1].legend();axes[1,1].legend(fontsize=6)
+    axes[0,1].legend();axes[1,1].legend(fontsize=9)
     fig.tight_layout();save(fig,'photometry_sampling.pdf')
 def failures(curves):
     cases=json.loads((DATA/'failure_drawing.json').read_text())
@@ -173,19 +175,19 @@ def failures(curves):
         ax.scatter([seed[0]],[seed[1]],marker='x',color='#edaa3e',s=35,lw=1)
         if max(abs(seed[0]),abs(seed[1]))>half:
             tip=np.asarray(seed)*(.82*half/max(abs(seed[0]),abs(seed[1])))
-            ax.annotate('Seed outside',xy=tip,xytext=tip*.45,color='#edaa3e',fontsize=6,
+            ax.annotate('Seed outside',xy=tip,xytext=tip*.45,color='#edaa3e',fontsize=9,
                         arrowprops=dict(arrowstyle='->',color='#edaa3e',lw=.8))
         ax.set(xlim=(-half,half),ylim=(-half,half),xlabel='Offset (arcsec)',ylabel='Offset (arcsec)',
                aspect='equal')
-        inside_title(ax,f'({chr(97+ip)}) {band}, {los}, $z={r["z"]:.3f}$\nOverlap {r["iou"]:.3f} at $b=0.10$',
+        inside_title(ax,f'({chr(97+ip)}) {band}, {los}, $z={r["z"]:.3f}$\nOverlap {r["iou"]:.3f}, $b=0.10$',
                      x=.97,y=.03 if ip==0 else .97,ha='right',
-                     va='bottom' if ip==0 else 'top',fontsize=7)
+                     va='bottom' if ip==0 else 'top',fontsize=9)
     fig.tight_layout(rect=[0,.10,1,1])
     cax=fig.add_axes([.28,.055,.44,.018]);bar=fig.colorbar(display,cax=cax,orientation='horizontal')
     levels=np.array([20,22,24,26,28,30])
     bar.set_ticks(10**(-.4*(levels-26.5)));bar.set_ticklabels(levels)
     bar.ax.invert_xaxis()
     bar.ax.minorticks_off()
-    bar.set_label(r'Surface brightness (mag arcsec$^{-2}$)',fontsize=7)
+    bar.set_label(r'Surface brightness (mag arcsec$^{-2}$)',fontsize=9)
     save(fig,'fail_maps.pdf')
 if __name__=='__main__':main()
