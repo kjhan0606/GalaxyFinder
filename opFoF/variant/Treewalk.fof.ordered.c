@@ -941,6 +941,20 @@ size_t new_fof_link(particle *p,POSTYPE fof_link,FoFTStruct *tree,
 //	free(linked);
 	return (ncount);
 }
+static FoFTStruct *opfof_tree_end = NULL;
+static int opfof_tree_overflow = 0;
+
+void opfof_set_tree_end(FoFTStruct *end)
+{
+	opfof_tree_end = end;
+	opfof_tree_overflow = 0;
+}
+
+int opfof_tree_overflowed(void)
+{
+	return opfof_tree_overflow;
+}
+
 void FoF_Make_Tree(FoFTStruct *TREE_START,FoFTPtlStruct *ptl,size_t np,Box box){
 	FoFBeginEndTree beginend;
 	FoFTStruct *NewTree;
@@ -956,6 +970,10 @@ void FoF_Make_Tree(FoFTStruct *TREE_START,FoFTPtlStruct *ptl,size_t np,Box box){
 FoFBeginEndTree FoF_divide_node(FoFTStruct *TREE_START,FoFTStruct *NewTree, 
 		FoFTPtlStruct *ptl, Box box,FoFTStruct *ThisTree){ 
 	FoFBeginEndTree beginend;
+	if(opfof_tree_overflow){
+		beginend.start = NewTree;
+		return beginend;
+	}
 	FoFTStruct *p2tree,tmpnode[8];
 	FoFTStruct *NowCal;
 	void *from_sibling;
@@ -1068,6 +1086,11 @@ FoFBeginEndTree FoF_divide_node(FoFTStruct *TREE_START,FoFTStruct *NewTree,
 	from_sibling = NULL;
 	for(i=0;i<8;i++){
 		if(tmpnode[i].Nparticle >= NODE_HAVE_PARTICLE && ThisTree->dist > MINCELLSIZE){
+			if(opfof_tree_end != NULL && NewTree >= opfof_tree_end){
+				opfof_tree_overflow = 1;
+				beginend.start = NewTree;
+				return beginend;
+			}
 			NewTree->daughter = tmpnode[i].daughter;
 			if(from_sibling != NULL) 
 				((GENERAL_TPtl_POINTER*)from_sibling)->sibling = NewTree;
@@ -1233,6 +1256,11 @@ FoFBeginEndTree FoF_divide_node2D(FoFTStruct *TREE_START,FoFTStruct *NewTree,
 	from_sibling = NULL;
 	for(i=0;i<2;i++){
 		if(tmpnode[i].Nparticle >= NODE_HAVE_PARTICLE && ThisTree->dist > MINCELLSIZE){
+			if(opfof_tree_end != NULL && NewTree >= opfof_tree_end){
+				opfof_tree_overflow = 1;
+				beginend.start = NewTree;
+				return beginend;
+			}
 			NewTree->daughter = tmpnode[i].daughter;
 			if(from_sibling != NULL) 
 				((GENERAL_TPtl_POINTER*)from_sibling)->sibling = NewTree;

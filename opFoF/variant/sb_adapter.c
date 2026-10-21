@@ -29,6 +29,9 @@ HaloQ haloproperty(particle *member, size_t nmem)
  * FoF-relevant arrays cross this ABI, so the 120-byte GALFIND record is never
  * mistaken for this build's StarType layout.
  */
+void opfof_set_tree_end(FoFTStruct *end);
+int opfof_tree_overflowed(void);
+
 int opfof_sb_labels(size_t n, const double *x, const double *y,
                     const double *z, const double *link,
                     uint64_t *labels)
@@ -68,7 +71,8 @@ int opfof_sb_labels(size_t n, const double *x, const double *y,
 
     ptl = calloc(n, sizeof(*ptl));
     linked = malloc(n * sizeof(*linked));
-    tree_capacity = (n / NODE_HAVE_PARTICLE) * 10 + 1024;
+    if (n > (SIZE_MAX - 4096) / 4) goto allocation_error;
+    tree_capacity = n * 4 + 4096;
     if (tree_capacity > SIZE_MAX / sizeof(*tree)) goto allocation_error;
     tree = calloc(tree_capacity, sizeof(*tree));
     if (ptl == NULL || linked == NULL || tree == NULL) goto allocation_error;
@@ -84,7 +88,9 @@ int opfof_sb_labels(size_t n, const double *x, const double *y,
         ptl[i].sibling = (i + 1 < n) ? (void *)&ptl[i + 1] : NULL;
     }
 
+    opfof_set_tree_end(tree + tree_capacity);
     FoF_Make_Tree(tree, ptl, n, box);
+    if (opfof_tree_overflowed()) goto allocation_error;
     for (i = 0; i < n; ++i) {
         if (ptl[i].included == NO) {
             new_fof_link(&ptl[i], 0.0, tree, ptl, linked, ncomp);

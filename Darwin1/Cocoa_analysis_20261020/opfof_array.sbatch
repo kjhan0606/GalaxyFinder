@@ -4,7 +4,8 @@
 #SBATCH --nodes=3
 #SBATCH --ntasks=10
 #SBATCH --ntasks-per-node=4
-#SBATCH --cpus-per-task=6
+# opFoF is MPI-only; allocate one CPU per rank.
+#SBATCH --cpus-per-task=1
 #SBATCH --mem=256G
 #SBATCH --time=48:00:00
 #SBATCH --exclude=syn02
@@ -21,13 +22,25 @@ module load intel/mpi/2021.17
 SNAPS=(972 977 980 984)
 SNAP=${SNAPS[$SLURM_ARRAY_TASK_ID]}
 printf -v PADDED '%05d' "$SNAP"
+GARBAGE_DIR="FoF_Garbage/Garb.${PADDED}"
+
+# opFoF truncates BottomFaceContactHalo files on the first slab. Refuse to
+# write through a symlink or into a non-empty directory from an earlier run.
+if [[ -L "$GARBAGE_DIR" ]]; then
+  echo "refusing symlinked FoF auxiliary-output directory: $GARBAGE_DIR" >&2
+  exit 3
+fi
+if [[ -e "$GARBAGE_DIR" && ! -d "$GARBAGE_DIR" ]]; then
+  echo "FoF auxiliary-output path exists and is not a directory: $GARBAGE_DIR" >&2
+  exit 3
+fi
+if [[ -d "$GARBAGE_DIR" && -n "$(ls -A "$GARBAGE_DIR")" ]]; then
+  echo "refusing non-empty FoF auxiliary-output directory: $GARBAGE_DIR" >&2
+  exit 3
+fi
 
 export PATH=/opt/ohpc/pub/intel/oneapi/mpi/2021.17/bin:${PATH}
 export LD_LIBRARY_PATH=/opt/ohpc/pub/intel/oneapi/mpi/2021.17/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
-export OMP_PLACES=cores
-export OMP_WAIT_POLICY=passive
-export OMP_STACKSIZE=128M
 export I_MPI_COMPATIBILITY=4
 export I_MPI_PIN_DOMAIN=auto
 

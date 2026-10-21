@@ -76,11 +76,23 @@ int rd_part(RamsesType *ram, char *infile){
 	F77read(&(ram->mstar_tot), sizeof(dptype), 1, fp);
 	F77read(&(ram->mstar_lost), sizeof(dptype), 1, fp);
 	F77read(&(ram->nsink), sizeof(int), 1, fp);
+	/* Empty CPU domains in these snapshots do not contain the optional
+	 * per-particle records.  There is nothing to classify or write for them. */
+	if(npartp == 0) {
+		fclose(fp);
+		ram->particle = NULL;
+		ram->npart = 0;
+		return 0;
+	}
 	dptype *xbuff = (dptype*)Malloc(sizeof(dptype)*npartp,PPTR(xbuff));
 #ifdef NCHEM
-	nchem=NCHEM;
+	/* The Cocoa outputs have three chemistry records followed by mass0.
+	 * Keep NCHEM=9 in the in-memory structs to preserve the NewDD/galfinder
+	 * binary layout, but read only the three chemistry records in the input. */
+	nchem=3;
 #endif
 	ram->particle = (PmType*)Malloc(sizeof(PmType)*npartp,PPTR(ram->particle));
+	memset(ram->particle, 0, sizeof(PmType)*npartp);
 
 
 	GetPart(xbuff,sizeof(dptype), npartp, fp, ram,particle,x);
@@ -107,7 +119,13 @@ int rd_part(RamsesType *ram, char *infile){
 		} else if(rec_bytes == (int)(sizeof(long long)*npartp)) {
 			long long *id64 = (long long*)Malloc(sizeof(long long)*npartp, PPTR(id64));
 			fread(id64, sizeof(long long), npartp, fp);
-			for(i=0;i<(size_t)npartp;i++) idbuff[i] = (idtype)id64[i];
+			for(i=0;i<(size_t)npartp;i++) {
+				idbuff[i] = (idtype)id64[i];
+				if((long long)idbuff[i] != id64[i]) {
+					fprintf(stderr, "Particle ID does not fit idtype; rebuild the entire pipeline with DOUBLE_PRECISION (64-bit IDs)\n");
+					exit(99);
+				}
+			}
 			Free(id64);
 		} else {
 			fprintf(stderr, "Unexpected particle ID record length %d\n", rec_bytes);
@@ -116,13 +134,15 @@ int rd_part(RamsesType *ram, char *infile){
 		fread(&rec_end, sizeof(int), 1, fp);
 		if(rec_end != rec_bytes) { fprintf(stderr, "Bad particle ID record\n"); exit(99); }
 	}
+	/* Both hydro and DM-only paths must preserve the original signed ID.
+	 * The sign carries the pre-SN state; abs(ID) is a downstream tracking key. */
+	for(i=0;i<(size_t)npartp;i++) ram->particle[i].id = idbuff[i];
 	if(getenv("NEWDD_DM_ONLY") != NULL) {
 		/* The lagRamses DM-only production snapshot may carry additional
 		 * legacy/type records after the standard particle ID with ABI-dependent
 		 * widths.  Preserve positions, velocities, masses, and IDs; classify
 		 * every retained particle as DM and stop before optional records. */
 		for(i=0;i<(size_t)npartp;i++) {
-			ram->particle[i].id = idbuff[i];
 			ram->particle[i].levelp = 1;
 			ram->particle[i].family = 1;
 			ram->particle[i].tag = 0;

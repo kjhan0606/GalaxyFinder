@@ -371,14 +371,8 @@ int main(int argc,char *argv[]){
 			printf("reading %s\n",infile);fflush(stdout);
 			RamsesType read_head(FILE *);
 			simpar = read_head(ffp);
-			if(sizeof(simpar) == simpar.ramses_sizeof){
-				fread(&simpar, sizeof(RamsesType), 1, ffp);
-			}
-			else {
-				fprintf(stderr,"Warning: different size of RamsesType.\n");
-				fprintf(stderr,"Warning: We cannot read the full precision parameter values from the binary format.\n");
-				fprintf(stderr,"So, we degrade the precision from double to float in each parameters.\n");
-			}
+			/* NewDD .info files contain only the ASCII header; no binary
+			 * RamsesType payload follows the closing marker. */
 			fclose(ffp);
 		}
 		MPI_Bcast(&simpar,sizeof(SimParameters),MPI_BYTE,0,MPI_COMM_WORLD);
@@ -423,14 +417,8 @@ int main(int argc,char *argv[]){
 			ffp = fopen(infile,"r");
 			printf("reading %s\n",infile);fflush(stdout);
 			simpar = read_head(ffp);
-			if(sizeof(simpar) == simpar.ramses_sizeof){
-				fread(&simpar, sizeof(RamsesType), 1, ffp);
-			}
-			else {
-				fprintf(stderr,"Warning: different size of RamsesType.\n");
-				fprintf(stderr,"Warning: We cannot read the full precision parameter values from the binary format.\n");
-				fprintf(stderr,"So, we degrade the precision from double to float in each parameters.\n");
-			}
+			/* NewDD .info files contain only the ASCII header; no binary
+			 * RamsesType payload follows the closing marker. */
 			fclose(ffp);
 		}
 		pflag = 1;

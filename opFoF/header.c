@@ -10,7 +10,7 @@ void write_head(FILE *wp, RamsesType wsimpar){
 	FILE_HEADER(fprintf,wp,,wsimpar);
 }
 RamsesType read_head(FILE *fp){
-	RamsesType rsimpar;
+	RamsesType rsimpar = {0};
 	int isize,ncnt=0;
 	char line[MAX_LINE_LENGTH];
 	/* Loop until it reaches P_Closing */

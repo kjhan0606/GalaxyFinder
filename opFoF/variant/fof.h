@@ -2,8 +2,9 @@
 #define OPFOF_FOF_H
 
 #define MinNumMem 20
-//#define MINCELLSIZE 1.e-2
-#define MINCELLSIZE 2.e-3
+/* Stellar linking lengths in this scan are ~1e-4 cMpc/h. A floor of
+ * 2e-3 left the whole core in one leaf and made every member scan it. */
+#define MINCELLSIZE 1.e-6
 
 #define MaxLinkedParticles 5000000
 #define sqr(A) ((A)*(A))

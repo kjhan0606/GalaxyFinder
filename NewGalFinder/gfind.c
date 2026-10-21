@@ -32,6 +32,13 @@ void FREAD(FoFTPtlStruct *p, HaloQ *haloq, FILE *fp, float omep){
 	GasType *gas = (GasType*)rbuffer;
 	SinkType *sink = (SinkType*)rbuffer;
 	StarType *star = (StarType*)rbuffer;
+	/* Stellar linking length in units of the mean interparticle spacing.
+	 * NGF_LINK_B overrides the default 0.2. Dark matter and gas stay at 0.2. */
+	double b_star = 0.2;
+	{
+		const char *eb = getenv("NGF_LINK_B");
+		if(eb != NULL && eb[0] != '\0') b_star = atof(eb);
+	}
 	fread(dm, sizeof(DmType), haloq->npdm,fp);
 #ifdef DEBUG
 //	printf("reading data: %ld %ld %ld %ld \n", haloq->npdm, haloq->npgas, haloq->npsink,
@@ -85,7 +92,7 @@ void FREAD(FoFTPtlStruct *p, HaloQ *haloq, FILE *fp, float omep){
 		p->vy = star[i].vy;
 		p->vz = star[i].vz;
 		p->mass = star[i].mass;
-		p->link02 =  0.2*pow(star[i].mass/2.7755e11L/omep, 0.33333333333333333333L);
+		p->link02 =  b_star*pow(star[i].mass/2.7755e11L/omep, 0.33333333333333333333L);
 		(p++)->p.star = star[i];
 	}
 }

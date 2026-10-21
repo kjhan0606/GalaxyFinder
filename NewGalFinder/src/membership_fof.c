@@ -9,15 +9,21 @@
 #include "finder_internal.h"
 #include "stage_timer.h"
 
-enum { LINK_STARS_SEPARATELY = 1 };
+/* NGF_LINK_STARS=0 skips the stellar isodensity pass. Default is on. */
+static int link_stars_separately(void) {
+	const char *e = getenv("NGF_LINK_STARS");
+	if (e == NULL || e[0] == '\0') return 1;
+	return atoi(e) != 0;
+}
 
 void link_galaxy_members(SimpleBasicParticleType *particles, int n_particles, int n_cores, Coretype *cores) {
 	StageTimer stage_stars, stage_all;
+	int link_stars = link_stars_separately();
 	stage_begin(&stage_stars);
 	if (n_particles < NOMPFoF) {
-		if (LINK_STARS_SEPARATELY && MINSTELLARMASS >= 0)
+		if (link_stars && MINSTELLARMASS >= 0)
 			link_members_stars(particles, n_particles, n_cores, cores);
-	} else if (LINK_STARS_SEPARATELY && MINSTELLARMASS >= 0) {
+	} else if (link_stars && MINSTELLARMASS >= 0) {
 		link_members_openmp(particles, n_particles, n_cores, cores, TYPE_STAR);
 	}
 	stage_end(&stage_stars, "fof_stars");

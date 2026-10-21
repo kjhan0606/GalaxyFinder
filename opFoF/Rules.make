@@ -19,7 +19,9 @@ FC = mpiifc
 CC = mpiicx
 F90C = mpiifort
 #OPT = -DPGCC -mcmodel=medium -tp nehalem-64 -fast -mp -fastsse
-OPT = -DINTEL -g
+# Keep debug symbols while explicitly optimizing production-sized FoF runs.
+# For Intel oneAPI, -g without -O selects -O0; do not rely on compiler defaults.
+OPT = -DINTEL -g -O2
 
 INCLUDES = 
 

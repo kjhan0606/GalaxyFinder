@@ -53,12 +53,12 @@ int main(int argc, char **argv){
 	int WGroupSize = WGROUPSIZE;
 	int sinmul,nsplit;
 	int ileaf =0;
-	/* The lagRamses build can emit a compatible particle file while its AMR
-	 * mesh bookkeeping differs from the historical NewDD reader.  In this
-	 * mode we intentionally build the DM/stellar slabs without touching AMR,
-	 * hydro, gas, or sink records; opFoF only needs the particle fields and
-	 * their individual masses. */
+	/* Some lagRamses outputs have AMR bookkeeping incompatible with this
+	 * reader.  NEWDD_SKIP_AMR skips AMR/hydro/gas/sink data while preserving
+	 * the full particle-family and stellar-property records.  The older
+	 * NEWDD_DM_ONLY path remains available for genuinely collisionless data. */
 	int dm_only = (getenv("NEWDD_DM_ONLY") != NULL);
+	int skip_amr = (getenv("NEWDD_SKIP_AMR") != NULL);
 	memset(&ram, 0, sizeof(RamsesType));
 	istep = atoi(argv[1]);
 	nsplit = atoi(argv[2]);
@@ -85,7 +85,7 @@ int main(int argc, char **argv){
 	sinmul = 1;
 	if(myid==0) {
 		rd_info(&ram, infile);
-		if(dm_only) units(&ram);
+		if(dm_only || skip_amr) units(&ram);
 	}
 	MPI_Bcast(&ram, sizeof(RamsesType), MPI_BYTE, 0, MPI_COMM_WORLD); 
 	int mystart, myfinal; 
@@ -118,7 +118,7 @@ int main(int argc, char **argv){
 		sprintf(infile,"./output_%.5d/amr_%.5d.out%.5d", istep, istep, icpu);
 		Wait2Start(WGroupSize);
 		printf("P%d: Opening %s\n", myid, infile);fflush(stdout);
-		if(!dm_only) rd_amr(&ram, infile, NO);
+		if(!dm_only && !skip_amr) rd_amr(&ram, infile, NO);
 		Wait2Go(WGroupSize);
 
 		printf("P%d stage 1 done \n",myid);
@@ -133,7 +133,7 @@ int main(int argc, char **argv){
 		
 		ram.nleafcell= ileaf;
 #ifndef NBODY
-		if(dm_only) goto particle_dump;
+		if(dm_only || skip_amr) goto particle_dump;
 		sprintf(infile,"./output_%.5d/hydro_%.5d.out%.5d", istep, istep, icpu);
 		Wait2Start(WGroupSize);
 		printf("P%d: Opening %s\n", myid, infile);fflush(stdout);
