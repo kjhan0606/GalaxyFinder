@@ -113,13 +113,14 @@ measurement of the host potential profile.
    the unadjusted relation, the relation after controlling for stellar mass
    and host, and the primary result after adding subhalo dark-matter mass.
    Present effect sizes in dex and percent, uncertainty intervals, and
-   between-galaxy scatter. Follow with aperture, mass-cut, host-bin, and size
-   sensitivities. Report the separate high-versus-low-metallicity orbital
+   between-galaxy scatter. Follow with aperture, mass-cut, host-bin, age, and
+   size sensitivities. Report the separate high-versus-low-metallicity orbital
    dispersion comparison with its host count, stellar-mass matching balance,
-   effect size, and host-bootstrap interval. The current analysis has not
-   derived recent SFRs or stellar ages from the NewGalFinder particle fields,
-   so do not report activity-class or age-controlled results unless these
-   quantities are derived and validated.
+   effect size, and host-bootstrap interval. Convert the NewGalFinder birth-time
+   field to proper age using the output cosmology and the RAMSES part2birth
+   method; report age-controlled results only after checking valid-time
+   coverage and the age distribution in all four catalogues. Recent SFR and
+   activity classes remain out of the primary analysis.
 6. **Discussion** — Compare the conditional result with stellar mass–metallicity,
    size–dispersion, and tidal-stripping expectations. Discuss a physical
    mechanism only if the audited measurements distinguish its predictions;

@@ -2,6 +2,37 @@
 
 Status: exploratory result from one existing ASCII catalogue, not a paper result.
 
+## RAMSES birth-time conversion added as an age sensitivity (2026-10-21 19:03 KST)
+
+NewGalFinder retains the RAMSES stellar birth-time field tp; NewDD carries it
+from the particle file without rescaling it. The official RAMSES
+[part2birth utility](https://github.com/ramses-organisation/ramses/blob/dev/utils/f90/part2birth.f90)
+interpolates this coordinate through the output-specific Friedmann tables to
+obtain proper stellar ages. I added the same conversion approach to the
+extractor, using the expansion-history equations in the
+[RAMSES Friedmann routine](https://github.com/ramses-organisation/ramses/blob/dev/utils/f90/utils.f90)
+and the output's H0, omega_m, omega_l, and omega_k. The extractor will
+write the current-stellar-mass-weighted mean age and the fraction of each
+galaxy's stellar particles with a valid birth time. The relation analysis now
+adds age as a separate host- and stellar-mass-controlled fit, reports a
+whole-host bootstrap interval and residual scatter, and summarizes particle
+time coverage before the age result is used in the paper.
+
+A coordinate sanity check on the first 16 star records in the 00972 NewDD shard
+found tp values from -6.68 to -3.15; all mapped within the table to ages from
+8.93 to 10.39 Gyr at the output redshift. This small file-order sample is not
+representative and is not a relation result. The four extracted catalogues
+must still pass the age-coverage and age-distribution checks before an age
+control is reported.
+
+At 19:01 KST, FoF 00972 (430610_0), 00977 (430418_1), and 00980
+(430611_2) remained RUNNING; 00984 (430622_3) remained resource-pending.
+The 00972 FoF files and log advanced at 18:55 KST. The 00977 log advanced at
+18:56 KST, although its consolidated FoF files remain at their 17:19 KST
+checkpoint. The 00980 log and FoF files remain at 18:37 KST. All NewGalFinder,
+extraction, and analysis jobs remain dependency-pending; no validated primary
+satellite catalogue or relation result is available yet.
+
 ## Kinematic scope and FoF update (2026-10-21 18:43 KST)
 
 The primary internal-stellar-dispersion analysis and the host-scale orbital

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Exploratory satellite metallicity/kinematics analysis for ASCII extracts.
+"""Analyse satellite metallicity and kinematics in galaxy catalogues.
 
-The internal-dispersion model includes host fixed effects and stellar mass.
-As a separate descriptive check, the host orbital-dispersion comparison pairs
-the metal-poor and metal-rich satellites within each host by stellar mass. It
-concerns galaxy-centre orbital velocities, not the primary internal stellar
-velocity dispersion; missing centre velocities do not remove a satellite from
-the internal-dispersion sample.
+The primary analysis uses NewGalFinder outputs and checks the particle-ID
+audit fields before fitting host-fixed-effects models. Legacy ASCII inputs are
+accepted only for exploratory diagnostics because they do not retain the
+particle IDs needed to verify catalogue membership. The internal stellar-
+dispersion models are separate from the host-scale comparison of galaxy-centre
+orbital velocities, which pairs metal-poor and metal-rich satellites by
+stellar mass within each host.
 """
 
 from __future__ import annotations
@@ -276,6 +277,7 @@ def normalize_catalogue(path: Path):
                          else np.full(len(raw), np.nan, dtype=float)),
             "rhalf3d_kpc": raw["rhalf3d_kpc"].astype(float),
             "age_mass_weighted_gyr": raw["age_mass_weighted_gyr"].astype(float),
+            "age_coverage_fraction": np.full(len(raw), np.nan, dtype=float),
             "vrot_global_kms": raw["vrot_global_kms"].astype(float),
             "host_id": raw["host_id"],
             "nstar": np.full(len(raw), -1, dtype=np.int64),
@@ -307,11 +309,13 @@ def normalize_catalogue(path: Path):
     required = {"is_central_max_stellar_mass",
                 "mean_birth_metallicity_current_mass_weighted",
                 "mean_birth_metallicity_number_weighted",
+                "mean_stellar_age_current_mass_weighted_gyr",
                 "galaxy_stellar_mass_msun_h", "host_fof_dm_star_mass_msun_h",
                 "galaxy_dm_star_mass_msun_h", "galaxy_dark_matter_mass_msun_h",
                 "rhalf3d_stellar_mass_weighted_kpc",
                 "sigma_star_1d_mass_weighted_within_rhalf_kms",
                 "nstar_velocity_within_rhalf",
+                "galaxy_nstar", "nstar_age_valid",
                 "hubble_h", "host_index", "galaxy_vx_kms",
                 "nstar_velocity_valid", "nstar_velocity_mass_valid"}
     required.add("stellar_particle_mass_sum_over_catalogue_mstar")
@@ -335,7 +339,14 @@ def normalize_catalogue(path: Path):
         "mgal_total_msun": raw["galaxy_dm_star_mass_msun_h"].astype(float) / h,
         "mdm_msun": raw["galaxy_dark_matter_mass_msun_h"].astype(float) / h,
         "rhalf3d_kpc": raw["rhalf3d_stellar_mass_weighted_kpc"].astype(float),
-        "age_mass_weighted_gyr": missing.copy(),
+        "age_mass_weighted_gyr": raw[
+            "mean_stellar_age_current_mass_weighted_gyr"].astype(float),
+        "age_coverage_fraction": np.divide(
+            raw["nstar_age_valid"].astype(float),
+            raw["galaxy_nstar"].astype(float),
+            out=np.full(len(raw), np.nan, dtype=float),
+            where=raw["galaxy_nstar"].astype(float) > 0,
+        ),
         "vrot_global_kms": missing.copy(),
         "host_id": raw["host_index"],
         "nstar": raw["nstar_velocity_mass_valid"].astype(np.int64),
@@ -576,13 +587,25 @@ def main():
             sigma_age_beta = size_beta_control = joint_beta = np.full(2, math.nan)
             sigma_age_se = size_se_control = joint_se = np.full(2, math.nan)
             age_n = age_nhost = size_n = size_nhost = joint_n = joint_nhost = 0
+            age_boot_lo = age_boot_hi = age_residual_scatter = math.nan
             size_boot_lo = size_boot_hi = size_residual_scatter = math.nan
             if kin_age.sum() >= 10:
+                age_predictors = [
+                    np.log10(z[kin_age]), np.log10(m[kin_age]),
+                    np.log10(age[kin_age]),
+                ]
                 b, e, age_n, age_nhost = fixed_host_ols_controls(
-                    [np.log10(z[kin_age]), np.log10(m[kin_age]), np.log10(age[kin_age])],
+                    age_predictors,
                     np.log10(sig[kin_age]), host[kin_age]
                 )
                 sigma_age_beta, sigma_age_se = b[:2], e[:2]
+                age_boot_lo, age_boot_hi = host_bootstrap_controls_interval(
+                    age_predictors, np.log10(sig[kin_age]), host[kin_age],
+                    args.bootstrap, rng,
+                )
+                age_residual_scatter = host_fe_residual_scatter(
+                    age_predictors, np.log10(sig[kin_age]), host[kin_age],
+                )
             kin_size = kin & np.isfinite(rhalf) & (rhalf > 0)
             if kin_size.sum() >= 10:
                 size_predictors = [
@@ -673,15 +696,31 @@ def main():
                 host[size_sel],
             ) if size_sel.sum() >= 10 else ((math.nan, math.nan), (math.nan, math.nan), 0, 0)
             age_sel = sel & np.isfinite(age) & (age > 0)
+            age_z_boot_lo = age_z_boot_hi = math.nan
             age_beta, age_se, _, _ = fixed_host_ols(
                 np.log10(z[age_sel]), np.log10(m[age_sel]), np.log10(age[age_sel]),
                 host[age_sel],
             ) if age_sel.sum() >= 10 else ((math.nan, math.nan), (math.nan, math.nan), 0, 0)
+            if age_sel.sum() >= 10:
+                age_z_boot_lo, age_z_boot_hi = host_bootstrap_interval(
+                    np.log10(z[age_sel]), np.log10(m[age_sel]),
+                    np.log10(age[age_sel]), host[age_sel], args.bootstrap, rng,
+                )
             rot_sel = kin & np.isfinite(vrot) & (vrot > 0)
             log_vrot_sigma = np.log10(vrot[rot_sel] / sig[rot_sel])
             rot_beta, rot_se, _, _ = fixed_host_ols(
                 np.log10(z[rot_sel]), np.log10(m[rot_sel]), log_vrot_sigma, host[rot_sel]
             ) if rot_sel.sum() >= 10 else ((math.nan, math.nan), (math.nan, math.nan), 0, 0)
+            age_coverage = d["age_coverage_fraction"][sel]
+            finite_age_coverage = age_coverage[np.isfinite(age_coverage)]
+            median_age_coverage = (
+                float(np.median(finite_age_coverage))
+                if finite_age_coverage.size else math.nan
+            )
+            p05_age_coverage = (
+                float(np.quantile(finite_age_coverage, 0.05))
+                if finite_age_coverage.size else math.nan
+            )
             summary_row = {
                 "snapshot": int(d["snapshot"][0]),
                 "redshift": float(d["redshift"][0]),
@@ -737,6 +776,11 @@ def main():
                 ),
                 "duplicate_star_id_audit_available": d["duplicate_id_audit_available"],
                 "n_satellites_with_internal_sigma": int(kin.sum()),
+                "n_satellites_with_valid_mean_age": int(
+                    (sel & np.isfinite(age) & (age > 0)).sum()
+                ),
+                "median_stellar_age_particle_coverage_fraction": median_age_coverage,
+                "p05_stellar_age_particle_coverage_fraction": p05_age_coverage,
                 "n_satellites_excluded_low_aperture_particle_count": int(
                     (sel & ~aperture_count_ok).sum()
                 ),
@@ -766,7 +810,18 @@ def main():
                 "n_hosts_number_weighted_Z_model": number_z_nhost,
                 "internal_sigma_slope_controlling_log_age": float(sigma_age_beta[0]),
                 "internal_sigma_slope_controlling_log_age_se": float(sigma_age_se[0]),
+                "sigma_change_pct_per_0p3dex_Z_controlling_log_age":
+                    sigma_change_percent_per_metallicity_delta(sigma_age_beta[0]),
+                "host_bootstrap_95_low_controlling_log_age": age_boot_lo,
+                "host_bootstrap_95_high_controlling_log_age": age_boot_hi,
+                "host_bootstrap_sigma_change_pct_low_controlling_log_age":
+                    sigma_change_percent_per_metallicity_delta(age_boot_lo),
+                "host_bootstrap_sigma_change_pct_high_controlling_log_age":
+                    sigma_change_percent_per_metallicity_delta(age_boot_hi),
+                "within_host_residual_scatter_dex_controlling_log_age":
+                    age_residual_scatter,
                 "n_satellites_age_control_model": age_n,
+                "n_hosts_age_control_model": age_nhost,
                 "internal_sigma_slope_controlling_log_rhalf": float(size_beta_control[0]),
                 "internal_sigma_slope_controlling_log_rhalf_se": float(size_se_control[0]),
                 "sigma_change_pct_per_0p3dex_Z_controlling_log_rhalf":
@@ -824,6 +879,8 @@ def main():
                 "rhalf3d_cluster_robust_se": float(size_se[0]),
                 "age_logZ_slope_at_fixed_logMstar_host": float(age_beta[0]),
                 "age_cluster_robust_se": float(age_se[0]),
+                "age_logZ_host_bootstrap_95_low": age_z_boot_lo,
+                "age_logZ_host_bootstrap_95_high": age_z_boot_hi,
                 "vrot_over_sigma_logZ_slope_at_fixed_logMstar_host": float(rot_beta[0]),
                 "vrot_over_sigma_cluster_robust_se": float(rot_se[0]),
                 "spearman_logZ_log_sigma_raw": corr(np.log10(z[kin]), np.log10(sig[kin])),

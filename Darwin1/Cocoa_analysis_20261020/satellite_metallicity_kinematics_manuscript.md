@@ -11,8 +11,8 @@ no exploratory legacy-catalogue values are carried into this draft.
 State the simulation sample, the current-mass-weighted mean stellar
 birth-metallicity mass fraction, the global and half-mass-radius internal
 one-dimensional dispersions, the host and stellar-mass controls, the
-finder-assigned subhalo-mass control, the measured effect size and uncertainty,
-and the conclusion about physical importance.]
+finder-assigned subhalo-mass and stellar-age controls, the measured effect size
+and uncertainty, and the conclusion about physical importance.]
 
 ## 1. Introduction
 
@@ -141,6 +141,14 @@ at star formation. We do not convert $z_p$ to $[\mathrm{Fe/H}]$, because
 $z_p$ is total metallicity rather than iron abundance. A number-weighted mean
 is retained as a sensitivity measure.
 
+NewGalFinder also retains each stellar particle's RAMSES birth-time field. We
+convert this time coordinate to proper age by interpolating the output-specific
+Friedmann expansion history, following the method used by the RAMSES
+\texttt{part2birth} utility \citep{Teyssier2002}. For each galaxy, we
+calculate the current-stellar-mass-weighted mean age and record the fraction
+of its stellar particles with a valid birth time. We use mean stellar age as
+an additional control in the internal-dispersion analysis.
+
 Our primary kinematic measurements are the one-dimensional stellar velocity
 dispersions. We calculate the global value from all member stars with finite
 velocities and positive current masses. We calculate a second value using
@@ -190,10 +198,8 @@ dark-matter-plus-star particle-mass sum described above. We test sensitivity
 by shifting each host-mass boundary up and down by $0.2$ dex while holding the
 other boundary fixed. These cuts are not full total-halo-mass thresholds.
 
-The current analysis does not derive recent star-formation rates or
-mass-weighted stellar ages from the NewGalFinder particle fields. We therefore
-do not split the primary sample by star-formation activity or add an age
-control.
+The current catalogue does not provide a validated recent star-formation rate,
+so we do not divide the sample by star-formation activity.
 
 For each output and each kinematic measure, we fit the following relation by
 ordinary least squares, giving each satellite equal weight:
@@ -213,6 +219,12 @@ mean stellar birth metallicity. The model with present-day subhalo mass answers 
 conditional question: since tidal stripping can change that mass and the
 stellar velocity dispersion \citep{FattahiEtAl2018}, attenuation after this
 control is not interpreted as evidence that stripping has no role.
+
+As a population-age sensitivity check, we fit another model that adds the
+logarithm of mean stellar age to the host- and stellar-mass-controlled model.
+We report its whole-host bootstrap interval and residual scatter. This tests
+whether the metallicity association remains among satellites with similar mean
+stellar ages; it does not identify a causal role for age.
 
 We report host-clustered standard errors from the fixed-effects fits and
 percentile 95 per cent confidence intervals from 2,000 bootstrap resamples
@@ -247,15 +259,15 @@ percentage change in dispersion for a 0.3-dex increase in mean stellar birth
 metallicity, and residual scatter. Repeat the fit with the number-weighted
 mean birth metallicity and report its effect size and host-bootstrap interval.]
 
-### 3.3 Structural and subhalo-mass controls and robustness
+### 3.3 Age, structural, and subhalo-mass controls and robustness
 
-[Report the size-adjusted fit, then the fits adding finder-assigned subhalo
-dark-matter mass and, separately, finder-assigned dark-matter-plus-star mass.
-For each, give the effect size, whole-host bootstrap interval, and residual
-scatter. Compare global and half-mass-radius dispersions, both stellar-mass
-thresholds, host-mass boundaries shifted one at a time by +/-0.2 dex, and the
-four outputs. Treat the outputs as replication checks, not as a
-redshift-evolution sequence.]
+[Report the age-adjusted fit and the size-adjusted fit, then the fits adding
+finder-assigned subhalo dark-matter mass and, separately, finder-assigned
+dark-matter-plus-star mass. For each, give the effect size, whole-host
+bootstrap interval, and residual scatter. Compare global and half-mass-radius
+dispersions, both stellar-mass thresholds, host-mass boundaries shifted one at
+a time by +/-0.2 dex, and the four outputs. Treat the outputs as replication
+checks, not as a redshift-evolution sequence.]
 
 ### 3.4 Satellite orbital dispersion within hosts
 

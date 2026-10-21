@@ -50,6 +50,13 @@ $z_p$ as a simulation metallicity proxy and do not convert it to
 $[\mathrm{Fe/H}]$ without a verified solar normalization. A number-weighted
 mean is retained as a sensitivity measure.
 
+NewGalFinder also retains each stellar particle's RAMSES birth-time field.
+We convert this time coordinate to proper age by interpolating the
+output-specific Friedmann expansion history, following the method used by the
+RAMSES \texttt{part2birth} utility \citep{Teyssier2002}. For each galaxy, we
+calculate the current-stellar-mass-weighted mean age and record the fraction
+of its stellar particles with a valid birth time.
+
 Our primary kinematic measurements are the one-dimensional stellar velocity
 dispersions. We calculate the global value from all member stars with finite
 velocities and positive current masses. We calculate a second value using
@@ -98,10 +105,8 @@ dark-matter-plus-star particle-mass sum described above. We test sensitivity
 by shifting each host-mass boundary up and down by $0.2$ dex while holding the
 other boundary fixed. These cuts are not full total-halo-mass thresholds.
 
-The current analysis does not derive recent star-formation rates or
-mass-weighted stellar ages from the NewGalFinder particle fields. We therefore
-do not split the primary sample by star-formation activity or add an age
-control.
+The current catalogue does not provide a validated recent star-formation rate,
+so we do not divide the sample by star-formation activity.
 
 For each output and each kinematic measure, we fit the following relation by
 ordinary least squares, giving each satellite equal weight:
@@ -121,6 +126,19 @@ metallicity proxy. The model with present-day subhalo mass answers a distinct
 conditional question: since tidal stripping can change that mass and the
 stellar velocity dispersion \citep{FattahiEtAl2018}, attenuation after this
 control is not interpreted as evidence that stripping has no role.
+
+As a population-age sensitivity check, we fit another model that adds the
+logarithm of mean stellar age to the host- and stellar-mass-controlled model.
+We report its whole-host bootstrap interval and residual scatter. This tests
+whether the metallicity association remains among satellites with similar mean
+stellar ages; it does not identify a causal role for age.
+
+As a structural sensitivity analysis, we add the logarithm of the stellar
+half-mass radius to the host- and stellar-mass-controlled model. This tests
+whether the metallicity association remains among galaxies of similar size.
+Because size may respond to the same processes as dispersion, we treat this
+as a conditional comparison rather than a causal mediation test, and report
+its whole-host bootstrap interval and residual scatter.
 
 We report host-clustered standard errors from the fixed-effects fits and
 percentile 95 per cent confidence intervals from 2,000 bootstrap resamples
