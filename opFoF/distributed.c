@@ -194,6 +194,10 @@ static ComponentEdge *find_right_edges(
 	MPI_Comm_size(MPI_COMM_WORLD,&nrank);
 	left = (rank-1+nrank)%nrank;
 	right = (rank+1)%nrank;
+	/* NewDD partitions the input DmType records in physical x.  The legacy
+	 * reader deliberately rotates DmType coordinates as dm.x -> p.z,
+	 * dm.y -> p.y, dm.z -> p.x, so the slab coordinate is p.z here.  Do not
+	 * replace this with p.x unless that reader mapping is removed as well. */
 	for(i=0;i<np;i++){
 		if(ptl[i].z <= domain_low+boundary_link) nlower++;
 		if(ptl[i].z >= domain_high-boundary_link) nupper++;

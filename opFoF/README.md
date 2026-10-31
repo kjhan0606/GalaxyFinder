@@ -58,7 +58,7 @@ The Friends-of-Friends (FoF) algorithm is a standard method in computational cos
 - **Tree-Based Spatial Indexing**: Uses oct-tree structures for efficient neighbor searches
 - **Multi-Component Support**: Handles dark matter, stellar, gas, and sink (black hole) particles
 - **Periodic Boundary Conditions**: Correctly identifies halos that wrap around simulation box edges
-- **Domain Decomposition**: Z-slab based partitioning with boundary particle exchange
+- **Domain Decomposition**: Physical X-slab partitioning with boundary particle exchange (stored as the legacy internal `p.z` coordinate)
 - **Multi-domain Halo Ownership**: Adjacent-rank face exchange and iterative
   component-label propagation preserve haloes spanning more than one rank
   domain. Final member payloads move through an adjacent-rank ring to one
@@ -572,9 +572,9 @@ For periodic simulations, the algorithm:
 #### 4. MPI Domain Decomposition
 
 ```
-1. Divide simulation volume into Z-slabs
+1. Divide simulation volume into X-slabs
 2. Each MPI rank handles subset of files
-3. Initial boundary: zmin = myid * (box/nprocs)
+3. Set the physical-X boundary through the legacy internal `p.z` coordinate
 4. Process internal halos first
 5. Exchange boundary particles via MPI_Send/Recv
 6. Merge boundary halos across rank boundaries
@@ -711,7 +711,7 @@ cd mfrac
 
 3. **I/O bandwidth**: Use parallel file system (Lustre, GPFS) for large runs
 
-4. **Load balancing**: Ensure uniform particle distribution across Z-slabs
+4. **Load balancing**: Ensure uniform particle distribution across X-slabs
 
 5. **MPI tuning**: For Intel MPI:
    ```bash

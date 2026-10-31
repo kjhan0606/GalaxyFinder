@@ -13,7 +13,7 @@ RAMSES Output → NewDD → opFoF → NewGalFinder → Galaxy Catalogs
 
 | Directory | Description |
 |-----------|-------------|
-| **NewDD** | RAMSES domain decomposition into Z-directional slabs for parallel processing |
+| **NewDD** | RAMSES domain decomposition into X-directional slabs for parallel processing |
 | **opFoF** | MPI-parallel Friends-of-Friends (FoF) halo finder |
 | **NewGalFinder** | Parallel galaxy/subhalo finder using density peaks and water-shedding |
 | **GalCenter** | Galaxy center identification utilities |
