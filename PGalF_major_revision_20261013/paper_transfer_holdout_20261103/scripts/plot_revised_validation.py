@@ -30,8 +30,8 @@ for j,band in enumerate(['V','g']):
   if j==0: ax.set_ylabel(r'$\mathrm{IoU}$' if metric=='iou' else r'$C$')
   ax.text(.97,.95,'$V$' if band=='V' else 'SDSS $g$',transform=ax.transAxes,ha='right',va='top',fontsize=10,weight='bold');ax.text(.03,.95,f'({chr(97+i*2+j)})',transform=ax.transAxes,va='top',fontsize=10)
   if i==1: ax.set_xlabel(r'$b_{\mathrm{link}}$')
-axs[0,0].legend(title='Output $z$',title_fontsize=8.5,fontsize=8.5,
-                loc='lower left',ncol=2,frameon=True,framealpha=.88,
+axs[1,1].legend(title='Output $z$',title_fontsize=8.5,fontsize=8.5,
+                loc='lower right',ncol=2,frameon=True,framealpha=.88,
                 borderpad=.25,labelspacing=.2,handlelength=1.1)
 for ax in axs.flat:
  ax.set_xlim(.02,.205);ax.set_xticks(np.arange(.05,.201,.05))
