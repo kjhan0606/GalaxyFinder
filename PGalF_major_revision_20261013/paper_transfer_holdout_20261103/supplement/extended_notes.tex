@@ -1,0 +1,1840 @@
+% Working draft for MNRAS.
+% Canonical copy: https://www.overleaf.com/project/6abf692aab636771b039c71a
+% The measurement is the stellar linking length matched to an isophote
+% in group-mass haloes. The Jacobi-radius finder paper is the separate file ms_jacobi.tex.
+% Author order: Jaehyun Lee, Jihye Shin, Yonghwi Kim, Jaewon Yoo,
+% M. James Jee, Jongwan Ko, Juhan Kim (corresponding).
+% The group-mass sample is finished. The supplement documents the
+% additional TNG300-1 merger-tree growth analysis.
+\documentclass[usenatbib]{mnras}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{booktabs}
+\usepackage{placeins}
+\hyphenation{pixels}
+
+\usepackage{xr}
+\externaldocument[main-][nocite]{main}
+\graphicspath{{figures/}}
+\title{Supplementary methods and numerical checks}
+\author{Lee et al.}
+\begin{document}
+\maketitle
+\section{Simulation resolution and subgrid settings}
+The RAMSES mesh spans levels 10 to 17. At $z=0.227$, the output length
+unit is $53.393\,\mathrm{Mpc}$, the proper box size. The finest cell is
+$2^{-17}$ of the output length unit, or $0.407$ proper kpc. Proper cell
+size decreases at earlier outputs in proportion to the scale factor.
+In periodic catalogue coordinates, the same cell spans
+$44.171\times 2^{-17}=0.337\,h^{-1}\mathrm{ckpc}$ at every output.
+
+Star particles form above a density threshold with a minimum birth mass
+of $10^{5}\,\mathrm{M}_{\odot}$. The threshold is
+$n_{\star}=0.1\,\mathrm{H\,cm}^{-3}$, the star-formation time-scale is
+$t_{\star}=1.632\,\mathrm{Gyr}$, and the polytropic temperature is
+$T_{2,\star}=15\,\mathrm{K}$. The polytropic index is $g_{\star}=1$,
+so the temperature floor does not rise with density. Type II supernova
+feedback is mechanical, with $E_{\mathrm{SNII}}=7\times10^{51}\,\mathrm{erg}$,
+$\eta_{\mathrm{SN}}=0.20$, and a $5\,\mathrm{Myr}$ delay. Type Ia
+feedback is thermal. Black-hole seeds of $5\times10^{4}\,\mathrm{M}_{\odot}$
+are included, with spin evolution and magnetically arrested jet
+switches on.
+
+\section{Point-spread function transition}
+\label{sec:psfwing}
+The $A/r^{2}$ wing has zero amplitude inside $7\,\mathrm{arcsec}$,
+rises linearly from $7$ to $8\,\mathrm{arcsec}$, and reaches full
+amplitude beyond $8\,\mathrm{arcsec}$. The wing is added to the Moffat
+core before the kernel is truncated at $80\,\mathrm{arcsec}$ and
+renormalised to one. Main-paper Section~\ref{main-sec:psf} gives the
+core width and band-dependent wing amplitudes.
+
+\section{Galaxy membership before the stellar link}
+The friends-of-friends group in main-paper Section~\ref{main-sec:group} is grown from a
+galaxy already defined by PGalF \citep{kim2023}.
+Figure~\ref{fig:finder} shows the galaxy definition on a schematic stellar
+density field.
+A density core is a local maximum surviving the watershed.
+From each maximum the finder walks downhill until the basin touches
+another maximum.
+The density at the contact is the saddle.
+The watershed is the boundary passing through the saddle.
+A peak with prominence
+$(\rho_{\mathrm{peak}}-\rho_{\mathrm{saddle}})/\rho_{\mathrm{peak}}$
+below $0.30$ is folded into the higher peak touched first.
+A basin with fewer than $100$ particles is discarded.
+The host is the core with the highest stellar peak density.
+
+Membership then walks outward through iso-density shells.
+A shell is the set of particles lying between two successive density
+thresholds, and the walk starts at the higher threshold.
+When a shell encloses a satellite core, the tidal radius is
+\begin{equation}
+r_{t}
+=
+d\left(\frac{m(<r_{t})}{3\,M(d)}\right)^{1/3}.
+\label{eq:rt}
+\end{equation}
+The radius is capped at $d/2$.
+The separation of the host peak and the satellite peak is $d$.
+The satellite mass $m(r)$ is the mass of stars, dark matter, and gas
+around the satellite peak and inside radius $r$.
+Particles already belonging to another core are omitted from $m(r)$.
+The host mass $M(d)$ is the mass inside distance $d$ of the host peak
+after removal of the particles already assigned to the satellite.
+$M(d)$ sets the tidal boundary.
+The satellite potential uses only $m$.
+Particles outside $r_{t}$ return to the unassigned pool.
+The host tests the unassigned pool in a later pass inside a search radius
+up to the virial radius of the friends-of-friends halo.
+The nucleus is the set of stars already belonging to the satellite
+and lying within $0.012\,h^{-1}\mathrm{cMpc}$ of the satellite core.
+At least five nucleus stars are required, and the nucleus stars set the
+satellite rest frame.
+The nucleus drawn in Figure~\ref{fig:finder} is enlarged, and the
+circle remains visible.
+The linking length in main-paper Section~\ref{main-sec:group} is applied after the
+membership above.
+The linking length is a separate stellar friends-of-friends boundary.
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{figures/finder_geometry.pdf}
+\caption{Boundaries defining a galaxy before the stellar linking
+length is applied.
+The density is a schematic with two surviving peaks and one weak peak,
+drawn for a clear separation of the boundaries.
+Panel (a) is a slice through the watershed.
+The finder walks downhill from each local maximum until the basin meets
+another maximum, and the density at the contact is the saddle.
+The dashed curve is the watershed.
+A surviving maximum is a density core.
+The weak peak is folded into the host because the weak-peak prominence
+$(\rho_{\mathrm{peak}}-\rho_{\mathrm{saddle}})/\rho_{\mathrm{peak}}$
+is below $0.30$.
+On the drawing the weak-peak prominence is $0.18$.
+The host is the core with the higher peak density.
+The small circle on the satellite is the nucleus setting the satellite rest
+frame, drawn larger than the true radius of
+$0.012\,h^{-1}\mathrm{cMpc}$.
+Panel (b) is the same slice during membership.
+The solid contours are three density thresholds, with
+$\rho_{\mathrm{high}}>\rho_{\mathrm{mid}}>\rho_{\mathrm{low}}$.
+A shell is the set of particles between two successive thresholds, and
+the arrow runs from the higher threshold toward the lower one.
+The circle centred on the satellite is the tidal radius $r_{t}$ of
+Equation~\eqref{eq:rt}.
+On the drawing the tidal radius lies inside the cap at $d/2$.
+Filled symbols inside $r_{t}$ can be kept with the satellite.
+Open symbols outside $r_{t}$ return to the unassigned pool.
+Panel (c) shows the same cores in three dimensions.
+The small closed curves are the high-density shells around each core,
+the outer curve is the lower threshold, the sheet between the cores is
+the watershed, and the sphere is the tidal radius.
+The linking length of main-paper Section~\ref{main-sec:group} is applied after the
+watershed membership and is a separate stellar friends-of-friends boundary.}
+\label{fig:finder}
+\end{figure}
+
+\section{Linking distance and density}
+For equal-mass stars the estimate $3\bar\rho/(2\pi b_{\mathrm{link}}^{3})$ is about
+$60\,\bar\rho$ at $b_{\mathrm{link}}=0.2$.
+The estimate is an equal-mass analogy.
+The estimate provides neither a calibrated density boundary for the
+unequal-mass stars nor a single isodensity contour.
+The percolation critical density is instead $81.62\,\bar\rho$ at the same
+linking length, and the boundary is a range around the critical density
+\citep{more2011}.
+The critical density is not rescaled to any other linking length.
+
+\section{Sample definitions and transfer checks}
+The full Darwin catalogue contains 76 halo-output entries at outputs
+00081, 00178, 00475, 00786, 00967, and 01001. We retain 75 entries for
+calibration because one $z=0.227$ entry has a maximum at a tested-grid
+endpoint in both-band selection. The artificial-redshift experiment
+instead uses every entry at $z\leq1.990$. The experiment omits the one
+$z=3.002$ entry and includes the endpoint entry at $z=0.227$. The
+complete IDs, masses, and inclusion flags are listed in
+\texttt{sample\_manifest.tsv}. The calibration and artificial-redshift samples are distinct.
+
+Exact dark-matter particle IDs establish links between selected haloes
+through output 00786 ($z=0.500$). Output 00967 has a top-100 FoF
+member-particle file, but the candidate 32-bit ID field fails the identity
+checks. A stratified sample reads three 4,096-record segments from each of
+the ten selected groups. The candidate ID is zero in 15.2--59.7 per cent of
+the 12,288 sampled records per group, and every sample contains repeated
+values. The output 01001 member-particle file is 68 bytes long and contains
+no usable particle payload. The nine apparent matches between outputs 00967
+and 01001 therefore use positions and remain provisional. The catalogues do
+not provide a merger tree. We report output entries separately and do not
+treat every entry as an independent system. For the exact-ID check, an
+earlier--later pair is linked when the later group is the best-overlap
+descendant and contains more than half of the earlier group's dark-matter
+particles. The 20 accepted links form 33 connected groups among 53 entries
+in outputs 00178, 00475, and 00786. Entries without an accepted link remain
+separate. The group count is not a complete count of independent lineages.
+
+The leave-one-output test uses the corrected-distance photometry
+adopted in the main paper. In each test, we exclude one output and
+catalogue centres within $0.5\,h^{-1}\mathrm{cMpc}$, then choose one
+$b_{\mathrm{link}}$ from the remaining entries. All six tests select
+$b_{\mathrm{link}}=0.10$ in both bands. Across the 75 excluded entries,
+median overlap is $0.9582$ in $V$ and $0.9626$ in $g$. The median gain
+over $b_{\mathrm{link}}=0.20$ is $0.0363$ and $0.0339$. This test
+measures transfer between outputs from one volume, not between
+independent haloes. Results for each test are in
+\texttt{validation\_corrected\_predictions.tsv}.
+
+For a second test, we omit all entries in one exact-ID connected group
+at a time and give each of the remaining groups equal weight when
+choosing $b_{\mathrm{link}}$. We also exclude any other group with a
+member within $0.5\,h^{-1}\mathrm{cMpc}$ of an omitted member. All 33
+tests select $b_{\mathrm{link}}=0.10$ in both bands. The median overlap
+for the omitted groups is $0.9556$ in $V$ and $0.9621$ in $g$. The equal-group mean gain over
+$b_{\mathrm{link}}=0.20$ is $0.0487$ ($0.0415$--$0.0555$) in $V$ and $0.0415$
+($0.0336$--$0.0494$) in $g$; intervals are 16th--84th percentiles from
+5,000 group-bootstrap draws. This result is restricted to the three
+outputs with exact particle-ID information.
+
+A sensitivity check adds reciprocal-nearest positional matches for
+intervals without exact particle IDs. The 75 retained entries form 35
+provisional groups; all 35 comparisons again select $b_{\mathrm{link}}=0.10$
+in both bands. The equal-group mean gain over $b_{\mathrm{link}}=0.20$ is $0.0423$
+($0.0359$--$0.0486$) in $V$ and $0.0379$ ($0.0308$--$0.0448$) in $g$.
+Because some links use positions rather than particle IDs, these values
+are conditional on the provisional grouping and do not establish
+independent-halo generalisation.
+
+\begin{table*}
+\centering
+\caption{Image centres, isophotal detection rules, and treatment of failed
+contours in the simulation samples. A central-pixel detection means that the
+connected above-threshold region contains the image-centre pixel.}
+\label{supp:centredetection}
+\small
+\begin{tabular}{p{2.5cm}p{3.5cm}p{5.0cm}p{5.0cm}}
+\toprule
+Sample & Image centre & Detection rule & Failure treatment \\
+\midrule
+Darwin calibration, 75 entries &
+Mass-weighted centre of the dark matter, gas, sink particles, and stars in
+the catalogue central galaxy &
+Use the connected threshold region at the centre pixel; if that pixel is
+fainter than the limit, use the region around the nearest pixel above the
+limit. An empty image gives an empty region. &
+Nearest-pixel selections are retained and flagged. An entry is excluded from
+calibration if any view has its maximum at either end of the tested linking
+grid. \\
+CAMELS CV20--CV26, 49 hosts &
+Minimum-potential position of the central subhalo &
+Use the same threshold and connected-region rule as for Darwin. &
+No target contour failed in the reported fixed-parameter image checks. \\
+CAMELS CV0--CV19, 130 hosts &
+Minimum-potential position of the central subhalo &
+The central component must be detected; a disconnected nearest-bright
+component is not accepted as the central contour. &
+Fallback, empty or zero-luminosity regions, and regions touching the image
+edge are invalid. Their IoU and completeness are set to zero; luminosity and
+$R_{50}$ errors are undefined. \\
+TNG300-1 transfer, 40 hosts &
+\texttt{SubhaloPos}, the position of the maximally bound particle &
+Use the connected threshold region at the centre; a missing region is not a
+detection. &
+Missing regions and regions touching the image edge are invalid for the
+transfer summary. \\
+TNG300-1 growth, 36 branches &
+\texttt{SubhaloPos} at each output &
+Nearest-pixel selections are retained in the full sample and flagged. The
+detection-qualified sample requires a central-pixel detection in all views
+at both endpoint outputs. &
+The full sample retains fallback selections. The endpoint-detection cut
+leaves 36 branches in $V$ and 29 in $g$. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+\FloatBarrier
+
+The image centres are defined by simulation catalogues and particle
+distributions, not recovered from the mock images. The validation samples
+therefore test isophotal selection at known centres; they do not test an
+image-based galaxy-centre finder. The main text and
+Table~\ref{supp:centredetection} distinguish central-pixel detection from
+other invalid-contour rules.
+
+\subsection{Corrected-distance fine grid and PSF-aperture weights}
+\label{supp:psfweights}
+
+We compare two light-overlap measures using the same corrected-distance
+isophotal regions and the same stellar-group memberships. In the positional
+measure, a star contributes its full flux when its projected position is
+inside the isophotal region. In the PSF-aperture measure, its flux is
+multiplied by the fraction of its normalized PSF kernel that falls inside
+that region. This second measure estimates the stellar flux inside the
+aperture after PSF spreading. It changes the overlap weights, not group
+membership. We evaluate both measures on the 15-point linking-parameter
+grid and choose a best value separately for each projection. We first take
+the median of the three projection-specific best values for each halo
+entry, then report the distribution across the 75 entries.
+
+The median fine-grid best parameter is $0.09$ in both bands for both
+weighting rules. Table~\ref{supp:psf-grid} gives the percentile ranges and
+overlap scores. For the median-over-entry score curves, the positional
+measure peaks at $b_{\mathrm{link}}=0.09$ in both bands; the PSF-aperture
+measure peaks at $0.09$ in $V$ and $0.10$ in $g$. The PSF-aperture scores
+are lower because flux from stars outside the isophote is spread into its
+aperture and flux from stars inside it is spread out. The preferred
+linking lengths change little, and $b_{\mathrm{link}}=0.10$ outperforms
+$0.20$ for both weighting rules.
+
+Applying the central-pixel detection rule in all three views retains 55
+entries in $V$ and 53 in $g$. Their median coarse-grid best parameters
+remain $0.08$ and $0.10$, respectively, while both fine-grid weighting
+rules give a median of $0.09$ in both bands. At the entries' original
+coarse-grid selected parameters, the median PSF-aperture IoU is $0.950$
+in $V$ and $0.949$ in $g$ for this subset, compared with $0.944$ and
+$0.950$ for all 75 entries. The complete central-detection flags and
+per-entry scores are in
+\texttt{supplement/astra\_review\_response\_20261106/results/}.
+
+\begin{table*}
+\centering
+\caption{Corrected-distance fine-grid overlap under positional and
+PSF-aperture flux weighting. For each halo entry, the three views are
+reduced before percentiles are calculated across entries. The listed
+best-parameter range is the 16th--84th percentile; the optimized overlap
+is the median at each view's individual maximum.}
+\label{supp:psf-grid}
+\small
+\begin{tabular}{llrrrr}
+\toprule
+Band & Weighting & Median $b_{\mathrm{link}}$ (16th--84th) &
+Median optimized IoU & IoU at $b_{\mathrm{link}}=0.10$ & IoU at $b_{\mathrm{link}}=0.20$ \\
+\midrule
+$V$ & Position & $0.09\;(0.07$--$0.12)$ & 0.968 & 0.958 & 0.920 \\
+$V$ & PSF aperture & $0.09\;(0.07$--$0.11)$ & 0.946 & 0.937 & 0.905 \\
+$g$ & Position & $0.09\;(0.07$--$0.12)$ & 0.973 & 0.963 & 0.933 \\
+$g$ & PSF aperture & $0.09\;(0.07$--$0.11)$ & 0.951 & 0.944 & 0.917 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{supplement/astra_review_response_20261106/results/corrected_positional_and_psf_overlap.pdf}
+\caption{Corrected-distance median light-weighted overlap on the 15-point
+linking-parameter grid. The blue curves assign each star's full flux by
+projected position; the orange curves weight its flux by the PSF fraction
+inside the isophotal aperture. Curves show the median of the three-view
+median for each halo entry; shaded regions show the 16th--84th percentiles
+across entries.}
+\label{fig:supp-psf-grid}
+\end{figure*}
+
+\subsection{Within-output validation at $z=0.1904$}
+For the within-output test, we omit one of the 12 haloes at $z=0.1904$
+and choose a common parameter from the other 11. Each calibration halo
+contributes the median of its three projection-specific parameters with
+maximum IoU; we then take the median across the 11 haloes. All 12 tests
+select $b_{\mathrm{link}}=0.12$ in $V$ and $0.10$ in $g$. The results
+for each omitted halo and projection are in
+\texttt{supplement/within\_output\_validation\_z019\_20261106/}.
+Because the tests share haloes and use one output, they do not provide
+independent-volume uncertainty.
+
+The output-weighting sensitivity computes the median-over-halo IoU curve
+within each of the six outputs, then averages the six curves with equal
+weights. The best tested parameter is $b_{\mathrm{link}}=0.10$ in both
+bands. The output-specific measurements and plotting script are in
+\texttt{supplement/output\_weighting\_sensitivity\_20261106/}.
+
+\section{CAMELS Swift-EAGLE transfer sample}
+The fixed-$b_{\mathrm{link}}$ transfer test contains 49 host groups from first-generation
+CAMELS Swift-EAGLE L25n256 CV boxes 20--26, using snapshot 090 and the
+associated \texttt{groups\_090.hdf5} catalogue. The 25 $h^{-1}$ cMpc box
+contains $256^3$ initial gas elements and dark-matter particles. Snapshot
+header mass units give an initial gas-element mass of
+$1.89\times10^7\,\mathrm{M}_{\odot}$. Star particle masses evolve after stellar
+mass loss. The catalogue records a maximum proper stellar softening of
+$5.84\,h^{-1}$ pkpc. The cosmology is $\Omega_m=0.3$, $h=0.6711$.
+For every host and band, the same simulation potential minimum centres
+the image, the 30 pkpc aperture, and the projected radial measurements.
+The aperture is a two-dimensional circle with projected radius at most
+30 pkpc. For each selected stellar set, projected $R_{50}$ is the
+smallest projected particle radius enclosing at least half of the total
+stellar flux of the selected set. Luminosity and radius errors are respectively
+$|\log_{10}(L_{\rm selected}/L_{\rm isophote})|$ and
+$|\log_{10}(R_{50,\rm selected}/R_{50,\rm isophote})|$. We use the
+median over the three projections for each host, then report the
+90th percentile across hosts. The PSF-convolved image defines the
+isophotal region. Full particle fluxes at projected positions define
+luminosity and $R_{50}$, without PSF-aperture weights. The transfer test
+compares one finite-resolution simulation and does not demonstrate
+convergence with particle or force resolution.
+The simulation centre is known, so the test does not evaluate automatic
+centre finding. Satellite galaxies are masked consistently. Full host
+metrics, per-box summaries, and paired host contrasts are supplied as
+\texttt{camels\_host\_metrics.csv}, \texttt{camels\_box\_summary.csv},
+and \texttt{camels\_paired\_contrasts.csv}.
+
+For $b_{\mathrm{link}}=0.10$, the mean host-median overlaps are 0.894 in $V$ and 0.872
+in $g$. The corresponding host medians are 0.893 and 0.872. Across the
+seven CV boxes, mean host overlap ranges from 0.872 to 0.904 in $V$
+and 0.842 to 0.886 in $g$. Relative
+to $b_{\mathrm{link}}=0.20$, paired mean improvements are 0.094 (95 per cent
+box-then-host bootstrap interval 0.083--0.106) and 0.111 (0.098--0.127).
+We first reduce the projections to one statistic per host. The bootstrap
+resamples CV boxes and then hosts within each sampled box. At $b_{\mathrm{link}}=0.10$, the
+90th-percentile absolute errors are 0.033 and 0.051 dex in luminosity,
+and 0.048 and 0.081 dex in projected half-light radius. The 30 pkpc
+aperture gives errors of 0.166/0.158 dex in luminosity and 0.238/0.236 dex
+in radius ($V/g$). The fixed linking parameter reduces luminosity and
+radius errors for the sample with known centres, although the stellar
+selections still differ for individual hosts.
+
+We also compare $b_{\mathrm{link}}=0.10$ directly with the 30 pkpc aperture on the same
+49 hosts. The mean paired overlap difference is $+0.040$ in $V$
+(95 per cent box-then-host interval $+0.005$--$+0.083$) and $+0.010$
+in $g$ ($-0.024$--$+0.051$). The mean selected-light fraction outside
+the isophote increases by $0.055$ and $0.074$, while completeness
+increases by $0.094$ and $0.081$. The linking selection recovers more
+isophotal light and gives smaller luminosity and radius errors, but also
+includes more light outside the isophote. The paired aperture table
+\texttt{camels\_b010\_vs\_aperture.csv} contains paired differences in
+signed biases and absolute errors, with 5,000-draw host and box-then-host
+intervals.
+
+\section{Test in separate CV0--CV19 boxes}
+
+We selected 130 FoF hosts from the first-generation CAMELS Swift-EAGLE
+L25n256 boxes CV0--CV19 at snapshot 090. The FoF masses span
+$10^{13}$--$10^{14}\,h^{-1}\mathrm{M}_{\odot}$, and each central subhalo
+contains at least 100 star particles. The boxes do not overlap the earlier
+CV20--CV26 sample. We rendered the $z=0$ systems at
+$z_{\rm obs}=0.19044$ with the same filters, brightness limits, image scale,
+PSF, satellite masks, and particle-flux calculation as the earlier CAMELS
+analysis. Catalogue particle IDs define the Swift-EAGLE FoF membership.
+The central subhalo's potential minimum, \texttt{SubhaloPos}, centres each
+image, aperture, and projected radius. We compare $b_{\mathrm{link}}=0.20$,
+common fixed $b_{\mathrm{link}}=0.10$, the low-redshift Darwin values
+($b_{\mathrm{link}}=0.12$ in $V$ and 0.10 in $g$), and a projected 30 pkpc
+aperture. We do not tune the linking parameter on these 130 hosts.
+
+We did not use the 130-host measurements to choose a linking parameter.
+The centre rule came from earlier CV20--CV26 and TNG300-1 work, so this
+is not a test whose full analysis plan was set in advance. It measures transfer across boxes in
+one Swift-EAGLE model, not across simulation models. Each host contributes
+the median across three orthogonal projections. Bootstrap intervals use 2,000 draws, resampling boxes first and hosts
+within sampled boxes second. A large failure is a host with an invalid target
+contour in any view, median contamination above 0.20, or a factor-of-two
+error in host-median luminosity or $R_{50}$.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\begingroup
+\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llcccccc@{}}
+\toprule
+Band & Method & Mean IoU (95\% interval) & Completeness & Contamination &
+\shortstack{$P_{90}(|\Delta\log L|)$\\(dex)} &
+\shortstack{$P_{90}(|\Delta\log R_{50}|)$\\(dex)} & Large failures \\
+\midrule
+$V$ & 30 pkpc aperture & 0.837 [0.812, 0.862] & 0.846 & 0.009 & 0.180 & 0.252 & 5/130 \\
+$V$ & $b_{\mathrm{link}}=0.20$ & 0.783 [0.767, 0.798] & 0.988 & 0.209 & 0.135 & 0.247 & 70/130 \\
+$V$ & Darwin $b_{\mathrm{link}}=0.12$ & 0.864 [0.853, 0.875] & 0.966 & 0.107 & 0.063 & 0.094 & 5/130 \\
+$V$ & Fixed $b_{\mathrm{link}}=0.10$ & 0.884 [0.874, 0.893] & 0.948 & 0.070 & 0.038 & 0.061 & 0/130 \\
+$g$ & 30 pkpc aperture & 0.844 [0.820, 0.868] & 0.859 & 0.016 & 0.160 & 0.231 & 4/130 \\
+$g$ & $b_{\mathrm{link}}=0.20$ & 0.742 [0.724, 0.759] & 0.989 & 0.251 & 0.179 & 0.303 & 99/130 \\
+$g$ & Darwin $b_{\mathrm{link}}=0.10$ & 0.861 [0.849, 0.872] & 0.950 & 0.097 & 0.055 & 0.082 & 3/130 \\
+\bottomrule
+\end{tabular*}
+\endgroup
+\caption{CV0--CV19 validation sample metrics. Each host contributes the
+median across three projections. Mean IoU intervals use the nested box-host
+bootstrap. Completeness and contamination are equal-host means. The final
+column counts hosts meeting the large-failure definition in the text. The
+$g$-band Darwin calibration is $b_{\mathrm{link}}=0.10$ and is listed once.}
+\label{tab:cv019-validation}
+\end{table*}
+
+All 130 catalogue particle-ID lists resolve to snapshot stars. The median
+Jaccard similarity between catalogue membership and snapshot
+\texttt{FOFGroupIDs} is 0.998. Five hosts in CV8 or CV11 have no overlap
+between the two membership representations. The primary calculation retains
+the catalogue particle IDs. Removing the five hosts changes mean IoU by at
+most 0.0026, mean contamination by at most 0.0007, the 90th-percentile
+luminosity error by at most 0.007 dex, and the large-failure fraction by at
+most 0.006. The checks confirm that the catalogue IDs resolve to snapshot
+stars, but do not show whether the disagreement comes from halo-index ordering
+or a difference in the FoF assignments. The cause remains unidentified.
+
+Supplementary tables give host, projection, box, and paired-comparison
+measurements, the sample selection and membership checks, and the
+analysis scripts in
+\url{supplement/cv0_19_holdout_20261103/}. The scripts require the
+original CAMELS snapshot and catalogue products.
+
+\section{TNG300-1 SubhaloPos-centred transfer test}
+
+We selected 40 FoF hosts from snapshot 84 of TNG300-1 ($z=0.1973$)
+\citep{nelson2019tng,pillepich2018tng,springel2018tng,nelson2018tng,naiman2018tng,marinacci2018tng}.
+FoF masses span $3.09\times10^{13}$--$1.288\times10^{14}\,
+h^{-1}\mathrm{M}_{\odot}$, with a median of
+$4.680\times10^{13}\,h^{-1}\mathrm{M}_{\odot}$. For each host, we select the
+qualifying subhalo with the largest stellar-particle count. We centre images
+and apertures on \texttt{SubhaloPos}, the position of the maximally bound
+particle. TNG guidance recommends \texttt{SubhaloPos} for galaxy centring.
+The all-type mass-weighted centre \texttt{SubhaloCM} can be displaced by
+asymmetric or distant material.\footnote{The IllustrisTNG data specifications
+define \texttt{SubhaloPos} and \texttt{SubhaloCM} at
+\url{https://www.tng-project.org/data/docs/specifications/}. The position
+guidance appears at
+\url{https://www.tng-project.org/data/forum/topic/295/how-to-get-galaxy-positions/}.}
+The stellar-density peak remains the root for linked-group selection. The
+same satellite mask, filters, thresholds, image scale, PSF, and flux
+calculation apply to Darwin and TNG. We compare the low-redshift Darwin
+calibration ($b_{\mathrm{link}}=0.12$ in $V$ and 0.10 in $g$), fixed values
+of 0.10 and 0.20, and a projected 30 pkpc aperture. The leave-one-host-out
+test selects the same values as the low-redshift calibration, so we report
+those transfer measurements once. Each host contributes the
+median across three projections. Host haloes are the statistical units.
+Earlier TNG overlap measurements using a different image-centre rule had already been
+inspected. The present centre comparison is post hoc, and no linking
+parameter was tuned using TNG measurements.
+
+Table~\ref{tab:tng300-transfer} reports median IoU, median contamination,
+mean signed luminosity and $R_{50}$ errors, 90th-percentile absolute errors,
+and large-failure counts. Signed errors are
+$\Delta\log L=\log_{10}(L_{\rm selected}/L_{\rm isophote})$ and
+$\Delta\log R_{50}=\log_{10}(R_{50,\rm selected}/R_{50,\rm isophote})$.
+The projected $R_{50}$ encloses half of the selected particle flux.
+Contamination is one minus light-weighted precision. A large failure is a
+factor-of-two error in luminosity or $R_{50}$, contamination above 0.20, or
+a missing or edge-touching selected contour.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\begingroup
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccccccc@{}}
+\toprule
+Band & Method & Median IoU & Mean $\Delta\log L$ &
+$P_{90}(|\Delta\log L|)$ & Mean $\Delta\log R_{50}$ &
+$P_{90}(|\Delta\log R_{50}|)$ & Median contamination & Failures \\
+\midrule
+$V$ & $b_{\mathrm{link}}=0.20$ & 0.833 & +0.074 & 0.103 & +0.128 & 0.194 & 0.158 & 9/40 \\
+$V$ & Fixed $b_{\mathrm{link}}=0.10$ & 0.893 & -0.027 & 0.059 & -0.037 & 0.078 & 0.025 & 0/40 \\
+$V$ & Darwin low-$z$ & 0.892 & +0.002 & 0.031 & +0.009 & 0.057 & 0.056 & 0/40 \\
+$V$ & 30 pkpc aperture & 0.716 & -0.153 & 0.245 & -0.221 & 0.334 & 0.000 & 7/40 \\
+$g$ & $b_{\mathrm{link}}=0.20$ & 0.783 & +0.100 & 0.142 & +0.162 & 0.233 & 0.209 & 22/40 \\
+$g$ & Fixed $b_{\mathrm{link}}=0.10$ & 0.883 & -0.007 & 0.042 & -0.003 & 0.065 & 0.053 & 0/40 \\
+$g$ & Darwin low-$z$ & 0.883 & -0.007 & 0.042 & -0.003 & 0.065 & 0.053 & 0/40 \\
+$g$ & 30 pkpc aperture & 0.737 & -0.139 & 0.243 & -0.188 & 0.304 & 0.000 & 5/40 \\
+\bottomrule
+\end{tabular*}
+\endgroup
+\caption{Host-level transfer metrics for the 40 TNG300-1 haloes. Each host
+is represented by the median across three projections. The low-redshift
+Darwin calibration uses $b_{\mathrm{link}}=0.12$ in $V$ and 0.10 in $g$;
+the leave-one-host-out test selects these same values. The aperture is a
+projected circle of radius 30 pkpc.}
+\label{tab:tng300-transfer}
+\end{table*}
+
+The primary Darwin values increase median IoU over $b_{\mathrm{link}}=0.20$
+by 0.067 in $V$ (95 per cent host-bootstrap interval 0.055--0.073) and
+0.104 in $g$ (0.093--0.109). Median contamination falls by 0.093 in $V$
+and 0.143 in $g$. Median absolute luminosity errors fall by 0.054 and
+0.073 dex. Median absolute $R_{50}$ errors fall by 0.098 and 0.124 dex.
+Large failures fall by 22.5 percentage points in $V$ and 55 points in $g$.
+The linking selection has higher IoU and smaller luminosity and $R_{50}$
+errors than the 30 pkpc aperture. The aperture selects less light outside
+the isophote. The calibrated linking method therefore trades higher
+contamination for closer agreement with the full isophotal light.
+
+The proper distance between \texttt{SubhaloCM} and \texttt{SubhaloPos} has
+a median of 72.4 pkpc, a 90th percentile of 171.9 pkpc, and a maximum of
+396.7 pkpc. The stellar-density peak lies closer to \texttt{SubhaloPos},
+with median, 90th-percentile, and maximum offsets of 0.62, 1.44, and
+9.83 pkpc. At fixed $b_{\mathrm{link}}=0.10$, the earlier
+\texttt{SubhaloCM}-centred rendering has 90th-percentile absolute
+luminosity errors of 3.36 dex in $V$ and 3.30 dex in $g$. The present
+\texttt{SubhaloPos}-centred rendering gives 0.059 and 0.042 dex. The earlier
+stellar-density-peak-centred and current \texttt{SubhaloPos}-centred
+renderings agree within 0.002 in host-level median IoU for 90 per cent of
+hosts. The centre offset and the change in overlap shows strong sensitivity to
+the centre definition. A single output and volume do not establish transfer
+across all hydrodynamical models or redshifts.
+
+The tabulated host and projection metrics, method summaries, paired
+contrasts, metric definitions, position list, catalogue access and selection details, processing notes,
+and source scripts appear in
+\url{supplement/tng300_subhalopos_r50_transfer_20261103/}. The
+original \texttt{tng300\_*.csv} files in the supplement root retain the
+SubhaloCM-centred sensitivity results. Full reruns also require the original
+TNG snapshot cutouts and project environment.
+
+\section{TNG300-1 merger-tree growth analysis}
+\label{sec:tng-growth-methods}
+
+We retrieve the SubLink main-progenitor branch for each of the 40 TNG300-1
+descendant central subhaloes described above \citep{rodriguezgomez2015}.
+The target outputs are snapshots 84, 67, and 50, at redshifts 0.197284,
+0.503048, and 0.997294. We retain the 36 branches whose subhalo remains
+the FoF central at all three outputs. This sample cut uses catalogue
+central status and does not use image measurements. The independent unit
+is one descendant branch.
+
+At each output, we compare image-based selections with the stars assigned
+to the central subhalo. We use exact stellar-particle IDs from the TNG
+catalogue to form this reference membership. Summing current particle
+masses for these IDs reproduces the catalogue stellar mass
+\texttt{SubhaloMassType[4]} to within $6.3\times10^{-5}$ dex for every
+branch and output. We remove resolved satellite members using the same
+mask as in the single-output TNG transfer test. Competing selections are
+the isophotal region, friends-of-friends stellar groups with
+$b_{\mathrm{link}}=0.10$, 0.12, or 0.20, a projected circle of radius
+30 pkpc, and three-dimensional spheres using the Darwin-calibrated radii
+of 80 pkpc in $V$ and 60 pkpc in $g$. The $b_{\mathrm{link}}=0.12$
+($V$) and 0.10 ($g$) values are the low-redshift Darwin calibrations;
+the other linking parameters are comparison settings. The sphere radii
+were selected from a grid of 10, 15, 20, 30, 45, 60, 80, and 120 pkpc
+by maximizing the median host-level, three-view light-weighted overlap
+across the 12 Darwin groups at $z=0.190$. These full-sample radii are
+held fixed in TNG and are not refit using TNG images.
+We use current stellar-particle mass for selected stellar-mass sums.
+Projected $R_{50}$ is the radius containing half the selected stellar
+flux, with each particle's full flux assigned at its projected position.
+As a structural-size sensitivity, we also calculate projected half-mass
+radii by replacing luminosity weights with current stellar-particle mass.
+
+For each physical output, the primary image uses that output's redshift
+as the observer redshift. We also render each output at fixed
+$z_{\rm obs}=0.197284$. These control images retain the output's stellar
+positions, ages, and metallicities, while applying the same observer
+distance, spectral redshift, surface-brightness dimming, angular scale,
+and PSF. Comparing the two conditions measures how the adopted observer
+redshift changes the result in this mock-image model; it does not
+represent a separate physical history. The overlap measurements for all
+three outputs and observer redshifts are tabulated. The main growth
+comparison uses images at the physical redshifts and at fixed
+$z_{\rm obs}=0.197284$.
+
+For each branch and method, we calculate the growth bias in each of the
+three orthogonal projections, then take the median across projections.
+For every image, we record whether the centre pixel lies inside the
+isophotal region, whether selection used the region containing the
+nearest pixel brighter than the threshold, the region area, and whether
+the region touches the image edge. This nearest-pixel selection is
+retained and flagged separately from a central-pixel detection. The stellar-mass growth bias is
+\begin{equation}
+\Delta_{M}=\log_{10}\!\left[\frac{M_{\rm sel}(z=0.197)}{M_{\rm sel}(z=0.997)}\right]
+-\log_{10}\!\left[\frac{M_{\rm cen}(z=0.197)}{M_{\rm cen}(z=0.997)}\right],
+\end{equation}
+where $M_{\rm sel}$ is the mass selected by a method and $M_{\rm cen}$ is
+the mass in the central-subhalo reference. We define the projected-size
+bias in the same way using $R_{50}$. Positive values mean that the method
+measures more growth than the central-subhalo reference. We report the
+sample median and percentile intervals from 20,000 bootstrap resamples of
+the 36 descendant branches. We resample branches, not outputs or
+projections.
+
+The merger-tree tables, particle-membership checks, measurements for
+each image, growth summaries, paired observer-redshift comparisons,
+plotting and analysis scripts, and figure source are in
+\url{supplement/tng300_growth_bias_20261106/}. Reproduction requires the
+TNG300-1 cutouts and the stellar-population synthesis inputs documented in
+that directory.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llrrrrrr@{}}
+\toprule
+Band & Selection & $\Delta_M$ & MAE$_M$ & $\Delta_{R_{50,\rm light}}$ & MAE$_{R_{50,\rm light}}$ & $\Delta_{R_{50,\rm mass}}$ & MAE$_{R_{50,\rm mass}}$ \\
+\midrule
+$V$ & Isophotal region & +0.176 & 0.184 & +0.430 & 0.519 & +0.315 & 0.316 \\
+$V$ & FoF, $b_{\mathrm{link}}=0.10$ & -0.004 & 0.044 & +0.065 & 0.257 & -0.007 & 0.131 \\
+$V$ & FoF, $b_{\mathrm{link}}=0.12$ & -0.003 & 0.037 & +0.011 & 0.235 & -0.004 & 0.112 \\
+$V$ & FoF, $b_{\mathrm{link}}=0.20$ & -0.003 & 0.025 & -0.026 & 0.178 & +0.000 & 0.073 \\
+$V$ & Projected aperture, 30 pkpc & -0.127 & 0.125 & -0.104 & 0.254 & -0.171 & 0.226 \\
+$V$ & Spherical aperture, 80 pkpc & -0.067 & 0.081 & -0.147 & 0.218 & -0.125 & 0.150 \\
+$g$ & Isophotal region & +0.261 & 0.531 & +0.296 & 0.468 & +0.323 & 0.424 \\
+$g$ & FoF, $b_{\mathrm{link}}=0.10$ & -0.004 & 0.044 & +0.035 & 0.271 & -0.007 & 0.131 \\
+$g$ & FoF, $b_{\mathrm{link}}=0.12$ & -0.003 & 0.037 & +0.025 & 0.258 & -0.004 & 0.112 \\
+$g$ & FoF, $b_{\mathrm{link}}=0.20$ & -0.003 & 0.025 & -0.044 & 0.216 & +0.000 & 0.073 \\
+$g$ & Projected aperture, 30 pkpc & -0.127 & 0.125 & -0.150 & 0.275 & -0.171 & 0.226 \\
+$g$ & Spherical aperture, 60 pkpc & -0.088 & 0.098 & -0.166 & 0.267 & -0.142 & 0.180 \\
+\bottomrule
+\end{tabular*}
+\caption{Bias in the growth of selected stellar mass and projected radius
+relative to the central-subhalo reference, for images at the physical
+observer redshift of each output. $\Delta_M$ is the median branch difference
+in stellar-mass growth; the two $\Delta_{R_{50}}$ columns give the median
+branch differences in half-light- and half-mass-radius growth. Each branch
+contributes the median of three projections. The MAE columns give the mean
+absolute branch difference, in dex, over 36 branches.}
+\label{tab:growth-methods}
+\end{table*}
+
+\subsection{Detection, mass recovery, and size-weighting checks}
+At the physical observer redshift of snapshot 50 ($z=0.997$), all 108
+$V$ projections have a central-pixel detection. In $g$, 93/108 projections
+have a central-pixel detection and 15 use the region containing the
+nearest pixel above the threshold;
+none has an empty region or a region touching the image edge. At snapshot 84
+($z=0.197$), both bands have detections in all 108 projections. Requiring
+central-pixel detections in all three views at both endpoints retains 36
+branches in $V$ and 29 in $g$. The physical-redshift $g$-band mass-growth
+bias is $0.261$ dex (95 per cent interval $0.182$--$0.303$) in the full
+36-branch sample and $0.196$ dex ($0.148$--$0.289$) in the 29-branch
+detection-qualified sample. The corresponding mean biases are $0.526$ and
+$0.210$ dex. The full-sample estimate retains these nearest-pixel selections; the
+separate detection-qualified estimate shows their effect without removing
+them from the analysis.
+
+The median selected-to-central mass ratios for $b_{\mathrm{link}}=0.10$
+are $0.708$, $0.704$, and $0.708$ at snapshots 50, 67, and 84; for
+$b_{\mathrm{link}}=0.20$ they are $0.852$, $0.836$, and $0.833$. The
+corresponding tree-level 16th--84th percentile ranges are $0.62$--$0.78$
+and $0.77$--$0.88$. For the calibrated $b_{\mathrm{link}}=0.12$ in $V$,
+the median mass-growth bias is $-0.003$ dex and the mean absolute error is
+$0.037$ dex. The calibrated $b_{\mathrm{link}}=0.10$ in $g$ gives
+$-0.004$ dex and $0.044$ dex. The $b_{\mathrm{link}}=0.20$ comparison has
+a mean absolute mass-growth error of $0.025$ dex in both bands.
+
+The central-subhalo projected half-mass radius grows by a median of
+$0.382$ dex (95 per cent interval $0.306$--$0.450$). The central-subhalo
+half-light-radius growth is $0.020$ dex in $V$ and $-0.003$ dex in $g$
+for physical-redshift images; both intervals include zero. At fixed observer
+redshift, the half-light-radius growth medians are $0.257$ dex in $V$ and
+$0.237$ dex in $g$. Thus the half-light-radius result depends on observer
+condition and luminosity weighting, while the half-mass radius provides a
+separate structural comparison.
+
+The R1--R4 results directory contains central-pixel detections and
+nearest-pixel selections for each branch and projection, isophotal areas
+and edge flags, stellar-mass recovery ratios, both growth samples,
+half-mass-radius measurements, bootstrap intervals, and the updated
+figure source. The former
+growth summaries in the parent directory use only $b_{\mathrm{link}}=0.10$
+and 0.20 and are superseded for the revised comparison.
+
+The branch-level mass-growth errors show a broad positive tail for the
+isophotal selection. The 16th--84th percentile range is $0.077$--$0.278$
+dex in $V$ and $0.069$--$0.691$ dex in $g$ for all 36 branches. Among the
+29 $g$-band branches with central-pixel detections in every view at both
+endpoints, the range is $0.054$--$0.323$ dex. By comparison, the calibrated
+FoF growth errors remain close to zero. The seven branches excluded by the
+$g$-band detection cut include the largest positive errors; the full-sample
+median retains these cases rather than discarding them.
+
+The nearly constant FoF mass-recovery ratios explain why substantial mass
+under-recovery can coexist with a small growth error: a ratio that changes
+little between outputs largely cancels in the growth comparison. The
+isophotal recovery rises from $0.479$ to $0.747$ in $V$ and from $0.406$ to
+$0.719$ in $g$ between snapshots 50 and 84, so its growth error is more
+positive. Figure~\ref{supp:branchgrowth} shows the branch-level errors and
+the recovery distributions at all three outputs.
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{supplement/astra_review_response_20261106/branch_level_growth_recovery.pdf}
+\caption{Branch-level stellar-mass growth error and mass recovery in
+TNG300-1. Panels (a) and (b) show the change in selected stellar-mass growth
+minus the central-subhalo growth from snapshot 50 to 84. Each point is one
+branch after taking its median over three projections; horizontal marks show
+the sample median. Filled circles mark branches with central-pixel
+detections in all three views at both endpoints. Open triangles mark the
+seven $g$-band branches with at least one nearest-pixel fallback. The inset
+in panel (b) expands the values near zero. Panels (c) and (d) show the
+selected-to-central stellar-mass ratio at snapshots 50, 67, and 84. Curves
+are medians across branches and shaded regions span the 16th--84th
+percentiles. The linking parameters in the calibrated FoF curves are 0.12
+in $V$ and 0.10 in $g$; the comparison curve uses 0.20.}
+\label{supp:branchgrowth}
+\end{figure*}
+
+\subsection{Stellar-mass budget and stellar-population controls}
+\label{sec:tng-assembly-population}
+
+We use the exact \texttt{ParticleIDs} in the central-subhalo catalogues at
+snapshots 50, 67, and 84 to separate changes in central membership from
+changes in particle mass. For each pair of outputs, a particle is persistent
+if it belongs to the central subhalo at both outputs. Pre-existing newly
+central stars have formation scale factors at or before the first output and
+are central only at the second output. Newly formed central stars formed
+between the outputs and are central at the second output. The lost category
+contains particles central at the first output that are no longer central at
+the second. We retain particles with finite stellar-formation scale factors
+$0<a_{\rm birth}\leq a_{\rm snap}$; the excluded counts are listed in
+\texttt{input\_membership\_integrity.csv}. We use current particle masses in
+the mass balance. The equation is
+\begin{equation}
+\Delta M_{\rm cen}=\Delta M_{\rm persistent}
++M_{\rm old,new\ cen}
++M_{\rm formed,new\ cen}
+-M_{\rm lost\ cen}.
+\end{equation}
+We evaluate the mass balance for each branch before summarizing the sample. We
+normalize each term by the central stellar mass at the starting output.
+The maximum absolute closure residual over all 36 branches and all three
+output pairs is $9.7\times10^{-16}$ of the starting mass.
+
+To characterize the earlier catalogue assignment of pre-existing newly
+central stars, we match their IDs to the earlier parent-FoF cutout and record
+the \texttt{RemoveSatelliteGalaxy} flag. That flag marks stars assigned to
+resolved non-central subhaloes with at least 100 stellar particles; the
+cutouts do not provide the source subhalo ID for these stars. Stars absent
+from the earlier parent-FoF cutout have an unknown earlier location. We
+therefore report catalogue-mask membership and do not interpret it as a
+measured merger or accretion history. We also do not label stars formed
+between outputs as in situ because their birth hosts are not recorded.
+
+The size controls use the same central-subhalo members, proper positions,
+and dust-free FSPS simple-stellar-population flux grids as the reference
+half-light radii. In the controls, we replace each particle's age, total
+metal mass fraction, or both with the central population's geometric mean
+for that quantity at that output. Each geometric mean is the exponential
+of the current-mass-weighted mean logarithm. This changes the spatial population
+weighting while leaving positions and formed-mass normalizations unchanged.
+The age and metallicity contributions use a two-factor Shapley split, which
+assigns half of their interaction to each factor. The combined effect is
+computed as a paired full-population minus uniform-population growth for
+each branch and projection before reducing projections to a branch median.
+The statistical unit is the descendant branch; 95 per cent intervals use
+20,000 bootstrap resamples of the 36 branches. Radial profiles combine bins
+inside and outside one projected current-mass half-mass radius. The quoted
+metallicity is the total metal mass fraction in \texttt{GFM\_Metallicity},
+not [Fe/H]; \texttt{GFM\_StellarFormationTime} records the formation scale
+factor [\url{https://www.illustris-project.org/data/docs/specifications/}].
+
+From snapshot 50 to 84, the median net central stellar-mass increase is
+$0.869$ times the starting central mass. The median mass of pre-existing
+stars newly assigned to the central is $0.789$ times the starting mass;
+the median current-mass change of persistent central members is $-0.050$,
+and stars formed after snapshot 50 and central at snapshot 84 contribute
+$0.096$. The mass of snapshot-50 central particles no longer central at
+snapshot 84 contributes $-0.002$. These are separate component medians and
+do not sum to the median net change. A median 88.1 per cent of the pre-existing
+newly central mass carried the earlier resolved-satellite flag. The unflagged
+remainder is 11.9 per cent in the branch-level medians. Of the total newly
+central pre-existing mass, 2.1 per cent was in the earlier parent FoF without
+the satellite flag, while 8.2 per cent was absent from that earlier FoF
+catalogue. The component medians do not add to the median remainder; the
+earlier location of absent stars is unknown.
+Table~\ref{tab:tng-id-budget} gives the bootstrap intervals across branches.
+
+\begin{table*}
+\centering
+\caption{Particle-ID mass budget for the change in central-subhalo stellar mass
+from snapshot 50 ($z=0.997$) to snapshot 84 ($z=0.197$). The first five
+quantities are normalized by each branch's snapshot-50 central stellar mass;
+the final quantity is the fraction of pre-existing newly central mass with
+the earlier resolved-satellite flag. Values give the sample median and the
+95 per cent branch-bootstrap interval. Component medians do not add because
+the mass balance closes separately for each branch.}
+\label{tab:tng-id-budget}
+\small
+\begin{tabular}{lr}
+\toprule
+Mass-budget component & Median [95 per cent interval] \\
+\midrule
+Net central stellar-mass increase / $M_{\rm cen,50}$ & $+0.869\;[+0.650,+1.332]$ \\
+Persistent-particle current-mass change / $M_{\rm cen,50}$ & $-0.050\;[-0.054,-0.046]$ \\
+Pre-existing stars newly assigned to central / $M_{\rm cen,50}$ & $+0.789\;[+0.631,+0.971]$ \\
+Stars formed after snapshot 50, central at 84 / $M_{\rm cen,50}$ & $+0.096\;[+0.060,+0.348]$ \\
+Snapshot-50 central stars no longer central at 84 / $M_{\rm cen,50}$ & $-0.002\;[-0.003,-0.001]$ \\
+Earlier resolved-satellite-flag fraction of pre-existing newly central mass & $0.881\;[0.766,0.919]$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+At snapshot 84, the linked groups and isophotal regions capture different
+fractions of these particle populations (Table~\ref{tab:tng-capture}). The
+FoF values are independent of photometric band because the 3D membership is
+the same in $V$ and $g$. Increasing $b_{\mathrm{link}}$ from 0.10 to 0.20
+raises capture of resolved-satellite stars and newly formed stars, while
+also including more stars that were not central members and did not carry the
+earlier satellite flag.
+
+\begin{table*}
+\centering
+\caption{Fraction of each snapshot-84 stellar population selected by the
+isophotal region or linked group. Values are percentages: the three
+projections are reduced to a median for each branch, followed by the median
+across 36 branches. The satellite class uses the earlier
+\texttt{RemoveSatelliteGalaxy} flag. The other parent-FoF class was in the
+earlier group but was neither central nor flagged as a resolved satellite;
+the absent class has no matching star in that earlier FoF catalogue. The FoF
+rows are identical in $V$ and $g$ and are shown once.}
+\label{tab:tng-capture}
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+Selection & Persistent & Earlier satellite & Other in parent FoF & Absent from parent FoF & Formed since 50 \\
+\midrule
+Isophotal, $V$ & 81.4 & 73.3 & 12.7 & 2.7 & 56.9 \\
+Isophotal, $g$ & 79.1 & 70.3 & 11.0 & 2.3 & 52.8 \\
+FoF, $b_{\mathrm{link}}=0.10$ & 78.1 & 69.9 & 7.1 & 0.8 & 52.8 \\
+FoF, $b_{\mathrm{link}}=0.12$ & 80.9 & 74.3 & 9.5 & 1.5 & 59.5 \\
+FoF, $b_{\mathrm{link}}=0.20$ & 88.8 & 84.1 & 19.0 & 4.7 & 71.6 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+With the physical observer redshift at each output, the full-population
+half-light-radius growth is $0.020$ dex in $V$ and $-0.003$ dex in $g$;
+the uniform-age-and-metallicity control grows by $0.386$ dex in both bands.
+This radius weights particles by formed stellar mass; the half-mass radius
+uses current particle mass and grows by $0.382$ dex.
+The paired full-minus-uniform change is $-0.255$ dex in $V$ and $-0.324$
+dex in $g$. At fixed $z_{\rm obs}=0.197284$, the corresponding paired
+changes are $-0.071$ dex in $V$ and $-0.085$ dex in $g$. The paired
+full-population half-light-radius growth is lower by $0.183$ dex in $V$
+and $0.199$ dex in $g$ at the physical observer redshifts than at fixed
+$z_{\rm obs}$. For the full-minus-uniform growth change, the age and
+metallicity Shapley contributions at the physical observer redshifts are
+$-0.162$ and $-0.123$ dex in $V$, and $-0.175$ and $-0.143$ dex in $g$.
+At fixed observer redshift, they are $-0.047$ and $-0.018$ dex in $V$, and
+$-0.051$ and $-0.007$ dex in $g$. The contribution medians need not sum to
+the median combined effect; branch-bootstrap intervals are in
+\texttt{results/key\_results.csv}.
+
+At snapshot 50, stars outside one projected central half-mass radius are
+median $0.304$ Gyr younger and lower by $0.514$ dex in log total metal mass
+fraction than stars inside it. Their outer-minus-inner log mass-to-light
+ratio is $-0.556$ dex in $V$ and $-0.775$ dex in $g$ when each output is rendered at
+its physical observer redshift. At fixed $z_{\rm obs}=0.197284$, the
+snapshot-50 differences are $-0.245$ dex in $V$ and $-0.301$ dex in $g$.
+At snapshot 84, the outer-minus-inner differences are $-0.558$ Gyr,
+$-0.435$ dex in log metallicity, and $-0.168$ dex in $V$ and $-0.205$ dex
+in $g$ under either observer condition. The stronger snapshot-50 contrast
+at its physical observer redshift occurs when the observed bands sample
+rest-frame near-UV light. These radial contrasts describe the simulated
+population gradients. The controlled SSP comparison uses dust-free spectra;
+dust attenuation could change the measured contrast, and we do not estimate
+that change here. Per-projection gradients and
+all branch-bootstrap summaries are in
+\texttt{results/radial\_gradients\_per\_view.csv} and
+\texttt{results/radial\_gradient\_summary.csv}.
+
+\section{Artificial-redshift sample and detection accounting}
+The experiment holds each halo fixed in proper size at the original simulation
+output and renders all 75 entries from outputs $z\leq1.990$ at observed
+redshifts 0.190, 0.227, 0.500, 1.002, and 1.990. We convert the stored
+comoving coordinates to proper positions using the simulation scale factor,
+then use the angular-diameter distance at the observed redshift. The angular
+pixel scale and PSF stay fixed. The physical resolution therefore varies
+with redshift. Changes combine
+cosmological dimming, spectral shifting, and physical resolution, and
+do not isolate the causal effect of any one ingredient. The four flux
+modes are defined as follows. \texttt{observer\_full} uses the redshifted
+stellar spectrum and corrects the FSPS flux normalization to the Darwin
+luminosity distance. \texttt{observer\_no\_tolman\_factor} multiplies
+the corrected flux by $(1+z_{\rm obs})^4$. \texttt{rest\_sed\_with\_distance}
+uses the $z=0$ stellar spectrum with the Darwin luminosity distance.
+\texttt{rest\_sed\_no\_dimming} uses the $z=0$ absolute spectrum
+without luminosity-distance scaling. The final mode is an extreme no-distance control,
+not merely the removal of the Tolman factor.
+
+The data table \texttt{artificial\_redshift\_summary.csv} gives the fraction
+of views with a detected isophote, the mean overlap among detected views,
+and the mean overlap across all views. Every view has equal weight. Views
+without a detected isophote have zero overlap in the all-view mean.
+Completeness is undefined without a detected region and is averaged only over
+detections. The table reports the difference between the all-view mean and
+the detection fraction multiplied by the mean overlap among detections.
+The difference is zero to numerical precision.
+
+At $z_{\rm obs}=1.990$, isophotes are detected in 182/225 $V$ views and
+188/225 $g$ views. The view-weighted mean overlap among detected views is
+0.829 in $V$ and 0.860 in $g$. Mean completeness among detected views is
+0.996 and 0.994. Assigning zero overlap to non-detections gives means of
+0.671 and 0.719 across all views. The means among detections describe
+images where an isophote was found, while the all-view means also account
+for views without a detected isophote. Removing the $(1+z)^4$ cosmological-dimming factor raises the
+all-view means by 0.211 in $V$ and 0.158 in $g$. Using the $z=0$ stellar
+spectrum while retaining the Darwin luminosity distance gives means of
+0.795 and 0.818. The extreme control without luminosity-distance scaling is limited by
+the finite 360-arcsec field. The full stamp is filled in 81, 67, 15, 3,
+and 2 of 225 views at observed redshifts 0.190, 0.227, 0.500, 1.002,
+and 1.990, respectively, in each band. The mean overlaps are therefore
+field-of-view dependent and are not interpreted as physical comparisons.
+The controls change image construction in different ways and do not
+isolate one physical cause or represent evolution of the stellar systems.
+
+An additional comparison pairs image conditions within the 33 major exact-ID
+components. The calculation first takes the median over three projections at
+each halo output and then takes the median over repeated outputs in each
+component. Removing the $(1+z_{\rm obs})^4$ surface-brightness dimming lowers
+mean component IoU at $z_{\rm obs}=0.190$ by $0.0273$ in $V$ and $0.0235$ in
+$g$. At $z_{\rm obs}=1.990$, removing dimming raises mean component IoU by
+$0.0834$ in $V$ and $0.0485$ in $g$. The 95 per cent interval includes zero
+for the $g$-band change. Replacing redshifted stellar spectra with $z=0$
+spectra raises mean IoU at $z_{\rm obs}=1.990$ by $0.0958$ in $V$ and
+$0.0769$ in $g$. The paired changes vary with observed redshift and band.
+The angular pixel and PSF scales remain fixed, so physical resolution changes
+with observed redshift. The paired changes measure image-construction
+sensitivity and do not measure halo evolution.
+
+\begin{table*}
+\centering
+\caption{Paired changes in overlap for artificial-redshift image controls at
+$b_{\mathrm{link}}=0.10$. Each value gives the mean component-level change
+from the full image with redshifted stellar spectra, followed by the 95 per
+cent bootstrap interval. The first control removes cosmological surface-brightness
+dimming while retaining the redshifted spectra and luminosity distance. The
+second control uses the $z=0$ stellar spectra and retains the luminosity
+distance. The comparison uses 53 halo-output entries from outputs 00178,
+00475, and 00786. Twenty major-descendant exact dark-matter particle-ID links
+form 33 connected components. The analysis takes the median across three
+projections at each output and then the median across repeated outputs in each
+component. Bootstrap resampling uses the 33 components. The components do not
+represent a complete merger-tree census, and image-mode contrasts also include
+the change in physical resolution with observed redshift.}
+\label{tab:redshiftmodepaired}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ccccc}
+\toprule
+$z_{\rm obs}$ & Band & $N_{\rm comp}$ & No-dimming $\Delta\mathrm{IoU}$
+& $z=0$ spectrum $\Delta\mathrm{IoU}$ \\
+\midrule
+0.190 & $V$ & 33 & $-0.0273\;[-0.0334,-0.0216]$ & $-0.0070\;[-0.0087,-0.0052]$ \\
+ & $g$ & 33 & $-0.0235\;[-0.0299,-0.0179]$ & $-0.0161\;[-0.0195,-0.0129]$ \\
+0.227 & $V$ & 33 & $-0.0305\;[-0.0377,-0.0242]$ & $-0.0081\;[-0.0101,-0.0062]$ \\
+ & $g$ & 33 & $-0.0250\;[-0.0322,-0.0184]$ & $-0.0165\;[-0.0197,-0.0133]$ \\
+0.500 & $V$ & 33 & $-0.0176\;[-0.0294,-0.0063]$ & $+0.0003\;[-0.0061,+0.0070]$ \\
+ & $g$ & 33 & $-0.0086\;[-0.0202,+0.0027]$ & $-0.0011\;[-0.0094,+0.0084]$ \\
+1.002 & $V$ & 33 & $+0.0264\;[-0.0010,+0.0604]$ & $+0.0389\;[+0.0068,+0.0778]$ \\
+ & $g$ & 33 & $+0.0201\;[-0.0124,+0.0643]$ & $+0.0379\;[-0.0031,+0.0900]$ \\
+1.990 & $V$ & 33 & $+0.0834\;[+0.0167,+0.1688]$ & $+0.0958\;[+0.0162,+0.1901]$ \\
+ & $g$ & 33 & $+0.0485\;[-0.0076,+0.1192]$ & $+0.0769\;[+0.0030,+0.1657]$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}
+\centering
+\caption{Fixed-$b_{\mathrm{link}}$ comparison after grouping repeated outputs
+with major exact-ID links. The sample contains 53 entries from outputs 00178,
+00475, and 00786. Twenty major-descendant links define 33 components. Each
+component first takes the median across three views at each output, followed
+by the median across repeated outputs. $\Delta\mathrm{IoU}$ gives the mean
+paired difference $b_{\mathrm{link}}=0.10$ minus $b_{\mathrm{link}}=0.20$ and
+the 95 per cent interval from 5,000 bootstrap resamples of the 33 components.
+The failure fraction counts components with median IoU below 0.90 at the two
+fixed linking lengths. $P_{90}(|\Delta\log_{10}L|)$ gives the 90th-percentile
+absolute luminosity error in dex at $b_{\mathrm{link}}=0.10$ and 0.20. IoU
+includes zero for views without a detected isophote. Luminosity errors use
+components with a detected isophote. At $z_{\rm obs}=1.990$, 30 $V$ components
+and 32 $g$ components have valid luminosity errors for each linking length.
+All other luminosity-error quantiles use 33 components.}
+\label{tab:exactredshift}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{ccccc}
+\toprule
+$z_{\rm obs}$ & Band & $\Delta\mathrm{IoU}$ (95\% interval)
+& $f_{<0.90}$ (\%, $b_{\mathrm{link}}=0.10/0.20$)
+& $P_{90}(|\Delta\log_{10}L|)$ (dex, $b_{\mathrm{link}}=0.10/0.20$) \\
+\midrule
+0.190 & $V$ & $-0.0105\;[-0.0224,+0.0001]$ & 15/9 & 0.049/0.027 \\
+ & $g$ & $-0.0064\;[-0.0180,+0.0045]$ & 15/9 & 0.049/0.032 \\
+0.227 & $V$ & $-0.0037\;[-0.0144,+0.0065]$ & 12/9 & 0.044/0.032 \\
+ & $g$ & $+0.0021\;[-0.0081,+0.0124]$ & 12/12 & 0.043/0.039 \\
+0.500 & $V$ & $+0.0388\;[+0.0283,+0.0498]$ & 15/33 & 0.024/0.076 \\
+ & $g$ & $+0.0313\;[+0.0223,+0.0407]$ & 15/30 & 0.029/0.089 \\
+1.002 & $V$ & $+0.0395\;[+0.0266,+0.0539]$ & 21/27 & 0.120/0.238 \\
+ & $g$ & $+0.0286\;[+0.0144,+0.0445]$ & 18/27 & 0.134/0.185 \\
+1.990 & $V$ & $+0.0206\;[+0.0110,+0.0329]$ & 24/27 & 0.067/0.123 \\
+ & $g$ & $+0.0221\;[+0.0107,+0.0355]$ & 21/27 & 0.144/0.253 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Fixed-parameter image checks in CAMELS}
+\label{sec:camelsimage}
+The image checks use the same 49 hosts, potential-minimum centres,
+stellar masks, observing redshift, and corrected flux convention as the
+nominal CAMELS transfer test. The linking parameters remain fixed at
+$b_{\mathrm{link}}=0.10$ and $0.20$. A projected 30 pkpc aperture provides a third
+selection. The checks were designed after the nominal transfer result
+and do not select a new linking parameter from the external sample.
+
+The baseline uses $0.2$-arcsec pixels, a $1$-arcsec FWHM Moffat PSF
+with index $4.765$ and the outer wing defined in
+Section~\ref{sec:psfwing}, and limits
+of $26.5$ and $27.0\,\mathrm{mag\,arcsec}^{-2}$ in $V$ and $g$.
+Each check changes one choice. The limits become $0.5$ mag brighter
+or fainter, the pixels become $0.4$ arcsec wide, the PSF wing is
+removed, or a constant positive residual of
+$29\,\mathrm{mag\,arcsec}^{-2}$ is added to the image. The no-wing
+PSF is normalized to unit flux. The field of view remains fixed.
+Three further checks add independent, zero-mean Gaussian noise after
+PSF convolution. The pixel rms equals the pixel flux at the brightness
+limit divided by 5, 3, or 1. Negative pixel values remain in the
+noisy images. Each host, view, and band has three deterministic noise
+realisations. The three noise amplitudes use the same standard-normal
+patterns, scaled to the requested rms. The Gaussian model does not
+represent a calibrated survey noise distribution.
+
+For each realisation, we take the median over three views. We then
+average the three realisations within each host. Noiseless conditions
+use one realisation. Equal-host means and 90th-percentile absolute
+errors describe the 49 host summaries. The paired differences use
+5,000 shared bootstrap draws, resampling hosts or resampling boxes
+and then hosts within each sampled box. Views and noise realisations
+do not increase the number of independent hosts. An absent central region or a region selected around the nearest pixel
+above the threshold counts as a failed target. Failed targets receive zero overlap and
+completeness. Precision and luminosity or radius errors are undefined
+for failed targets. Error quantiles therefore condition on measurable
+targets and failure fractions are reported separately.
+
+Every host reproduces the nominal baseline projection metrics before
+entering the summary. The stronger-noise extension also reproduces the
+baseline. The combined projection table removes the repeated baseline
+and contains 13,230 rows across nine image conditions, two bands, and
+three stellar selections. No central target fails in any condition.
+The mean overlap difference between $b_{\mathrm{link}}=0.10$ and $0.20$ has a positive
+95 per cent box-then-host interval in every condition and band. At the
+largest noise amplitude, the differences are $+0.075$ in $V$
+($+0.063$--$+0.088$) and $+0.090$ in $g$
+($+0.075$--$+0.107$). The mean overlaps at $b_{\mathrm{link}}=0.10$ fall from
+$0.894/0.872$ to $0.877/0.857$ ($V/g$).
+
+Changing the brightness limit shifts the luminosity bias more than
+changing the pixel size or removing the PSF wing. With fainter limits,
+the $V$ mean overlap rises to $0.901$, while the 90th-percentile
+absolute luminosity error rises from $0.033$ to $0.056$ dex.
+The isophotal target changes with every image perturbation. A higher
+overlap does not guarantee a smaller luminosity error. Full noiseless
+particle fluxes at projected positions define luminosity and $R_{50}$.
+The image checks measure sensitivity to the boundary selection rather
+than noise in the measured stellar flux. Dust, correlated sky noise,
+Poisson counting statistics, and image-based centre finding are omitted.
+Figure~\ref{fig:camelsimage} compares overlap and luminosity errors.
+The directory \texttt{camels\_image\_checks} supplies the projection
+table, host summaries, paired differences, configurations, and
+provenance. The script
+\texttt{summarize\_camels\_image\_checks.py} reproduces the summary
+tables without the original particle snapshots.
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{supplement/camels_image_checks/fixed_b_image_sensitivity.pdf}
+\caption{Fixed-parameter image checks for 49 CAMELS Swift-EAGLE hosts.
+The upper row shows equal-host mean overlaps, and the lower row shows
+the 90th percentile of the absolute logarithmic luminosity error in dex,
+$|\Delta\log_{10}L|$, where
+$\Delta\log_{10}L=\log_{10}(L_{\rm selected}/L_{\rm isophote})$.
+The columns show $V$ and SDSS $g$. Base denotes the nominal image.
+The next conditions change the brightness limit by $-0.5$ mag
+(brighter) or $+0.5$ mag (fainter), use $0.4$-arcsec pixels, remove
+the outer PSF wing, or add a flat positive residual of
+$29\,\mathrm{mag\,arcsec}^{-2}$. The final conditions add Gaussian
+pixel noise with rms equal to the threshold pixel flux divided by
+5, 3, or 1. Each noisy host statistic averages the three-view medians
+from three noise realisations. The linking parameters remain fixed.
+The 30 pkpc aperture uses the same known centre. All luminosities
+use noiseless stellar-particle fluxes.}
+\label{fig:camelsimage}
+\end{figure*}
+
+\section{Fixed-structure redshift transfer in CAMELS}
+\label{sec:camelsmultiz}
+
+We render the 49 CAMELS Swift-EAGLE hosts from snapshot 090 at four observer
+redshifts: $z_{\rm obs}=0.190$, $0.500$, $1.002$, and $1.990$. Stellar
+positions, ages, metallicities, and FoF membership remain fixed at the $z=0$
+snapshot. The image calculation changes the redshifted stellar spectra,
+luminosity and angular-diameter distances, cosmological surface-brightness
+dimming, and physical sampling of the fixed angular pixel and PSF. Each
+redshift uses the nominal limits of $26.5$ and
+$27.0\,\mathrm{mag\,arcsec}^{-2}$ in $V$ and $g$, plus four sensitivity
+cases that make one band limit $0.5$ mag brighter or fainter. We keep
+$b_{\mathrm{link}}=0.10$, $b_{\mathrm{link}}=0.20$, and the projected 30 pkpc aperture
+fixed in every case. The calculation omits dust, sky background, pixel noise,
+and intergalactic absorption. Some $z=0$ stellar ages exceed the age of the
+Universe at $z_{\rm obs}=1.990$. These images therefore test how the
+measurement changes with observer redshift; they are not evolving galaxy
+models.
+
+For each host and selection, we first take the median over its three
+orthogonal projections. The mean overlap then gives equal weight to all 49
+hosts. A missing isophotal target in any view contributes zero overlap to
+that host's view median. $N_{\rm fail}$ counts hosts with at least one failed
+view. The paired intervals resample the seven CV boxes and then hosts within
+each selected box. Views are repeated measurements, not independent hosts.
+Table~\ref{tab:camelsmultizbase} gives the nominal-limit results for
+$b_{\mathrm{link}}=0.10$. Figure~\ref{fig:camelsmultiz} compares the three fixed
+selections across observer redshift.
+
+At the nominal limits, $b_{\mathrm{link}}=0.10$ has a higher mean overlap than
+$b_{\mathrm{link}}=0.20$ at all four redshifts, but the absolute overlap falls
+sharply above $z_{\rm obs}=0.190$. At $z_{\rm obs}=0.500$ and $1.002$, the
+30 pkpc aperture has a higher mean overlap than the fixed linking parameter.
+At $z_{\rm obs}=1.002$ and $1.990$, many hosts have at least one failed view.
+The luminosity, size, and contamination comparisons at those redshifts
+therefore use only hosts with measurable isophotes and do not represent the
+full sample. Changing a limit by $0.5$ mag changes the overlap and failure
+count, as listed in Table~\ref{tab:camelsmultizthreshold}. In the deeper
+single-band cases at $z_{\rm obs}=1.990$, the affected band still has failed
+views in 43 $V$ hosts or 41 $g$ hosts. The threshold comparison does not
+separate dimming from spectral shifting or physical resolution.
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{supplement/camels_multiz_20261030/camels_multiz_transfer_summary_v2.pdf}
+\caption{Fixed-structure image-transfer test for 49 CAMELS Swift-EAGLE
+hosts. The top panels show mean host-median overlap at the nominal
+surface-brightness limits. The bottom panels show the fraction of hosts
+with at least one failed projection; the dashed grey line is the same for
+all three selections because contour detection depends on the image. Error
+bars in the top panels show 95 per cent intervals from resampling CV boxes
+and hosts within boxes. Stellar structure and FoF membership are fixed
+while observer redshift changes.}
+\label{fig:camelsmultiz}
+\end{figure*}
+
+\begin{table*}
+\centering
+\caption{Nominal-limit redshift-transfer results for fixed
+$b_{\mathrm{link}}=0.10$. Mean IoU is the equal-host mean of each host's
+median over three projections. $N_{\rm IoU<0.90}$ counts hosts with a
+host-median IoU below 0.90. $N_{\rm fail}$ counts hosts with at least one
+projection lacking a measurable isophote. The two $\Delta$IoU columns give
+paired mean differences and 95 per cent box-then-host bootstrap intervals.}
+\label{tab:camelsmultizbase}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{ccrrrll}
+\toprule
+$z_{\rm obs}$ & Band & Mean IoU & $N_{\rm IoU<0.90}$ & $N_{\rm fail}$
+& $\Delta$IoU vs $b_{\mathrm{link}}=0.20$
+& $\Delta$IoU vs 30 pkpc \\
+\midrule
+0.190 & $V$ & 0.894 & 32 & 0 & $+0.094\;[+0.083,+0.106]$ & $+0.040\;[+0.005,+0.083]$ \\
+      & $g$ & 0.872 & 40 & 0 & $+0.111\;[+0.098,+0.127]$ & $+0.010\;[-0.025,+0.051]$ \\
+0.500 & $V$ & 0.690 & 47 & 0 & $+0.121\;[+0.105,+0.140]$ & $-0.130\;[-0.173,-0.099]$ \\
+      & $g$ & 0.653 & 46 & 0 & $+0.128\;[+0.110,+0.149]$ & $-0.125\;[-0.172,-0.090]$ \\
+1.002 & $V$ & 0.263 & 46 & 29 & $+0.047\;[+0.025,+0.070]$ & $-0.037\;[-0.059,-0.018]$ \\
+      & $g$ & 0.300 & 43 & 32 & $+0.054\;[+0.028,+0.082]$ & $-0.041\;[-0.067,-0.019]$ \\
+1.990 & $V$ & 0.041 & 49 & 46 & $+0.004\;[+0.000,+0.017]$ & $-0.004\;[-0.014,+0.000]$ \\
+      & $g$ & 0.116 & 49 & 44 & $+0.022\;[+0.002,+0.048]$ & $-0.013\;[-0.030,+0.000]$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}
+\centering
+\caption{Surface-brightness-limit sensitivity at fixed
+$b_{\mathrm{link}}=0.10$. Each row uses all 49 hosts. The limit pair is
+$(\mu_{V,\lim},\mu_{g,\lim})$ in $\mathrm{mag\,arcsec}^{-2}$. Mean IoU
+includes all hosts, assigning zero overlap when a target is not measured.
+$N_{\rm fail}$ counts hosts with at least one failed projection.}
+\label{tab:camelsmultizthreshold}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{ccrrrr}
+\toprule
+$z_{\rm obs}$ & $(\mu_{V,\lim},\mu_{g,\lim})$ & Mean IoU ($V$) & $N_{\rm fail}(V)$
+& Mean IoU ($g$) & $N_{\rm fail}(g)$ \\
+\midrule
+0.190 & $(26.5,27.0)$ & 0.894 & 0 & 0.872 & 0 \\
+      & $(26.0,27.0)$ & 0.858 & 0 & 0.872 & 0 \\
+      & $(27.0,27.0)$ & 0.901 & 0 & 0.872 & 0 \\
+      & $(26.5,26.5)$ & 0.894 & 0 & 0.827 & 0 \\
+      & $(26.5,27.5)$ & 0.894 & 0 & 0.892 & 0 \\
+0.500 & $(26.5,27.0)$ & 0.690 & 0 & 0.653 & 0 \\
+      & $(26.0,27.0)$ & 0.625 & 0 & 0.653 & 0 \\
+      & $(27.0,27.0)$ & 0.748 & 0 & 0.653 & 0 \\
+      & $(26.5,26.5)$ & 0.690 & 0 & 0.589 & 0 \\
+      & $(26.5,27.5)$ & 0.690 & 0 & 0.713 & 0 \\
+1.002 & $(26.5,27.0)$ & 0.263 & 29 & 0.300 & 32 \\
+      & $(26.0,27.0)$ & 0.185 & 37 & 0.300 & 32 \\
+      & $(27.0,27.0)$ & 0.379 & 10 & 0.300 & 32 \\
+      & $(26.5,26.5)$ & 0.263 & 29 & 0.215 & 36 \\
+      & $(26.5,27.5)$ & 0.263 & 29 & 0.392 & 24 \\
+1.990 & $(26.5,27.0)$ & 0.041 & 46 & 0.116 & 44 \\
+      & $(26.0,27.0)$ & 0.015 & 49 & 0.116 & 44 \\
+      & $(27.0,27.0)$ & 0.134 & 43 & 0.116 & 44 \\
+      & $(26.5,26.5)$ & 0.041 & 46 & 0.038 & 47 \\
+      & $(26.5,27.5)$ & 0.041 & 46 & 0.165 & 41 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The tabulated summaries in
+\texttt{camels\_multiz\_20261030/condition\_metrics.csv} give the 120
+condition, method, and band summaries. Paired redshift and threshold
+contrasts are in \texttt{paired\_redshift\_changes.csv} and
+\texttt{paired\_threshold\_changes.csv}; the rendering configuration and
+input checks are recorded in \texttt{summary\_metadata.json}.
+
+\section{Archived image-construction and sampling checks}
+The exploratory checks use the archived photometric normalization. The main
+conclusions and quoted calibration use the corrected-distance calculations.
+\begin{table*}
+\centering
+\caption{Sensitivity to image construction.
+$N$ counts haloes retained for paired changes, and $P_{16}$--$P_{84}$
+is the percentile interval of $\Delta b_{\mathrm{link}}$.
+Edge counts views moving to either grid endpoint.
+Below $0.90$ counts views remaining interior but falling below the
+baseline overlap threshold.
+The counts use the projection sample defined in the text, including qualifying
+views of the excluded halo.
+Sky brightnesses are in $\mathrm{mag\,arcsec}^{-2}$.
+Ellipses denote the absence of a valid selected linking parameter.}
+\label{tab:imagingvariants}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+Change & Band & $N$ & Median $\Delta b_{\mathrm{link}}$ & $P_{16}$--$P_{84}$
+& Median $\Delta\mathrm{IoU}$ & Edge & Below $0.90$ \\
+\midrule
+Remove PSF wing & $V$ & 75 & $0$ & $[0,0]$ & $0$ & 0 & 0 \\
+ & $g$ & 75 & $0$ & $[0,0]$ & $0$ & 0 & 0 \\
+Sky $29$ & $V$ & 75 & $0$ & $[0,0.02]$ & $0.0008$ & 0 & 2 \\
+ & $g$ & 74 & $0$ & $[0,0.02]$ & $0.0013$ & 1 & 0 \\
+Sky $27$ & $V$ & 56 & $0.03$ & $[0.02,0.05]$ & $0.0066$ & 28 & 4 \\
+ & $g$ & 0 & $\ldots$ & $\ldots$ & $\ldots$ & 198 & 0 \\
+Threshold $0.5$ mag brighter & $V$ & 74 & $0$ & $[-0.02,0]$ & $-0.005$ & 1 & 15 \\
+ & $g$ & 75 & $-0.02$ & $[-0.03,0]$ & $-0.0039$ & 0 & 11 \\
+Threshold $0.5$ mag fainter & $V$ & 73 & $0.02$ & $[0,0.03]$ & $0.003$ & 2 & 3 \\
+ & $g$ & 68 & $0.02$ & $[0,0.03]$ & $0.0024$ & 7 & 2 \\
+Include satellite light & $V$ & 75 & $0$ & $[0,0.02]$ & $0$ & 1 & 5 \\
+ & $g$ & 73 & $0$ & $[0,0.0096]$ & $0$ & 2 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}
+\centering
+\caption{Sensitivity to particle sampling.
+The retained fractions are one half, one quarter, and one eighth.
+The rebuilt-image test recalculates the brightness boundary.
+The fixed-image test retains the baseline boundary.
+Column definitions and view selections follow
+Table~\ref{tab:imagingvariants}.}
+\label{tab:thinning}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+Change & Band & $N$ & Median $\Delta b_{\mathrm{link}}$ & $P_{16}$--$P_{84}$
+& Median $\Delta\mathrm{IoU}$ & Edge & Below $0.90$ \\
+\midrule
+Rebuilt image, factor 2 & $V$ & 71 & $0$ & $[-0.02,0]$ & $-0.0057$ & 3 & 24 \\
+ & $g$ & 71 & $0$ & $[-0.02,0.016]$ & $-0.0045$ & 4 & 18 \\
+Rebuilt image, factor 4 & $V$ & 71 & $0$ & $[-0.02,0.016]$ & $-0.0138$ & 2 & 40 \\
+ & $g$ & 68 & $0$ & $[-0.02,0.02]$ & $-0.0108$ & 4 & 34 \\
+Rebuilt image, factor 8 & $V$ & 66 & $0$ & $[-0.03,0.02]$ & $-0.0198$ & 6 & 57 \\
+ & $g$ & 67 & $0$ & $[-0.0244,0.02]$ & $-0.0157$ & 5 & 47 \\
+Fixed image, factor 2 & $V$ & 66 & $0.02$ & $[0.02,0.04]$ & $0.0001$ & 10 & 0 \\
+ & $g$ & 66 & $0.02$ & $[0.02,0.03]$ & $0.0002$ & 13 & 1 \\
+Fixed image, factor 4 & $V$ & 50 & $0.05$ & $[0.03,0.0616]$ & $0.0002$ & 39 & 0 \\
+ & $g$ & 51 & $0.05$ & $[0.03,0.06]$ & $0.0005$ & 40 & 0 \\
+Fixed image, factor 8 & $V$ & 30 & $0.07$ & $[0.05,0.0736]$ & $0.0008$ & 96 & 1 \\
+ & $g$ & 30 & $0.07$ & $[0.0628,0.08]$ & $0.0007$ & 99 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The calibration applies to the image construction and particle sampling
+specified above.
+Tables~\ref{tab:imagingvariants} and \ref{tab:thinning} summarize the
+completed sensitivity tests on the original nine-node grid.
+Each halo contributes the median selected parameter and median overlap
+over three views.
+Changes are measured relative to the baseline, retaining only haloes
+with interior maxima in both calculations.
+The last two columns instead count individual views with an interior
+baseline maximum and overlap at least $0.90$, comprising 199 in $V$
+and 198 in $g$ across all 76 haloes.
+The edge and low-overlap categories are disjoint.
+The supplementary tables retain individual curves and exceptional cases.
+
+
+
+Removing the PSF wing leaves the halo parameter unchanged in $V$ and
+changes only two selected parameters in $g$, each by $-0.02$.
+A sky residual of $29\,\mathrm{mag\,arcsec}^{-2}$ corresponds to
+$0.16$ per cent of a $22\,\mathrm{mag\,arcsec}^{-2}$ sky and gives
+zero median change in the linking parameter.
+A residual of $27\,\mathrm{mag\,arcsec}^{-2}$ corresponds to $1$ per
+cent and fills every $g$ stamp because the residual equals the threshold.
+The resulting endpoint cannot define a calibrated linking parameter.
+The 28 $V$ views reaching an endpoint include the qualifying view of
+the excluded halo, leaving 27 among the 75 fully interior haloes.
+
+Moving the brightness threshold by half a magnitude changes the selected
+parameter and can replace a connected region with a different component.
+Consequently, a brighter threshold does not always shrink the selected
+region monotonically.
+Including satellites represented by at least $100$ stars changes only
+the image, with satellite particles still excluded from the link.
+The median parameter change is zero, but some selected regions no longer
+surround the central galaxy.
+The satellite edge counts include the excluded halo and become 0 in $V$
+and 1 in $g$ after omitting the halo.
+
+
+
+Particle thinning retains a nested random subset while preserving each
+retained particle's mass and luminosity.
+Rebuilding the image lowers surface brightness and leaves the median
+parameter change at zero, despite decreasing overlap and losing detectable
+regions.
+At a factor of eight, thirteen views in each band have no bright region.
+Holding the image fixed instead raises the median parameter by $0.02$,
+$0.05$, and $0.07$ at factors of two, four, and eight.
+The increasing endpoint counts restrict the last comparison to 30 haloes
+per band.
+Neither test establishes convergence of the hydrodynamical simulation.
+
+For equal-mass particles, a thinning factor $f$ increases the mean
+particle separation by $f^{1/3}$.
+Because retained particle masses remain unchanged, preserving a similar
+linking distance relative to the particle separation would require
+$b_{\mathrm{link}}$ to increase by the same factor.
+Starting from $b_{\mathrm{link}}=0.10$, the expected increases are approximately
+$0.026$, $0.059$, and $0.10$.
+The measured changes have the same sign and order, with a smaller change
+at a factor of eight.
+A fixed dimensional linking distance would instead leave $b_{\mathrm{link}}$ unchanged
+under the implemented mass convention in main-paper Equation~\eqref{main-eq:linkcode}.
+The conversion $b_{\mathrm{link}}=0.10$ to $1.046\,h^{-1}\mathrm{ckpc}$ for a
+$10^{5}\,h^{-1}\mathrm{M}_{\odot}$ particle is a reference value, rather than a
+sample median or a universal density boundary.
+
+In the archived-normalization analysis, the image centre lies below the
+brightness threshold in 34 $V$ projections and 35 $g$ projections.
+Without the nearest-pixel selection, the regions are empty in those
+projections, including 26 in $V$ and 25 in $g$ with baseline overlap at
+least $0.90$. The calibration therefore depends on this selection rule.
+Dust, additional viewing directions, other simulation volumes, and
+fixed $100\,\mathrm{kpc}$ apertures have not been tested. The fixed
+30 pkpc aperture is evaluated in the CAMELS transfer test.
+
+
+\section{Archived additional image diagnostics}
+The exploratory diagnostics use the original photometric normalization
+and do not replace the corrected-distance primary measurements.
+Across all 76 haloes, the median positional light fractions inside the
+boundary are $0.7947$ in $V$ and $0.8240$ in $g$.
+The corresponding fractions from convolved images are $0.7864$ and
+$0.8121$.
+The fractions use satellite-excluded total light and differ from completeness
+and precision.
+The PSF-weighted overlap in main-paper Section~\ref{main-sec:adopted} quantifies the consequence
+for the selected linking length.
+
+The equivalent radius is the radius of a circle with the selected area.
+Median halo radii are $4.05\,\mathrm{arcsec}$ in $V$ and
+$3.96\,\mathrm{arcsec}$ in $g$, with 16th to 84th percentiles
+$2.21$--$16.21\,\mathrm{arcsec}$ and $2.34$--$14.95\,\mathrm{arcsec}$.
+For the 29 $V$ haloes and 28 $g$ haloes above
+$5.0\,\mathrm{arcsec}$, the exterior fractions within
+$1.0\,\mathrm{arcsec}$ fall to $0.4342$ and $0.4252$.
+The interior fractions fall to $0.1930$ and $0.2120$.
+The residual therefore extends beyond the immediate boundary more
+strongly in larger regions.
+
+\section{Archived total and radial stellar luminosity}
+The numerical summaries use the archived normalization. The main text
+reports the corrected primary luminosity comparisons.
+We compare the total group light with light from stars projected
+inside the isophote using the signed fractional difference
+$L_{\mathrm{group}}/L_{\mathrm{inside}}-1$.
+For each halo, we take the median over three views before calculating
+the median and percentiles across 75 haloes.
+At $b_{\mathrm{link}}=0.20$, the median excess is $7.04$ per cent in $V$ and
+$6.33$ per cent in $g$. At $b_{\mathrm{link}}=0.10$, the median differences are
+$0.31$ and $0.28$ per cent, with 16th to 84th percentiles
+$-2.47$ to $4.18$ per cent and $-2.78$ to $4.16$ per cent.
+For the absolute differences quoted in the main paper, the absolute
+value is taken separately in every view before either median.
+
+The radial table divides each image into projected radii below
+$0.5R_{\mathrm{eq}}$, $0.5$--$1.0R_{\mathrm{eq}}$,
+$1.0$--$1.5R_{\mathrm{eq}}$, and above $1.5R_{\mathrm{eq}}$,
+where $R_{\mathrm{eq}}$ is the radius of a circle with the isophotal
+area. The table records group light, light from stars inside the
+isophote, and group light inside the isophote for each annulus.
+Exterior group light at radii above $R_{\mathrm{eq}}$, divided by
+$L_{\mathrm{inside}}$, has medians $6.60$ and $5.86$ per cent at
+$b_{\mathrm{link}}=0.20$, falling to $1.38$ and $1.47$ per cent at $b_{\mathrm{link}}=0.10$ in $V$
+and $g$, respectively. An equivalent radius approximates the area
+and does not reproduce the shape of a non-circular isophote.
+All luminosity sums use full stellar fluxes selected by projected
+position. The sums do not integrate PSF-convolved aperture flux.
+
+\section{Overlap near the isophote}
+Let $G$ denote the stellar group, $I$ the stars projected inside the
+isophote, and $R$ the stars projected into the boundary band.
+The band contains one layer of pixels on each side of the boundary,
+including pixels touching across a corner. The overlap in the band is
+defined as
+\begin{equation}
+\mathrm{IoU}_{R}=\frac{L(G\cap I\cap R)}{L[(G\cup I)\cap R]}.
+\end{equation}
+Completeness divides $L(G\cap I\cap R)$ by $L(I\cap R)$, and precision
+divides the same numerator by $L(G\cap R)$. Every sum uses full stellar
+fluxes selected by projected position. A ratio with a zero denominator
+is undefined. The halo statistic takes the median over all three views
+and remains undefined when any view has an undefined ratio.
+The pixel band spans different physical widths at different redshifts.
+
+At the parameter selected from the corrected-distance total light, the
+median overlaps in the band are $0.4614$ in $V$ and $0.4760$ in $g$.
+The 16th to 84th percentiles are $0.3924$--$0.5201$ and
+$0.3873$--$0.5399$. At the selected $b_{\mathrm{link}}$, completeness is $0.6945$
+($0.5789$--$0.7949$) in $V$ and $0.7004$ ($0.5603$--$0.8018$) in $g$.
+Precision is $0.5816$ ($0.5301$--$0.6528$) and $0.5864$
+($0.5351$--$0.6586$), respectively. Parentheses give the 16th--84th
+percentile ranges across halo medians. The corrected photometry changes
+some projection-level selected parameters and therefore changes the light ratios.
+All 75 halo medians are defined in both bands.
+Table~\ref{tab:ring} also gives completeness and precision.
+The larger groups at $b_{\mathrm{link}}=0.20$ recover more light from stars just
+inside the isophote, increasing completeness in the band.
+The lower precision near the boundary partly offsets the gain.
+
+\begin{table}
+\centering
+\caption{Median light ratios in the pixel band on both sides of the
+isophote. $C$ denotes completeness and $P$ precision.
+Selected $b_{\mathrm{link}}$ maximizes the ratio using all stellar light separately
+in each view. Each entry first takes the median over three views,
+then over the 75 retained halo entries. All ratios are defined.}
+\label{tab:ring}
+\small
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Choice & $\mathrm{IoU}_{V}$ & $C_{V}$ & $P_{V}$ & $\mathrm{IoU}_{g}$ & $C_{g}$ & $P_{g}$ \\
+\midrule
+Selected $b_{\mathrm{link}}$ & 0.4614 & 0.6945 & 0.5816 & 0.4760 & 0.7004 & 0.5864 \\
+$b_{\mathrm{link}}=0.10$ & 0.4936 & 0.7648 & 0.5651 & 0.4753 & 0.7509 & 0.5697 \\
+$b_{\mathrm{link}}=0.20$ & 0.5410 & 0.9703 & 0.5470 & 0.5480 & 0.9722 & 0.5572 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sensitivity to boundary-band width}
+\label{supp:boundary-width}
+
+For each image pixel, we calculate the signed Euclidean distance between
+its centre and the centre of the nearest pixel in the opposite isophotal
+class. Pixels with $|d|\leq\Delta$ form the boundary band. Thus $\Delta$
+is a pixel-centre distance threshold, not an exact distance from a
+continuous contour. We repeat the positional-flux overlap measurement at
+thresholds $\Delta=0.2$, $0.3$, $0.5$, $1$, and $2$ arcsec. The $0.5$-arcsec
+threshold is comparable to the $1$-arcsec PSF FWHM, but it does not define
+an exact one-FWHM-wide band. For each view, the position-calibrated value
+is selected using the original nine-point full-image positional grid; we
+compare it with fixed $b_{\mathrm{link}}=0.20$. Both the overlap and which
+parameter gives the higher median depend on the distance threshold. The
+fixed value $0.20$ gives higher median overlap at thresholds up to $1$ arcsec
+in $V$, and up to $0.5$ arcsec in $g$. At a $2$-arcsec threshold, the
+position-calibrated value gives higher median overlap in both bands. The shaded regions in
+Fig.~\ref{fig:supp-boundary-width} show the 16th--84th percentiles across
+halo-entry medians.
+
+\begin{table*}
+\centering
+\caption{Median light-weighted overlap within boundary bands defined by
+pixel-centre distance thresholds. $\Delta$ is the maximum distance from a
+pixel centre to the nearest pixel centre of the opposite isophotal class;
+it is not an exact distance from a continuous contour. The selected
+parameter is the full-image positional optimum on the original nine-point
+grid for each view; the comparison uses fixed $b_{\mathrm{link}}=0.20$.
+The last column is the difference between the two medians.}
+\label{tab:supp-boundary-width}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Band & Distance threshold $\Delta$ (arcsec) & Selected $b_{\mathrm{link}}$ &
+$b_{\mathrm{link}}=0.20$ & Difference \\
+\midrule
+$V$ & 0.2 & 0.441 & 0.526 & $-0.085$ \\
+$V$ & 0.3 & 0.461 & 0.541 & $-0.080$ \\
+$V$ & 0.5 & 0.516 & 0.575 & $-0.059$ \\
+$V$ & 1.0 & 0.651 & 0.671 & $-0.021$ \\
+$V$ & 2.0 & 0.842 & 0.808 & $+0.035$ \\
+$g$ & 0.2 & 0.453 & 0.531 & $-0.078$ \\
+$g$ & 0.3 & 0.476 & 0.548 & $-0.072$ \\
+$g$ & 0.5 & 0.528 & 0.592 & $-0.065$ \\
+$g$ & 1.0 & 0.699 & 0.696 & $+0.003$ \\
+$g$ & 2.0 & 0.862 & 0.851 & $+0.012$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{supplement/astra_review_response_20261106/results/boundary_width_sensitivity.pdf}
+\caption{Median overlap in bands around the isophote as a function of
+pixel-centre distance threshold $\Delta$. Blue points use the full-image
+positional optimum on the original nine-point grid for each halo view;
+orange points use $b_{\mathrm{link}}=0.20$. Shading shows the 16th--84th
+percentiles across the 75 halo-entry medians. The dashed line marks
+$\Delta=0.5$ arcsec, a threshold comparable to the $1$-arcsec PSF FWHM.
+The band is defined by distance between pixel centres, not by a continuous
+contour distance.}
+\label{fig:supp-boundary-width}
+\end{figure*}
+
+\section{Photometric provenance}
+The archived grids contain no record of the generating software version.
+We reproduce all $32\times12\times2$ flux values in each of the seven
+grids with python-fsps 0.4.7 and the recorded population parameters.
+Every reproduced flux equals the archived value at stored precision.
+The reproducing installation reports the \texttt{mist} isochrone,
+\texttt{miles} spectral, and \texttt{DL07} dust-emission libraries.
+The attenuation parameters \texttt{dust1} and \texttt{dust2} are zero.
+The default circumstellar dust model for asymptotic-giant-branch stars
+remains enabled. The omitted attenuation concerns interstellar dust.
+The supplementary metadata record the compiled extension's hash.
+The available FSPS source uses $\Omega_m=0.27$,
+$\Omega_\Lambda=0.73$, and $H_0=72\,\mathrm{km\,s}^{-1}\mathrm{Mpc}^{-1}$
+for luminosity distances. Angular sizes use the simulation cosmology.
+The archived image calculation applies no additional distance factor.
+
+We recover the FSPS distance table using the source integration and
+redshift interpolation. A consistent distance convention multiplies
+each apparent stellar flux by
+$[D_{L,\mathrm{FSPS}}(z)/D_{L,\mathrm{sim}}(z)]^2$.
+The flux multipliers are $0.8873$, $0.8895$, $0.9041$, $0.9249$,
+$0.9476$, and $0.9589$ at the outputs from lowest to highest redshift.
+The corresponding magnitude shifts are $0.1298$, $0.1272$, $0.1095$,
+$0.0848$, $0.0584$, and $0.0456$.
+The correction preserves stellar spectra, angular scales, the PSF,
+and the numerical brightness limits. The common flux factor cancels
+from luminosity ratios for fixed stellar selections but changes the
+isophotal regions selected from the images.
+The absolute-magnitude grid used for the redshift-zero control needs
+no luminosity-distance correction.
+
+Recalculating all 76 haloes with the common distance convention
+retains the same 75 halo entries in both bands. The median parameter
+changes for 8 entries in $V$ and 11 in $g$. The median change per
+entry is zero in both bands, including the 16th and 84th percentiles.
+The sample median changes from $0.10$ to $0.08$ in $V$ and remains
+$0.10$ in $g$. A few changes can move the central entry of the ordered
+sample across two adjacent grid values without moving the median of
+the paired differences.
+
+Table~\ref{tab:distance} gives the parameters at each output.
+The median overlaps become $0.9658$ in $V$ and $0.9721$ in $g$, with
+$b_{\mathrm{link}}$ chosen separately for each view. The median paired changes in
+overlap are $-0.0012$ and $-0.0009$.
+The median ratios of corrected to original region area are $0.9386$
+and $0.9425$ across all 228 views per band. No view loses every pixel
+brighter than the limit.
+The area increases in one view per band because the nearest-pixel
+rule selects a different region. The $g$ case is the single-pixel
+example in main-paper Section~\ref{main-sec:fail}.
+In $V$, the excluded halo at $z=0.227$ changes from $0.04$ to
+$0.88\,\mathrm{arcsec}^{2}$ along $x$. The overlap remains below
+$10^{-5}$ and the selected $b_{\mathrm{link}}$ remains at the upper grid endpoint.
+
+\begin{table}
+\centering
+\caption{Median linking parameters after using the simulation cosmology
+for both angular and luminosity distances. $N$ counts the same halo
+entries retained in the original calibration. Each halo value first
+takes the median of the three parameters selected separately by view.}
+\label{tab:distance}
+\begin{tabular}{lrrr}
+\toprule
+$z$ & $N$ & $b_{V}$ & $b_{g}$ \\
+\midrule
+3.002 & 1 & 0.10 & 0.12 \\
+1.990 & 3 & 0.10 & 0.15 \\
+1.002 & 17 & 0.08 & 0.08 \\
+0.500 & 33 & 0.08 & 0.08 \\
+0.227 & 9 & 0.12 & 0.10 \\
+0.190 & 12 & 0.12 & 0.10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\section{Archived-normalization illustrations retained for reference}
+\label{sec:archived-products}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+
+The following figures and table preserve earlier illustrative products
+made with the archived FSPS luminosity-distance normalization. The
+corrected-distance calculations in the main paper supersede the numerical
+calibration inferred from those images. The archival products do not enter
+the primary measurements or conclusions.
+
+\subsection{Representative cluster image}
+The image shows how the stellar group changes as the linking parameter
+increases. Its contour and displayed overlap use the archived
+normalization; the corrected calibration is reported in the main text.
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{figures/cluster_38857678.pdf}
+\caption{The most massive halo in the sample at $z=0.190$, with group
+mass $1.337\times10^{14}\,h^{-1}\mathrm{M}_{\odot}$ and $38857678$ stellar
+particles, projected along the box $y$ axis.
+Panels (a)--(e) sample stars with probability proportional to stellar
+flux after removing satellite galaxies represented by at least 100
+stars. Colours distinguish group members from the remaining stars.
+The fixed contour bounds the region brighter than
+$27\,\mathrm{mag\,arcsec}^{-2}$ in $g$, with area
+$2896.240\,\mathrm{arcsec}^{2}$.
+Maximum overlap in the illustrated view occurs at $b_{\mathrm{link}}=0.10$. The image,
+contour, and area use the archived photometric normalization. With the corrected distance convention, the median selected
+$b_{\mathrm{link}}$ is $0.12$ in $V$ and $0.10$ in $g$.
+Panel (f) includes satellite stars and shows stellar mass on a
+logarithmic colour scale. Ellipses show second-moment shapes for 935 galaxies,
+with semi-axes enlarged by a factor of five.
+The dashed square locates panels (a)--(e). Scale bars give proper distances.}
+% Alt text: Six views of the most massive simulated group show stellar light and group membership at progressively larger linking parameters, alongside the full stellar-mass map and galaxy shapes. A fixed surface-brightness contour marks the apparent central-galaxy boundary.
+\label{supp:cluster-archived}
+\end{figure*}
+
+\subsection{Image-region failure examples}
+The maps illustrate small or displaced regions selected by the original
+centre-based rule. Their panel annotations show archived overlap measurements. The main
+text gives the corresponding corrected-distance result for the one-pixel
+example.
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{figures/fail_maps.pdf}
+\caption{Archived-normalization illustrations of isophotes enclosing
+small areas or regions far from the stellar density seed.
+Scale bars give angular distances in arcseconds in every panel.
+Labels inside each panel give the band, viewing direction, linking
+parameter, and overlap.
+The common grey scale gives convolved surface brightness.
+Cyan plus signs mark image centres, orange crosses mark visible density
+seeds, and open purple circles mark watershed cores.
+An arrow in panel (a) points towards a core outside the window.
+Blue points show stellar group members. Teal contours enclose regions
+containing the density seed, and coral contours enclose regions chosen
+by the original image-centre rule.
+Panel (a) shows the one-pixel $g$ region along $y$ at $z=1.002$.
+Panels (b) and (c) show the excluded halo at $z=0.227$ in $V$ along
+$x$ and in $g$ along $z$, enlarged to $\pm60\,\mathrm{arcsec}$.
+Panels (d)--(f) show the low-overlap halo at $z=1.990$ in $V$ along
+$x$ and $y$ and in $g$ along $z$.
+The panel labels show archived overlap measurements. The text also reports the
+corrected-distance change for the one-pixel example.}
+% Alt text: Six image cutouts illustrate tiny or displaced surface-brightness regions at high redshift. Markers identify the image centre, stellar-density seed, watershed cores, and selected group stars; paired contours compare the original region choice with the region containing the seed.
+\label{supp:fail-archived}
+\end{figure*}
+
+\subsection{Archived boundary-distance fractions}
+The fractions use archived fluxes and the archived view-specific linking
+parameters. Ring includes pixels touching either side of the contour,
+including corner contacts. For each halo, the table reports the median
+over three views.
+\begin{table}
+\centering
+\caption{Archived-normalization light near the isophote from group members outside the boundary
+and non-members inside. Entries are median fractions across 75 haloes
+with maximum overlap between the grid endpoints in all three views.
+Out fractions divide group light within the stated distance outside
+the isophote by all group light outside. In fractions divide light
+from non-members within the stated distance inside the isophote by all
+non-member light inside. Ring uses pixels touching the boundary on
+either side, including corner contacts. The supplementary table gives
+the fluxes for individual haloes.}
+\label{supp:boundarydistance}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Selection & Out $V$ & Out $g$ & In $V$ & In $g$ \\
+\midrule
+Ring & 0.2764 & 0.2632 & 0.1400 & 0.1441 \\
+Within $1.0''$ & 0.7300 & 0.7012 & 0.5242 & 0.5501 \\
+Within $2.0''$ & 0.9468 & 0.9365 & 0.8318 & 0.8671 \\
+Within $5.0''$ & 1 & 1 & 1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{No-dimming and unredshifted-spectrum control}
+\label{supp:rest-control}
+
+We make images without cosmological dimming and with unredshifted
+spectra for the halo at $z=3.002$ and the three haloes at $z=1.990$.
+We keep the angular pixel scale, PSF, and numerical brightness limits.
+The stellar populations are evaluated at redshift zero, and absolute
+AB fluxes per proper square parsec are converted to surface brightness
+with $2.5\log_{10}[(206265/10)^{2}]$.
+The comparison changes both dimming and sampled wavelength.
+For example, the observed $V$ filter samples wavelengths near
+$1400\,\text{\AA}$ at $z=3.002$.
+The archived intrinsic-surface-brightness images differ from the
+artificial-redshift \texttt{rest\_sed\_no\_dimming} stress test. The stress
+test places absolute 10-pc stellar flux directly into angular pixels
+without conversion to flux per proper area.
+
+We extend the grid to $b_{\mathrm{link}}=0.25$, $0.30$, $0.40$, and $0.50$.
+In all 24 combinations of band and view, overlap continues to increase
+at the largest tested parameter, $b_{\mathrm{link}}=0.50$. The curves therefore do not
+reach a maximum within the tested range.
+Precision at the endpoint is $0.9931$ to $1.0000$.
+Nearly all group light comes from stars inside the isophote, but some
+stars inside the isophote remain outside the group.
+Figure~\ref{supp:rest-archived} shows the archived-normalization control curves.
+The exploratory curves do not enter the corrected primary calibration.
+Image construction therefore changes the overlap curves.
+The small sample cannot establish a trend with redshift.
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{figures/b_rest.pdf}
+\caption{Overlap without cosmological dimming and with unredshifted
+spectra at the same numerical brightness limits. Lines are medians over
+three views, and shaded bands span the view range. Colour denotes
+redshift, while line style distinguishes haloes at $z=1.990$.
+The legend gives group masses in $h^{-1}\mathrm{M}_{\odot}$.
+All view curves continue to rise at the final grid point, $b_{\mathrm{link}}=0.50$.}
+% Alt text: Overlap curves for four high-redshift haloes rise through the largest tested linking parameter, 0.50. Colours distinguish redshift and line styles distinguish the haloes at redshift 1.990; the shaded ranges show variation across three views.
+\label{supp:rest-archived}
+\end{figure}
+
+
+\FloatBarrier
+\begin{thebibliography}{99}
+\bibitem[Kim et al.(2023)]{kim2023}
+Kim, J., Lee, J., Laigle, C., et al. 2023, ApJ, 951, 137
+\bibitem[Marinacci et al.(2018)]{marinacci2018tng}
+Marinacci, F., et al. 2018, MNRAS, 480, 5113
+\bibitem[More et al.(2011)]{more2011}
+More, S., Kravtsov, A.~V., Dalal, N., \& Gottl\"ober, S. 2011, ApJS, 195, 4
+\bibitem[Naiman et al.(2018)]{naiman2018tng}
+Naiman, J.~P., et al. 2018, MNRAS, 477, 1206
+\bibitem[Nelson et al.(2018)]{nelson2018tng}
+Nelson, D., et al. 2018, MNRAS, 475, 624
+\bibitem[Nelson et al.(2019)]{nelson2019tng}
+Nelson, D., et al. 2019, Comput.\ Astrophys.\ Cosmol., 6, 2
+\bibitem[Pillepich et al.(2018)]{pillepich2018tng}
+Pillepich, A., et al. 2018, MNRAS, 475, 648
+\bibitem[Rodriguez-Gomez et al.(2015)]{rodriguezgomez2015}
+Rodriguez-Gomez, V., Genel, S., Vogelsberger, M., et al. 2015, MNRAS, 449, 49
+\bibitem[Springel et al.(2018)]{springel2018tng}
+Springel, V., et al. 2018, MNRAS, 475, 676
+\end{thebibliography}
+
+\bsp
+\end{document}
